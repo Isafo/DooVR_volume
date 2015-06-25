@@ -389,6 +389,7 @@ int Oculus::runOvr() {
 	unsigned int l_FrameIndex = 0;
 	// RENDER LOOP ////////////////////////////////////////////////////////////////////////////////////////
 	while (!glfwWindowShouldClose(l_Window)) {
+
 		// Show fps at the top of the window
 		fps = Utilities::displayFPS(l_Window);
 
@@ -673,8 +674,8 @@ int Oculus::runOvr() {
 						glUniform4fv(locationMeshLP, 1, LP);
 						glUniform4fv(locationMeshLP2, 1, lPosTemp);
 
-						//if (lines) {
-						if (true) {
+						if (lines) {
+						//if (true) {
 							glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 							mTest->render();
 							glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

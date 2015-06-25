@@ -922,6 +922,14 @@ void Mesh::edgeCollapse(float* vPoint, float* vec, halfEdge* &edge) {
 		delete tempE2->nextEdge;
 		delete tempE2;
 	}
+	else if (tempE2->sibling->triangle == tempE2->nextEdge->sibling->triangle)
+	{
+
+	}
+	else if (tempE2->nextEdge->sibling->triangle == tempE2->nextEdge->nextEdge->sibling->triangle)
+	{
+
+	}
 
 	if (tempE->sibling->triangle == tempE->nextEdge->nextEdge->sibling->triangle) {
 
@@ -952,6 +960,14 @@ void Mesh::edgeCollapse(float* vPoint, float* vec, halfEdge* &edge) {
 		delete tempE->nextEdge;
 		delete tempE;
 		edge = vertexEPtr[currVert];
+	}
+	else if (tempE->sibling->triangle == tempE->nextEdge->sibling->triangle)
+	{
+
+	}
+	else if (tempE->nextEdge->sibling->triangle == tempE->nextEdge->nextEdge->sibling->triangle)
+	{
+
 	}
 	else
 		edge = tempE;
