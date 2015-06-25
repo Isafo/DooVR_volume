@@ -14,7 +14,7 @@ Mesh::Mesh(float rad) {
 	halfEdge* tempE1;
 	bool success = true;
 
-	float tempP1[3]; float tempP2[3] = {0.0f, 0.0f, 0.0f}; float tempVec[3];
+	float tempP1[3]; float tempP2[3] = {0.0f, 0.0f, 0.0f};
 	int tempSize = 0;
 	float testLength = 0.0f;
 

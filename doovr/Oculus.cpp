@@ -11,7 +11,6 @@
 #include "Texture.h"
 #include "Wand.h"
 #include "Passive3D.h"
-#include "VRPN.h"
 
 using namespace std;
 
@@ -20,16 +19,6 @@ using namespace std;
 static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
 
 void GLRenderCallsOculus();
-//! reads wandCalibration from file and sets wand transform
-void readCalibration(Vrpn* wand, float& eyeHeight, const char* profileName);
-
-// Declare moveMesh - used for moving around the mesh in the scene.
-// TODO: refactor this function to TOOLS namespace?
-void moveMesh(Wand* wand, Mesh* mTest, bool buttonPressed, float* changePos, float* differenceR);
-void moveEntity(Wand* wand, vector<Entity*> *objectList, float wandRadius);
-bool selectFunction(Wand* wand, vector<Entity*> *objectList, int &chooseFunction);
-void updatePanel(vector<Entity*> *objectList, int currentFunction, float MAX_HEX_HEIGHT, float MIN_HEX_HEIGHT);
-void print_FLOAT_matrix(float *M);
 
 // --- Variable Declerations ------------
 const bool L_MULTISAMPLING = false;
@@ -51,16 +40,6 @@ const float EYEHEIGHT{OVR_DEFAULT_EYE_HEIGHT};
 const int nFunctions = 7;
 const int nLightsources = 3;
 
-// Function ID's
-const int DILATEnERODE = 0;
-const int DRAGnPULL = 1;
-const int moveMESH = 2;
-const int moveENTITY = 3;
-const int coREGISTER = 4;
-const int meshRESET = 5;
-const int hexRESET = 6;
-
-
 int Oculus::runOvr() {
 
 	ovrVector3f g_EyeOffsets[2];
@@ -68,7 +47,7 @@ int Oculus::runOvr() {
 	ovrTexture g_EyeTextures[2];
 	OVR::Matrix4f g_ProjectionMatrix[2];
 	OVR::Sizei g_RenderTargetSize;
-	ovrVector3f g_CameraPosition;
+	//ovrVector3f g_CameraPosition;
 
 	GLfloat I[16] = { 1.0f, 0.0f, 0.0f, 0.0f,
 					  0.0f, 1.0f, 0.0f, 0.0f,
@@ -91,8 +70,10 @@ int Oculus::runOvr() {
 	// Save old positions and transforms
 	float changePos[3] = { 0.0f };
 	float differenceR[16] = { 0.0f };
-	float lastPos[3] = { 0.0f, 0.0f, 0.0f };
+	float* lastPos = nullptr;
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
+	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
+	float* moveVec = nullptr;
 
 	// Configuration variables
 	int regCounter = 0;
@@ -104,13 +85,9 @@ int Oculus::runOvr() {
 	float eyeHeight = OVR_DEFAULT_EYE_HEIGHT;
 	float MAX_HEX_HEIGHT = -eyeHeight + 0.95f;
 	float MIN_HEX_HEIGHT = -eyeHeight + 0.9f;
-	float eye, floor;
 
 	// FPS
 	double fps = 0;
-
-	// Translation vector -- used for tranlate objects in SceneGraph
-	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
 
 	// Size of the wand tool
 	float wandRadius = 0.01f;
@@ -120,9 +97,6 @@ int Oculus::runOvr() {
 	bool buttonHeld = false;
 	bool buttonReleased = false;
 	bool lines = false;
-
-	int currentFunction = moveENTITY;
-	int &chooseFunction = currentFunction;
 
 	// Location used for UNIFORMS in shader
 	GLint locationLP;
@@ -362,68 +336,17 @@ int Oculus::runOvr() {
 	MVstack.init();
 	
 	//DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
-
-	Plane ground(0.0f, 0.0f, 0.0f, 100.0f, 100.0f);			//Ground plane
-	Box board(0.0f, -0.95f, 0.0f, 0.35, 0.01, 0.26);
-
-	Box box(0.0f, -0.935f, 0.0f, 0.5f, 0.2f, 0.5f);			//box in the middle of the wand
-	Box boxPoint(0.0f, 0.0f, 0.0f, 0.005f, 0.005f, 0.005f); //hexBox representing the Oculus camera
+	Box board(0.0f, -0.935f, 0.0f, 0.35, 0.01, 0.26);
 	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
 
-	// ObjectLists
-	/*
-	vector<Entity*> objectList;
-	vector<Entity*> *oPointer;
-	vector<Entity*>::iterator it;
-	float offset = 0;
-	hexBox* tempHex;
-	*/
-	/*
-	// Function-boxes
-	float X = 0.142f + 0.215f;
-	float Z = -0.0813333f - 0.125f;
-	objectList.push_back(new hexBox(X + 0.0f, MIN_HEX_HEIGHT, Z + 0.0f, 3, 0));	// y = -eyeHeight + MIN_HEX_HEIGHT
-	objectList.push_back(new hexBox(X + 0.0f, MIN_HEX_HEIGHT, Z - 0.0815f, 2, 0));
-	objectList.push_back(new hexBox(X + 0.0f, MIN_HEX_HEIGHT, Z + 0.0815f, 5, 0));
-	objectList.push_back(new hexBox(X + 0.07058f, MIN_HEX_HEIGHT, Z + 0.04075f, 6, 0));
-	objectList.push_back(new hexBox(X + 0.07058f, MIN_HEX_HEIGHT, Z - 0.04075f, 4, 0));
-	objectList.push_back(new hexBox(X - 0.07058f, MIN_HEX_HEIGHT, Z + 0.04075f, 0, 0));
-	objectList.push_back(new hexBox(X - 0.07058f, MIN_HEX_HEIGHT, Z - 0.04075f, 1, 0));
-	// Movable hexBoxes
-	for (int i = 0; i < 48; i++)
-	{
-		if (i % 2)
-			offset = 0;
-		else
-			offset = -0.04075f;
-		for (int j = 0; j < 24; j++)
-			objectList.push_back(new hexBox(-1.58f + i * 0.071777f,						// X-axis
-											  -eyeHeight - 0.4f,						// Y-axis (-eyeHeight - 0.01, height = 0.1)
-											  -1.131f + 0.083984f * j + offset, 0, 1));			// Z-axis
-	}
-	// Lightsources
-	objectList.push_back(new Sphere(0.3f, 0.2f, 0.0f, 0.02f));
-	objectList.push_back(new Sphere(-0.3f, 0.2f, 0.0f, 0.02f));
-	objectList.push_back(new Sphere(0.0f, 0.2f, -0.5f, 0.02f));
-	*/
-	// Pointers to the lists
-	//oPointer = &objectList;
 
 	// Wand = Box + sphere
-	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
+	Box boxWand(0.0f, 0.0f, 0.0f, 0.20f, 0.03f, 0.03f);
 	Sphere sphereWand(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Initilise VRPN connection with the Intersense wand
-	//Vrpn* wand = new Vrpn(true, true, true, "Wand");
+	// Initilise passive wand
 	Passive3D* wand = new Passive3D();
-
-	// read calibration from file and set the transform
-	// save configfile as Oculus profile name, if profile name doesn't exist save as: wandCalibration
-	//readCalibration(wand, eyeHeight, ovrHmd_GetString(hmd, OVR_KEY_USER, "wandCalibration"));
-
-	//readCalibration(wand, eyeHeight);
 	
-
 	// TEXTURES ///////////////////////////////////////////////////////////////////////////////////////////////
 	glEnable(GL_TEXTURE_2D);
 	// Wand function textures
@@ -442,7 +365,7 @@ int Oculus::runOvr() {
 	//UNIFORM VARIABLES WITH SHADER ///////////////////////////////////////////////////////////////////////////
 	locationMV = glGetUniformLocation(phongShader.programID, "MV");						// ModelView Matrix
 	locationP = glGetUniformLocation(phongShader.programID, "P");						// Perspective Matrix
-	locationLP = glGetUniformLocation(phongShader.programID, "lightPos");			// Light position
+	locationLP = glGetUniformLocation(phongShader.programID, "lightPos");				// Light position
 	locationTex = glGetUniformLocation(phongShader.programID, "tex");					// Texture Matrix
 
 	locationMeshMV = glGetUniformLocation(meshShader.programID, "MV");					// ModelView Matrix
@@ -452,11 +375,11 @@ int Oculus::runOvr() {
 	//locationMeshLP2 = glGetUniformLocation(meshShader.programID, "LP2");
 	//for (int i = 0; i < nLightsources + 1; i++) {
 	//	string uniform = "lightPos[" + to_string(i) + "]";
-	//	locationMeshLP[i] = glGetUniformLocation(meshShader.programID, uniform.c_str());			// Light position
+	//	locationMeshLP[i] = glGetUniformLocation(meshShader.programID, uniform.c_str());	// Light position
 	//}
 
 	locationWandMV = glGetUniformLocation(sphereShader.programID, "MV");					// ModelView Matrix
-	locationWandP = glGetUniformLocation(sphereShader.programID, "P");					// Perspective Matrix
+	locationWandP = glGetUniformLocation(sphereShader.programID, "P");						// Perspective Matrix
 
 	//ovrHmd_RecenterPose(hmd);
 	ovrHmd_DismissHSWDisplay(hmd); // dismiss health safety warning
@@ -467,7 +390,6 @@ int Oculus::runOvr() {
 	unsigned int l_FrameIndex = 0;
 	// RENDER LOOP ////////////////////////////////////////////////////////////////////////////////////////
 	while (!glfwWindowShouldClose(l_Window)) {
-		// Show fps at the top of the window
 
 		/*
 
@@ -612,6 +534,17 @@ int Oculus::runOvr() {
 			delete mTest; // Reset mesh
 			mTest = new Mesh(0.3f);
 		}
+		if (glfwGetKey(l_Window, GLFW_KEY_RIGHT_ALT)) {
+			pmat4 = mTest->getPosition();
+			
+			linAlg::calculateVec(moveVec, wand->getWandPosition(), lastPos);
+			pmat4[0] += moveVec[0];
+			pmat4[1] += moveVec[1];
+			pmat4[2] += moveVec[2];
+
+			mTest->setPosition(pmat4);
+		}
+
 		// Activate wireframe (hold L)
 		if (glfwGetKey(l_Window, GLFW_KEY_L) == GLFW_PRESS && !lines) {
 			lines = true;
@@ -619,9 +552,7 @@ int Oculus::runOvr() {
 			lines = false;
 		}
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
-		lastPos[0] = wand->getWandPosition()[0];
-		lastPos[1] = wand->getWandPosition()[1];
-		lastPos[2] = wand->getWandPosition()[2];
+		lastPos = wand->getWandPosition();
 
 		// Begin the frame...
 		ovrHmd_BeginFrame(hmd, l_FrameIndex);
@@ -643,9 +574,9 @@ int Oculus::runOvr() {
 				ovrEyeType l_Eye = hmd->EyeRenderOrder[l_EyeIndex];
 
 				glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
-					g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
-					g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
-					g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
+						   g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
+						   g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
+						   g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
 
 				glUseProgram(phongShader.programID);
 				// Pass projection matrix on to OpenGL...
@@ -756,15 +687,13 @@ int Oculus::runOvr() {
 					//RENDER WAND---------------------------------------------------------------------------
 					MVstack.push();
 						MVstack.translate(wand->getWandPosition());
-						
 						MVstack.multiply(wand->getWandOrientation());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					//	boxPoint.render();
 
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						MVstack.push();
-							translateVector[0] = 0.0f;
+							translateVector[0] = -0.1f;
 							translateVector[1] = 0.0f;
-							translateVector[2] = -0.1f;
+							translateVector[2] = 0.0f;
 							MVstack.translate(translateVector);
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());
@@ -788,9 +717,6 @@ int Oculus::runOvr() {
 
 		// Back to the default framebuffer...
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		//Wand callback from VRPN
-		//wand->sendtoMainloop();
 
 		// Do everything, distortion, front/back buffer swap...
 		ovrHmd_EndFrame(hmd, g_EyePoses, g_EyeTextures);
@@ -826,6 +752,7 @@ static void WindowSizeCallback(GLFWwindow* p_Window, int p_Width, int p_Height) 
         }
     }
 }
+
 void GLRenderCallsOculus(){
     // Clear...
     //GL calls
@@ -845,156 +772,4 @@ void GLRenderCallsOculus(){
     else {
         glDisable(GL_MULTISAMPLE);
     }
-}
-void updatePanel(vector<Entity*> *objectList, int currentFunction, float MAX_HEX_HEIGHT, float MIN_HEX_HEIGHT) {
-    hexBox* tempHex;
-    vector<Entity*>::iterator it = objectList->begin();
-    while (it != objectList->begin() + nFunctions) {
-        tempHex = static_cast<hexBox*> ((*it));
-        if (currentFunction == tempHex->getFunction())
-            tempHex->moveInstant(MAX_HEX_HEIGHT);
-        else
-            tempHex->moveInstant(MIN_HEX_HEIGHT);
-        ++it;
-    }
-}
-
-bool selectFunction(Wand* wand, vector<Entity*> *objectList, int& chooseFunction) {
-	vector<Entity*>::iterator it = objectList->begin();
-	hexBox *tempHex;
-	float vLength[3];
-	float radius = 0.04075f;
-
-	while (it != objectList->begin() + nFunctions) {
-		tempHex = static_cast<hexBox*> ((*it));
-		vLength[0] = wand->getWandPosition()[0] - (*it)->getPosition()[0];
-		vLength[1] = wand->getWandPosition()[1] - (*it)->getPosition()[1];
-		vLength[2] = wand->getWandPosition()[2] - (*it)->getPosition()[2];
-		if (linAlg::vecLength(vLength) < radius) {
-			chooseFunction = tempHex->getFunction();
-			return true;
-		}
-		++it;
-	}
-	return false;
-}
-void moveMesh(Wand* wand, Mesh* mTest, bool buttonPressed, float* changePos, float* differenceR) {
-    // Save first wand rotation transform in wandR
-    float* wandR = wand->getWandOrientation();
-    float resultR[16];
-    float resultPos[3];
-
-    if (buttonPressed) {
-        // Offset translation back to the original position of the mesh
-        changePos[0] = mTest->getPosition()[0] - wand->getWandPosition()[0];
-		changePos[1] = mTest->getPosition()[1] - wand->getWandPosition()[1];
-		changePos[2] = mTest->getPosition()[2] - wand->getWandPosition()[2];
-
-        // Get the difference betweeen the original mesh rotation transform and wandR  --   wandR * differenceR = meshR
-        float* meshR = mTest->getOrientation();
-        float invWandR[16] = { 0.0f };
-        linAlg::invertMatrix(wandR, invWandR);
-        linAlg::matrixMult(invWandR, meshR, differenceR);
-    }
-
-    // Resulting translation to be made on the mesh calculated from origin.
-	resultPos[0] = wand->getWandPosition()[0] + changePos[0];
-	resultPos[1] = wand->getWandPosition()[1] + changePos[1];
-	resultPos[2] = wand->getWandPosition()[2] + changePos[2];
-
-    // Resulting rotation to be made on the mesh
-    linAlg::matrixMult(wandR, differenceR, resultR);
-
-    mTest->setPosition(resultPos);
-    mTest->setOrientation(resultR);
-}
-void moveEntity(Wand* wand, vector<Entity*> *objectList, float wandRadius) {
-    hexBox *tempHex;
-    vector<Entity*> selectedList;
-    vector<Entity*>::iterator it;
-    bool find = false;
-    float vLength[3];
-
-    // Look for lightsources
-    it = objectList->end() - nLightsources;
-    while (it != objectList->end() && (*it)->getOtype() == 'S') {
-        vLength[0] = wand->getWandPosition()[0] - (*it)->getPosition()[0];
-        vLength[1] = wand->getWandPosition()[1] - (*it)->getPosition()[1];
-        vLength[2] = wand->getWandPosition()[2] - (*it)->getPosition()[2];
-        if (linAlg::vecLength(vLength) < wandRadius) {
-            find = true;
-            selectedList.push_back((*it));
-			break;
-        }
-        ++it;
-    }
-    // Look for hexboxes
-    if (!find) {
-        it = objectList->begin() + nFunctions;
-        while (it != objectList->end() - nLightsources) {
-            // Create vectors between wand and object, depending on object type
-            vLength[0] = wand->getWandPosition()[0] - ((*it))->getPosition()[0];
-            vLength[1] = 0.0f;
-            vLength[2] = wand->getWandPosition()[2] - ((*it))->getPosition()[2];
-            // Select object if the distance is smaller than wandRadius
-            if (linAlg::vecLength(vLength) < wandRadius) {
-                selectedList.push_back((*it));
-            }
-            ++it;
-        }
-    }
-    // Move selected objects
-    it = selectedList.begin();
-	if (selectedList.size() != 0) {
-		if ((*it)->getOtype() == 'S')
-			while (it != selectedList.end()) {
-				(*it)->setPosition(wand->getWandPosition());
-				++it;
-			}
-		else
-			while (it != selectedList.end()) {
-				tempHex = static_cast<hexBox*> ((*it));
-				tempHex->move(wand->getWandPosition()[1]);
-				++it;
-			}
-	}
-    
-}
-
-void print_FLOAT_matrix(float* M) {
-    for (int i = 0; i < 16; i++) {
-        cout << std::fixed << std::setprecision(2);
-        cout << M[i] << "  ";
-        if (i == 3 || i == 7 || i == 11)	cout << endl;
-    }
-    cout << endl << "---------------------" << endl;
-}
-
-void readCalibration(Vrpn* wand, float& eyeHeight, const char* profileName){
-
-	string line;
-	float value;
-	int i = 0;
-	float transform[16] = { 0.0f };
-
-	string fileName(profileName);
-
-	ifstream wandCalibration(fileName + ".ini");
-	if (wandCalibration.is_open()) {
-		while (getline(wandCalibration, line)) {
-			std::istringstream in(line);
-			in >> value;
-			if (i < 16) {
-				transform[i] = value;
-				i++;
-			}
-			else {
-				eyeHeight = value;
-				wand->setWandTransform(transform);
-			}
-		}
-		wandCalibration.close();
-	}
-
-	else cout << "No configuration file found, calibrate the wand";
 }
