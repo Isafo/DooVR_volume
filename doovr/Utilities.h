@@ -19,7 +19,7 @@
 #include <iomanip>      // std::setprecision
 
 namespace Utilities {
-	
+	/*
 	double displayFPS(GLFWwindow* window);
-	
+	*/
 }

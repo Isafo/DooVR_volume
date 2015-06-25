@@ -468,7 +468,6 @@ int Oculus::runOvr() {
 	// RENDER LOOP ////////////////////////////////////////////////////////////////////////////////////////
 	while (!glfwWindowShouldClose(l_Window)) {
 		// Show fps at the top of the window
-		fps = Utilities::displayFPS(l_Window);
 
 		/*
 
