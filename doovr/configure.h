@@ -1,5 +1,0 @@
-
-namespace configure {
-
-	bool coRegister();
-}

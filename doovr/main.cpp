@@ -32,17 +32,13 @@
 * - Link the required libraries in the project properties
 * - Build and run the project
 * 
-* - To run the wand configuration type "C" in the console
-* - To run the application using a Oculus display type "O" in the console
 *
 * \section dependencies_sec Dependencies
 *	- OpenGL
 *	- GLFW
 *	- GLEW
 *	- libOVR
-*	- VRPN
 *	- wand3D
-*	- Armadillo
 *
 */
 
@@ -57,11 +53,7 @@
 #include "Entity.h"
 #include "Sphere.h"
 
-#include "twoDim.h"
 #include "Oculus.h"
-#include "configure.h"
-
-char DeviceType;
 
 //! main 
 
@@ -73,14 +65,7 @@ int main() {
 
 	int runSuccess = 0;
 	
-	
-	while (runSuccess == 0) {
-		cin >> DeviceType;
-		if (DeviceType == 'C')
-			runSuccess = configure::coRegister();
-		else if (DeviceType == 'O')
-			runSuccess = Oculus::runOvr();
-	}
+	runSuccess = Oculus::runOvr();
 	
 	return runSuccess;
 }
