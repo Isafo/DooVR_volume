@@ -76,7 +76,7 @@ void VRPN_CALLBACK handle_tracker(void* userData, const vrpn_TRACKERCB t) {
 
 	// Set new orientation
 	double T[16];
-	float floatT[16] = { 0.0f };
+	//float floatT[16] = { 0.0f };
 	float out[16] = { 0.0f };
 	q_to_ogl_matrix(T, t.quat);
 	T[3] = 0.0;

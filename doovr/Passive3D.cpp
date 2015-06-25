@@ -27,12 +27,12 @@ void Passive3D::wand3dCallback(WandData data) {
 	float Orientation[16];
 	//float finalM[16];
 	setWandPosition(data.position);
-	utils::getGLRotMatrix(data, wandOrientation);
+	utils::getGLRotMatrix(data, Orientation);
 	float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
 						 0.f, 0.f, 1.f, 0.f,
 						 0.f, 1.f, 0.f, 0.f,
 						 0.f, 0.f, 0.f, 1.0f };
-	//linAlg::matrixMult(rotZX, Orientation, wandOrientation);
+	linAlg::matrixMult(rotZX, Orientation, wandOrientation);
 	/*
 	wandOrientation[0] = finalM[0];
 	wandOrientation[1] = finalM[1];

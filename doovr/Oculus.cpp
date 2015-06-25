@@ -364,7 +364,7 @@ int Oculus::runOvr() {
 	//DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
 
 	Plane ground(0.0f, 0.0f, 0.0f, 100.0f, 100.0f);			//Ground plane
-	Box board(0.0f, -0.935f, 0.0f, 0.35, 0.01, 0.26);
+	Box board(0.0f, -0.95f, 0.0f, 0.35, 0.01, 0.26);
 
 	Box box(0.0f, -0.935f, 0.0f, 0.5f, 0.2f, 0.5f);			//box in the middle of the wand
 	Box boxPoint(0.0f, 0.0f, 0.0f, 0.005f, 0.005f, 0.005f); //hexBox representing the Oculus camera
@@ -410,16 +410,16 @@ int Oculus::runOvr() {
 	//oPointer = &objectList;
 
 	// Wand = Box + sphere
-	Box boxWand(0.0f, 0.0f, 0.0f, 0.20f, 0.03f, 0.03f);
+	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
 	Sphere sphereWand(0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Initilise VRPN connection with the Intersense wand
-	Vrpn* wand = new Vrpn(true, true, true, "Wand");
-	//Passive3D* wand = new Passive3D();
+	//Vrpn* wand = new Vrpn(true, true, true, "Wand");
+	Passive3D* wand = new Passive3D();
 
 	// read calibration from file and set the transform
 	// save configfile as Oculus profile name, if profile name doesn't exist save as: wandCalibration
-	readCalibration(wand, eyeHeight, ovrHmd_GetString(hmd, OVR_KEY_USER, "wandCalibration"));
+	//readCalibration(wand, eyeHeight, ovrHmd_GetString(hmd, OVR_KEY_USER, "wandCalibration"));
 
 	//readCalibration(wand, eyeHeight);
 	
@@ -742,8 +742,8 @@ int Oculus::runOvr() {
 						glUniform4fv(locationMeshLP, 1, LP);
 						glUniform4fv(locationMeshLP2, 1, lPosTemp);
 
-						//if (lines) {
-						if (true) {
+						if (lines) {
+						//if (true) {
 							glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 							mTest->render();
 							glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -757,16 +757,15 @@ int Oculus::runOvr() {
 					//RENDER WAND---------------------------------------------------------------------------
 					MVstack.push();
 						MVstack.translate(wand->getWandPosition());
-						//MVstack.rotZ(3.141592f / 2.f);
+						
 						MVstack.multiply(wand->getWandOrientation());
-
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					//	boxPoint.render();
 
 						MVstack.push();
-							translateVector[0] = -0.1f;
+							translateVector[0] = 0.0f;
 							translateVector[1] = 0.0f;
-							translateVector[2] = 0.0f;
+							translateVector[2] = -0.1f;
 							MVstack.translate(translateVector);
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());
