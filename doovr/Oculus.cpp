@@ -73,7 +73,7 @@ int Oculus::runOvr() {
 	float* lastPos = nullptr;
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
-	float* moveVec = nullptr;
+	float* moveVec = currPos;
 
 	// Configuration variables
 	int regCounter = 0;
@@ -336,12 +336,12 @@ int Oculus::runOvr() {
 	MVstack.init();
 	
 	//DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
-	Box board(0.0f, -0.935f, 0.0f, 0.35, 0.01, 0.26);
+	Box board(0.0f, -0.25f, -0.35f, 0.35, 0.01, 0.26);
 	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
 
 
 	// Wand = Box + sphere
-	Box boxWand(0.0f, 0.0f, 0.0f, 0.20f, 0.03f, 0.03f);
+	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
 	Sphere sphereWand(0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Initilise passive wand
@@ -518,17 +518,14 @@ int Oculus::runOvr() {
 			ovrHmd_RecenterPose(hmd);
 			ovrHmd_DismissHSWDisplay(hmd);
 		}
-		if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
-			mTest->sculpt(wand->getWandPosition(), lastPos, wandRadius, true);
-		}
 		if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose(l_Window, GL_TRUE);
 		}
 		if (glfwGetKey(l_Window, GLFW_KEY_Q)) {
-			wandRadius += 0.01f;
+			wandRadius += 0.001f;
 		}
 		if (glfwGetKey(l_Window, GLFW_KEY_W)) {
-			wandRadius -= 0.01f;
+			wandRadius -= 0.001f;
 		}
 		if (glfwGetKey(l_Window, GLFW_KEY_R)) {
 			delete mTest; // Reset mesh
@@ -538,11 +535,18 @@ int Oculus::runOvr() {
 			pmat4 = mTest->getPosition();
 			
 			linAlg::calculateVec(moveVec, wand->getWandPosition(), lastPos);
+			cout << moveVec[0];
+			cout << moveVec[1];
+			cout << moveVec[2] << endl;
+			cout << "#";
 			pmat4[0] += moveVec[0];
 			pmat4[1] += moveVec[1];
 			pmat4[2] += moveVec[2];
 
 			mTest->setPosition(pmat4);
+		}
+		if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
+			mTest->sculpt(wand->getWandPosition(), lastPos, wandRadius, true);
 		}
 
 		// Activate wireframe (hold L)
@@ -691,9 +695,9 @@ int Oculus::runOvr() {
 
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						MVstack.push();
-							translateVector[0] = -0.1f;
+							translateVector[0] = 0.0f;
 							translateVector[1] = 0.0f;
-							translateVector[2] = 0.0f;
+							translateVector[2] = -0.1f;
 							MVstack.translate(translateVector);
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());
@@ -760,6 +764,8 @@ void GLRenderCallsOculus(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+	//glEnable(GL_FLAT);
+	glShadeModel(GL_FLAT);
     glCullFace(GL_BACK);
     //glDisable(GL_TEXTURE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

@@ -49,9 +49,6 @@ class Mesh {
 	void setPosition(float* p) { position[0] = p[0]; position[1] = p[1]; position[2] = p[2]; }
 	void setOrientation(float* o) { std::copy(o, o + 16, orientation); }
 
-	bool getisMoved() { return isMoved; }
-	void setisMoved(bool b) { isMoved = b; }
-
   private:
 
 	//! updates the changed vertecies normal and checks if retriangulation is needed.
@@ -71,8 +68,8 @@ class Mesh {
 	const int COLS = 100;
 
 
-	const float MAX_LENGTH = 0.025f *0.2f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.01f *0.2f;
+	const float MAX_LENGTH = 0.025f;// *0.2f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f;// *0.2f;
 
 	GLuint vao;          // Vertex array object, the main handle for geometry
 	
