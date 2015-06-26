@@ -336,7 +336,10 @@ int Oculus::runOvr() {
 	MVstack.init();
 	
 	//DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
+
 	Box board(0.0f, -0.25f, -0.35f, 0.35, 0.01, 0.26);
+	Box trackingGrid(0.0f, -0.125f, -0.35f, 0.50, 0.25, 0.50);
+
 	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
 
 
@@ -652,15 +655,22 @@ int Oculus::runOvr() {
 						ground.render();
 					MVstack.pop();
 					*/
-					//TRACKINGRANGE
+					
 					MVstack.push();
 						MVstack.translate(board.getPosition());
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-						//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-						//glLineWidth(5.0f);
 						board.render();
-						//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					MVstack.pop();
+
+					//TRACKINGRANGE
+					MVstack.push();
+						MVstack.translate(trackingGrid.getPosition());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+						glLineWidth(2.0f);
+						trackingGrid.render();
+						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					MVstack.pop();
 
 					glBindTexture(GL_TEXTURE_2D, 0);

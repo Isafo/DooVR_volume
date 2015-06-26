@@ -13,7 +13,7 @@ public:
 		vertexarray = NULL;
 		indexarray = NULL;
 		nverts = 0;
-		ntris = 0;
+		nquads = 0;
 	};
 
 	Box(float x, float y, float z, float dX, float dY, float dZ );
@@ -26,7 +26,7 @@ public:
 private:
 	GLuint vao;          // Vertex array object, the main handle for geometry
 	int nverts; // Number of vertices in the vertex array
-	int ntris;  // Number of triangles in the index array (may be zero)
+	int nquads;  // Number of triangles in the index array (may be zero)
 	GLuint vertexbuffer; // Buffer ID to bind to GL_ARRAY_BUFFER
 	GLuint indexbuffer;  // Buffer ID to bind to GL_ELEMENT_ARRAY_BUFFER
 	GLfloat *vertexarray; // Vertex array on interleaved format: x y z nx ny nz s t
