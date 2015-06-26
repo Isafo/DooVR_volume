@@ -9,6 +9,7 @@
 * NOTE: This function doesn't work properly if you call it for multiple
 * windows. Call it only for one window, and only once for each frame.
 */
+/*
 double Utilities::displayFPS(GLFWwindow *window) {
 
 	static double t0 = 0.0;
@@ -35,3 +36,4 @@ double Utilities::displayFPS(GLFWwindow *window) {
 	frames++;
 	return fps;
 }
+*/

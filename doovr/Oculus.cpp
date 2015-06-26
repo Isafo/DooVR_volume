@@ -340,6 +340,7 @@ int Oculus::runOvr() {
 	Box trackingGrid(0.0f, -0.81f, 0.0f, 0.50, 0.25, 0.50);
 	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
 
+
 	// Wand = Box + sphere
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.20f, 0.03f, 0.03f);
 	Sphere sphereWand(0.0f, 0.0f, 0.0f, 1.0f);
@@ -390,9 +391,6 @@ int Oculus::runOvr() {
 	unsigned int l_FrameIndex = 0;
 	// RENDER LOOP ////////////////////////////////////////////////////////////////////////////////////////
 	while (!glfwWindowShouldClose(l_Window)) {
-
-		// Show fps at the top of the window
-		fps = Utilities::displayFPS(l_Window);
 
 		/*
 
