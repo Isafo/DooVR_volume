@@ -33,8 +33,9 @@ public:
 
 	virtual void setWandTransform(float* T);
 
-
 	void wand3dCallback(wand3d::WandData data);
+	
+	void calibrate();
 
 private:
 	wand3d::Wand3d* wand;
