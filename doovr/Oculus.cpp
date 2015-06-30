@@ -6,6 +6,7 @@
 #include "MatrixStack.h"
 #include "Sphere.h"
 #include "Plane.h"
+#include "MenuItem.h"
 #include "Box.h"
 #include "hexBox.h"
 #include "Texture.h"
@@ -114,6 +115,9 @@ int Oculus::runOvr() {
 	bool buttonHeld = false;
 	bool buttonReleased = false;
 	bool lines = false;
+
+	vector<MenuItem> menuItem;
+	menuItem.reserve(4);
 
 	// Location used for UNIFORMS in shader
 	GLint locationLP;
@@ -352,13 +356,16 @@ int Oculus::runOvr() {
 	MatrixStack MVstack;
 	MVstack.init();
 	
-	//DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
-
+	// DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
 	Box board(0.0f, -0.27f, -0.25f, 0.50, 0.01, 0.50);
 	Box trackingGrid(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
+	
+	for (int i = -2; i < 2; i++) {
+		MenuItem tempItem(0.2f, -0.22f, -0.25f + i * 0.08f, 0.07f, 0.07);
+		menuItem.push_back(tempItem);
+	}
 
 	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
-
 
 	// Wand = Box + sphere
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
@@ -612,6 +619,15 @@ int Oculus::runOvr() {
 						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					MVstack.pop();
 
+					//  MENU ITEMS
+					for (int i = 0; i < menuItem.size(); i++) {
+						MVstack.push();
+							MVstack.translate(menuItem[i].getPosition());
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							menuItem[i].render();
+						MVstack.pop();
+					}
+
 					glBindTexture(GL_TEXTURE_2D, 0);
 					//RENDER MESH -----------------------------------------------------------------------
 					glUseProgram(meshShader.programID);
@@ -727,4 +743,10 @@ void GLRenderCallsOculus(){
     else {
         glDisable(GL_MULTISAMPLE);
     }
+}
+
+//! checks if a menu item is choosen and activates or executes the function
+void handleMenu(float* wandPosition, vector<MenuItem> menuItem) {
+
+
 }

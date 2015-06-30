@@ -14,7 +14,6 @@ Plane::Plane(float x, float y, float z, float dX, float dZ) {
 	tempV.nx = 0.0f;
 	tempV.ny = 1.0f;
 	tempV.nz = 0.0f;
-//	tempV.adjacentFace = nullptr;
 
 	position[0] = x;
 	position[1] = y;
