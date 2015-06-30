@@ -58,6 +58,23 @@ int Oculus::runOvr() {
 					  0.0f, 2.42f, 0.0f, 0.0f,
 					  0.0f, 0.0f, -1.0f, -1.0f,
 					  0.0f, 0.0f, -0.2f, 0.0f };
+	
+
+	// states
+	//! contains the number of any active state
+	vector<int> activeStates;
+
+	/*! 0 indicates that the state is not active, 
+	 * 1 indicates that the state has just been activated
+	 * 2 indicates that the state is active
+	 * 3 indicates that the state has just been deactivated
+	 *
+	 * state[0] is the modelling state
+	 * state[1] is the moveMesh state
+	 * state[2] is the changeToolSize state
+ 	 */
+	int state[4] = { 0 };
+	state[0] = 1;
 
 	// Lightposition 
 	float lPos[4] = { 2.0f, 2.0f, 2.0f, 1.0f};
@@ -373,11 +390,6 @@ int Oculus::runOvr() {
 	locationMeshP = glGetUniformLocation(meshShader.programID, "P");					// Perspective Matrix
 	locationMeshLP = glGetUniformLocation(meshShader.programID, "lightPos");
 	locationMeshLP2 = glGetUniformLocation(meshShader.programID, "lightPos2");
-	//locationMeshLP2 = glGetUniformLocation(meshShader.programID, "LP2");
-	//for (int i = 0; i < nLightsources + 1; i++) {
-	//	string uniform = "lightPos[" + to_string(i) + "]";
-	//	locationMeshLP[i] = glGetUniformLocation(meshShader.programID, uniform.c_str());	// Light position
-	//}
 
 	locationWandMV = glGetUniformLocation(sphereShader.programID, "MV");					// ModelView Matrix
 	locationWandP = glGetUniformLocation(sphereShader.programID, "P");						// Perspective Matrix
@@ -391,137 +403,95 @@ int Oculus::runOvr() {
 	unsigned int l_FrameIndex = 0;
 	// RENDER LOOP ////////////////////////////////////////////////////////////////////////////////////////
 	while (!glfwWindowShouldClose(l_Window)) {
-
-		/*
-
-		// STATES //////////////////////////////////////////////////////////////////////////////////////////////
-		// All states are originally false
-		if (wand->getButtonState() && !buttonPressed && !buttonHeld) { // Button pressed
-			buttonPressed = true;
-		} else if (!wand->getButtonState()) { // Button released
-			buttonReleased = buttonHeld;
-			buttonHeld = false;
-		} else if (buttonPressed || buttonHeld) { // Button held down
-			buttonHeld = true;
-			buttonPressed = false;
+		
+		// STATES
+		// modelingstate
+		if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
+			if (state[0] == 0) {
+				state[0] = 1;
+				activeStates.push_back(0);
+			}
+			else if (state[0] == 1)
+				state[0] = 2;
+		} else {
+			if (state[0] == 3)
+				state[0] = 0;
+			else if (state[0] != 0) {
+				state[0] = 3;
+				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 0), activeStates.end());
+			}
 		}
 
-		if (buttonPressed && wand->getButtonNumber() == 1) {
-			readCalibration(wand, eyeHeight);
+		// moveMesh state
+		if (glfwGetKey(l_Window, GLFW_KEY_LEFT_SHIFT)) {
+			if (state[1] == 0) {
+				state[1] = 1;
+				activeStates.push_back(1);
+			}
+			else if (state[1] == 1)
+				state[1] = 2;
+		} else {
+			if (state[1] == 3)
+				state[1] = 0;
+			else if (state[1] != 0) {
+				state[1] = 3;
+				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 1), activeStates.end());
+			}
 		}
 
-		// INTERACTION ////////////////////////////////////////////////////////////////////////////////////////
-		if (buttonPressed || buttonHeld) {
-			switch (wand->getButtonNumber()) {
-			// Hotkeys on wand
-			case 0: // 2nd from the left
-				currentTexID = dilate.getTextureID();
-				updatePanel(oPointer, DILATEnERODE, MAX_HEX_HEIGHT, MIN_HEX_HEIGHT);
-				//mTest->not_implemented_yet(wand->getTrackerPosition(), false, wandRadius);
-				break;
-			case 1: // 1st from the left		
-				currentTexID = dnp.getTextureID();
-				updatePanel(oPointer, DRAGnPULL, MAX_HEX_HEIGHT, MIN_HEX_HEIGHT);
-				mTest->sculpt(wand->getWandPosition(), lastPos, wandRadius, true);
-				break;
-			/*case 2: // 3rd from the left
-				currentTexID = move.getTextureID();
-				updatePanel(oPointer, moveMESH, MAX_HEX_HEIGHT, MIN_HEX_HEIGHT);
-				moveMesh(wand, mTest, buttonPressed, changePos, differenceR);
-				break;
-			case 3: // 4th from the left
-				currentTexID = move.getTextureID();
-				updatePanel(oPointer, moveENTITY, MAX_HEX_HEIGHT, MIN_HEX_HEIGHT);
-				moveEntity(wand, oPointer, wandRadius);
-				break;
-			case 4: // co-register, analog button
-				currentFunction = coREGISTER;
-				ovrHmd_RecenterPose(hmd);
-				ovrHmd_DismissHSWDisplay(hmd);
-				regCounter = 0;
-				renderRegisterSpheres = true;
-				wand->setWandTransform(I);
-				break;
-			case 5: // Trigger button (only non-hotkey)
-				if (buttonPressed && currentFunction != coREGISTER)
-					if (selectFunction(wand, oPointer, chooseFunction)) {
-						resetCounter = 0;
-						regCounter = -1;
-					}
+		// changeToolSize state
+		if (glfwGetKey(l_Window, GLFW_KEY_LEFT_SHIFT)) {
+			if (state[2] == 0) {
+				state[2] = 1;
+				activeStates.push_back(2);
+			}
+			else if (state[3] == 1)
+				state[2] = 2;
+		}
+		else {
+			if (state[2] == 3)
+				state[2] = 0;
+			else if (state[2] != 0) {
+				state[2] = 3;
+				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 2), activeStates.end());
+			}
+		}
 
-				if (currentFunction == DILATEnERODE)
-					break; //mTest->not_implemented_yet(wand->getTrackerPosition(), false, wandRadius);
-				else if (currentFunction == DRAGnPULL)
-					mTest->sculpt(wand->getTrackerPosition(), lastPos, wandRadius, true);
-				else if (currentFunction == moveMESH)
-					moveMesh(wand, mTest, buttonPressed, changePos, differenceR);
-				else if (currentFunction == moveENTITY)
-					moveEntity(wand, oPointer, wandRadius);
-				else if (currentFunction == meshRESET && buttonPressed) {
-					resetCounter++;
-					if (resetCounter > 1) {
-						buttonPressed = false;
-						delete mTest;
-						mTest = new Mesh(0.3f);
-						resetCounter = 0;
-						currentFunction = moveMESH;
-					}
+		// Switch to execute active states, checks menu choices if none are active
+		if (activeStates.empty()) {
+			// do menu
+		} else {
+			for (int i = 0; i < activeStates.size(); i++) {
+				switch (activeStates[i]) {
+				  case 0: {
+					mTest->sculpt(wand->getWandPosition(), lastPos, wandRadius, true);
+					break;
+				  }
+				  case 1: {
+					pmat4 = mTest->getPosition();
+
+					linAlg::calculateVec(moveVec, wand->getWandPosition(), lastPos);
+					pmat4[0] += moveVec[0];
+					pmat4[1] += moveVec[1];
+					pmat4[2] += moveVec[2];
+
+					mTest->setPosition(pmat4);
+					break;
+				  }
+				  case 2: {
+					//wandRadius += 0.01f;
+					//wandRadius -= 0.01f;
+					break;
+				  }
+				  default: {
+					  break;
+				  }
 				}
-				else if (currentFunction == hexRESET && buttonPressed) {
-					resetCounter++;
-					if (resetCounter > 1) {
-						buttonPressed = false;
-						it = objectList.begin() + nFunctions;
-						while (it != objectList.end() - nLightsources) {
-							tempHex = static_cast<hexBox*> ((*it));
-							tempHex->moveInstant(-eyeHeight - 0.01f);
-							++it;
-						}
-						resetCounter = 0;
-						currentFunction = moveMESH;
-					}
-
-				}
-
-			default:
-				currentFunction = -1;
 			}
 		}
-		// Done when button is released
-		if (buttonReleased) {
-			it = objectList.begin();
-			while (it != objectList.begin() + nFunctions) {
-				tempHex = static_cast<hexBox*> ((*it));
-				if (currentFunction == tempHex->getFunction())
-					tempHex->moveInstant(MAX_HEX_HEIGHT);
-				else
-					tempHex->moveInstant(MIN_HEX_HEIGHT);
-				++it;
-			}
-		}
-			
-		// ANALOG BUTTON - change tool size
-		if (wand->getAnalogPosition()[0] != 0 || wand->getAnalogPosition()[1] != 0) {
-			const float MAX_RADIUS_WAND_TOOL = 0.2f;
-			const float MIN_RADIUS_WAND_TOOL = 0.02f;
-			// check if tool is to small or to big
-			if (wandRadius > MIN_RADIUS_WAND_TOOL && wandRadius < MAX_RADIUS_WAND_TOOL) {
-				wandRadius += 0.001f*wand->getAnalogPosition()[1];
-			} else if (wandRadius <= MIN_RADIUS_WAND_TOOL && wand->getAnalogPosition()[1] > 0) {
-				wandRadius += 0.001f*wand->getAnalogPosition()[1];
-			} else if (wandRadius >= MAX_RADIUS_WAND_TOOL && wand->getAnalogPosition()[1] < 0) {
-				wandRadius += 0.001f*wand->getAnalogPosition()[1];
-			}
-		}*/
+
 		//////////////////////////////////////////////////////////////////////////////////////////////
 		// KEYBORD EVENTS
-		if (glfwGetKey(l_Window, GLFW_KEY_O)) {
-			ovrHmd_RecenterPose(hmd);
-			ovrHmd_DismissHSWDisplay(hmd);
-		}
-		if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
-			mTest->sculpt(wand->getWandPosition(), lastPos, wandRadius, true);
-		}
 		if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose(l_Window, GL_TRUE);
 		}
@@ -535,17 +505,6 @@ int Oculus::runOvr() {
 			delete mTest; // Reset mesh
 			mTest = new Mesh(0.3f);
 		}
-		if (glfwGetKey(l_Window, GLFW_KEY_RIGHT_ALT)) {
-			pmat4 = mTest->getPosition();
-			
-			linAlg::calculateVec(moveVec, wand->getWandPosition(), lastPos);
-			pmat4[0] += moveVec[0];
-			pmat4[1] += moveVec[1];
-			pmat4[2] += moveVec[2];
-
-			mTest->setPosition(pmat4);
-		}
-
 		// Activate wireframe (hold L)
 		if (glfwGetKey(l_Window, GLFW_KEY_L) == GLFW_PRESS && !lines) {
 			lines = true;
@@ -611,45 +570,6 @@ int Oculus::runOvr() {
 					//RENDER DIFFERENT HEXBOXES---------------------------------------------------------------------
 					refBox.render();
 					glUniform4fv(locationLP, 1, LP);
-					/*
-					it = objectList.begin();
-					n = 0;
-					while (it != objectList.begin() + nFunctions) {
-						tempHex = static_cast<hexBox*> ((*it));
-						tempHex->setFunction(n);
-						(*it)->render();
-						n++;
-						++it;
-					}
-					while (it != objectList.end() - nLightsources) {
-						(*it)->render();
-						++it;
-					}
-					*/
-					/*
-					// Lightsources - remember to send as unifor
-					while (it != objectList.end()) {
-						MVstack.push();
-							MVstack.translate((*it)->getPosition());
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							(*it)->render();
-						MVstack.pop();
-						++it;
-					}
-					*/
-					/*
-					MVstack.push();
-						translateVector[0] = 0.0f;
-						translateVector[1] = -eyeHeight;
-						translateVector[2] = 0.0f;
-						MVstack.translate(translateVector);
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						glUniform4fv(locationLP, 1, LP);
-						glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-						ground.render();
-					MVstack.pop();
-					*/
-					
 					MVstack.push();
 						MVstack.translate(board.getPosition());
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
