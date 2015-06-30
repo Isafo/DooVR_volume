@@ -19,14 +19,20 @@ Passive3D::Passive3D()
 	newNet.setSensorPosition(2, -0.15, 0.0, -0.082);
 	newNet.setSensorPosition(3, 0.15, 0.0, -0.082);
 
-	double rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
-		0.f, 0.f, 1.f, 0.f,
-		0.f, 1.f, 0.f, 0.f,
-		0.f, 0.f, 0.f, 1.0f };
-	//newNet.setSensorRotation(0, rotZX);
-	//newNet.setSensorRotation(1, inv(rotZX));
-	//newNet.setSensorRotation(2, inv(rotZX));
-	//newNet.setSensorRotation(3, rotZX);
+	double rotZX[16] = { -1.f, 0.f, 0.f,
+		                  0.f, 0.f, 1.f,
+		                  0.f, 1.f, 0.f,
+		                  0.f, 0.f, 0.f };
+
+	double rotZXY[16] = {  1.f, 0.f, 0.f,
+						   0.f, 0.f, 1.f,
+		                   0.f, -1.f, 0.f,
+		                   0.f, 0.f, 0.f };
+
+	newNet.setSensorRotation(0, rotZX);
+	newNet.setSensorRotation(1, rotZXY);
+	newNet.setSensorRotation(2, rotZXY);
+	newNet.setSensorRotation(3, rotZX);
 
 	wand->setNetwork(newNet);
 	*/
