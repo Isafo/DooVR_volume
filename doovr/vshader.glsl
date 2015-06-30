@@ -16,7 +16,8 @@ void main ()
 	vec3 Position =  vec3( MV * vec4(VertexPosition, 1.0));
 	vec3 Normal = normalize(mat3(MV) * VertexNormal);
 
-	vec3 LightIntensity = vec3(0.58039f,0.423529f, 0.282352f);
+	//vec3 LightIntensity = vec3(0.58039f,0.423529f, 0.282352f);
+	vec3 LightIntensity = vec3(0.68039f,0.182352f, 0.182352f);
 
 	vec3 Kd = vec3(0.8f, 0.8f, 0.8f);                // Diffuse reflectivity
 	vec3 Ka = vec3(0.1f, 0.1f, 0.1f);                // Ambient reflectivity

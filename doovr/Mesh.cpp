@@ -28,8 +28,8 @@ Mesh::Mesh(float rad) {
 	vertexEPtr.resize(6);
 	triEPtr.resize(8);
 	position[0] = 0.0f;
-	position[1] = -0.20f;
-	position[2] = -0.35f;
+	position[1] = -0.22f;
+	position[2] = -0.25f;
 
 	orientation[0] = 1.0f;
 	orientation[1] = 0.0f;
@@ -226,6 +226,7 @@ Mesh::Mesh(float rad) {
 	/*
 	while (success)
 	{
+		
 		success = false;
 		tempSize = vertexArray.size() / 2;
 		tempP2[0] = vertexArray[tempSize].x;
@@ -640,7 +641,7 @@ void Mesh::edgeSplit(float* vPoint, float* vec, halfEdge* &edge) {
 	static float tempVec1[3], tempVec2[3];
 
 	//TODO: FLIP EDGE, NOT HANDLED PROPERLY BUT SHOULD BE////////////////////////////////////
-	///*
+	
 	halfEdge* tempE2;
 	
 	
@@ -961,7 +962,7 @@ void Mesh::edgeCollapse(float* vPoint, float* vec, halfEdge* &edge) {
 
 		if (tempE == tempE2->sibling->nextEdge->nextEdge || tempE == tempE2->sibling->nextEdge || tempE == tempE2->sibling || tempE == tempE2->nextEdge->nextEdge || tempE == tempE2->nextEdge || tempE == tempE2)
 		{
-          			currVert = currVert;
+                               			currVert = currVert;
 		}
 
 		delete tempE2->sibling->nextEdge->nextEdge;
@@ -981,6 +982,7 @@ void Mesh::edgeCollapse(float* vPoint, float* vec, halfEdge* &edge) {
 
 	}
 	*/
+
 
 
 

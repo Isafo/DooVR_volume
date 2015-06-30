@@ -11,9 +11,28 @@ Passive3D::Passive3D()
 	catch (Wand3dSerialException error) {
 		std::cout << error.what() << std::endl;
 	}
+	/*
+	Network newNet;
+	
+	newNet.setSensorPosition(0, 0.15, 0.0, 0.082);
+	newNet.setSensorPosition(1, -0.15, 0.0, 0.082);
+	newNet.setSensorPosition(2, -0.15, 0.0, -0.082);
+	newNet.setSensorPosition(3, 0.15, 0.0, -0.082);
+
+	double rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
+		0.f, 0.f, 1.f, 0.f,
+		0.f, 1.f, 0.f, 0.f,
+		0.f, 0.f, 0.f, 1.0f };
+	//newNet.setSensorRotation(0, rotZX);
+	//newNet.setSensorRotation(1, inv(rotZX));
+	//newNet.setSensorRotation(2, inv(rotZX));
+	//newNet.setSensorRotation(3, rotZX);
+
+	wand->setNetwork(newNet);
+	*/
 	Wand3dObserver* observer = this;
 	wand->addObserver(observer);
-
+	
 	wand->start();
 }
 
@@ -53,15 +72,21 @@ void Passive3D::wand3dCallback(WandData data) {
 	*/
 }
 
-void calibrate()
+void Passive3D::calibrate()
 {
+	wand->reCalibrate();
 }
 
 void Passive3D::setWandPosition(double* t) {
 	// Change the coordinatesystem to match Oculus x->x, y->z, z->-y
 	wandPosition[0] = (float) -t[0];
-	wandPosition[1] = (float) t[2] - 0.25f;
-	wandPosition[2] = (float) t[1] - 0.35f;
+	wandPosition[1] = (float) t[2] - 0.27f;
+	wandPosition[2] = (float) t[1] - 0.25f;
+
+	//wandPosition[0] = (float)t[0];
+	//wandPosition[1] = (float)t[1];
+	//wandPosition[2] = (float)t[2];
+
 }
 
 void Passive3D::setWandOrientation(double* o) {

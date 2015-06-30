@@ -70,10 +70,10 @@ int Oculus::runOvr() {
 	// Save old positions and transforms
 	float changePos[3] = { 0.0f };
 	float differenceR[16] = { 0.0f };
-	float* lastPos = nullptr;
+	float* lastPos;
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
-	float* moveVec = currPos;
+	float moveVec[3];
 
 	// Configuration variables
 	int regCounter = 0;
@@ -337,8 +337,8 @@ int Oculus::runOvr() {
 	
 	//DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
 
-	Box board(0.0f, -0.25f, -0.35f, 0.35, 0.01, 0.26);
-	Box trackingGrid(0.0f, -0.125f, -0.35f, 0.50, 0.25, 0.50);
+	Box board(0.0f, -0.27f, -0.25f, 0.50, 0.01, 0.50);
+	Box trackingGrid(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 
 	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
 
@@ -538,10 +538,28 @@ int Oculus::runOvr() {
 			pmat4 = mTest->getPosition();
 			
 			linAlg::calculateVec(moveVec, wand->getWandPosition(), lastPos);
+			/*
+			cout << "#";
 			cout << moveVec[0];
 			cout << moveVec[1];
 			cout << moveVec[2] << endl;
-			cout << "#";
+			cout << "::";
+			cout << lastPos[0];
+			cout << lastPos[1];
+			cout << lastPos[2] << endl;
+			cout << "||";
+			cout << wand->getWandPosition()[0];
+			cout << wand->getWandPosition()[1];
+			cout << wand->getWandPosition()[2] << endl;
+			currPos[0] = 1.0f; currPos[1] = 1.0f; currPos[2] = 1.0f;
+			translateVector[0] = 1.5f; translateVector[1] = 1.5f; translateVector[2] = 1.5f;
+			linAlg::calculateVec(moveVec, currPos, translateVector);
+			cout << "#2";
+			cout << moveVec[0];
+			cout << moveVec[1];
+			cout << moveVec[2] << endl;
+			cout << 0.0001f - 0.00015f;
+			*/
 			pmat4[0] += moveVec[0];
 			pmat4[1] += moveVec[1];
 			pmat4[2] += moveVec[2];
