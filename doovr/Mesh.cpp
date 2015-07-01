@@ -538,7 +538,7 @@ void Mesh::updateArea(int* changeList, int listSize) {
 	static float tempVec1[3], tempVec2[3], tempVec3[3];
 	static float tempNorm1[3] = { 0.0f, 0.0f, 0.0f };
 	static float tempNorm2[3] = { 0.0f, 0.0f, 0.0f };
-	halfEdge* tempEdge;
+	halfEdge* tempEdge; halfEdge* tempE;
 	static int vert1, vert2; 
 	static float edgeLength;
 
@@ -573,7 +573,8 @@ void Mesh::updateArea(int* changeList, int listSize) {
 
 				// check if edge is to long/short
 				if (edgeLength < MIN_LENGTH) {
-					edgeCollapse(tempEdge);
+					//tempE = tempEdge
+					edgeCollapse(false, tempEdge);
 					tempEdge = tempEdge->sibling->nextEdge->nextEdge;
 					//edge already incremented, something needs to be done.
 				} else if (edgeLength > MAX_LENGTH) {
@@ -657,7 +658,7 @@ void Mesh::edgeSplit(float* vPoint, float* vec, halfEdge* &edge) {
 	temp2[2] = vertexArray[vert2].z;
 	linAlg::calculateVec(temp3, temp, temp2);
 	linAlg::vecLength(temp3);
-	
+	///*
 	if (linAlg::vecLength(temp3) < MAX_LENGTH && edge != edge->nextEdge->sibling->nextEdge->sibling->nextEdge->sibling && edge != edge->sibling->nextEdge->sibling->nextEdge->sibling->nextEdge) {
 		for (int i = 0; i < 3; i++) {
 			if (indexArray[edge->triangle].index[i] == edge->vertex)
@@ -839,13 +840,13 @@ void Mesh::edgeSplit(float* vPoint, float* vec, halfEdge* &edge) {
 
 }
 
-void Mesh::edgeCollapse( halfEdge* &edge) {
+void Mesh::edgeCollapse(bool recursive, halfEdge* &edge) {
 
 	halfEdge* tempE;
 	halfEdge* tempE2;
 	static int currVert; 
 	static int nVert;
-	currVert = edge->sibling->vertex;
+   	currVert = edge->sibling->vertex;
 	nVert = edge->vertex;
 	bool edgeRemoved = false;
 
@@ -854,14 +855,16 @@ void Mesh::edgeCollapse( halfEdge* &edge) {
 
 	//if (tempE == tempE->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
 	//if (edge = edge->nextEdge->nextEdge->sibling->nextEdge->sibling->nextEdge->sibling->nextEdge->nextEdge)
-	if (edge == edge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge)
+	while (edge == edge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge)
 	{
-		edgeCollapse(edge->nextEdge->sibling);
+                                                                             		tempE = edge->nextEdge->nextEdge->sibling;
+     	edgeCollapse(true,edge->nextEdge->sibling);
+		edge = tempE;
 	}
 	//if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
-	if (edge->sibling == edge->sibling->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge)
+	while (edge->sibling == edge->sibling->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge)
 	{
-		edgeCollapse(edge->sibling->nextEdge->sibling);
+                                                                  edgeCollapse(true, edge->sibling->nextEdge->sibling);
 	}
 
 	// rebind edges that point to nVert
@@ -879,7 +882,9 @@ void Mesh::edgeCollapse( halfEdge* &edge) {
 		}
 		tempE = tempE->nextEdge->nextEdge->sibling;
 	}
+	
 	tempE = edge->nextEdge->sibling;
+	
 
 	// rebind edges
 	edge->nextEdge->sibling->sibling = edge->nextEdge->nextEdge->sibling;
@@ -915,18 +920,26 @@ void Mesh::edgeCollapse( halfEdge* &edge) {
 	triEPtr[edge->triangle] = nullptr;
 	triEPtr[edge->sibling->triangle] = nullptr;
 
-	if (edge == edge->sibling)
+	if (edge == edge->sibling) //|| edge == edge->sibling->nextEdge || edge == edge->sibling->nextEdge->nextEdge)
+		currVert = currVert;
+	if ( edge == edge->nextEdge || edge == edge->nextEdge->nextEdge)
 		currVert = currVert;
 
 	// delete the removed edges
+	
+	currVert = currVert;
 	delete edge->sibling->nextEdge->nextEdge;
 	delete edge->sibling->nextEdge;
 	delete edge->sibling;
+
+	currVert = currVert;
+	
 	delete edge->nextEdge->nextEdge;
 	delete edge->nextEdge;
 	delete edge;
 
-	edge = tempE;
+	if (!recursive)
+		edge = tempE;
 }
 
 
