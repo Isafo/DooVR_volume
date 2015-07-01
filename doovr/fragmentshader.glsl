@@ -15,7 +15,7 @@ void main () {
 	//(coord.u, 1.0-coord.v) to fetch the correct texel.
 	vec2 invUV = vec2(UV.x, 1.0-UV.y);
 	vec3 texcolor = texture( tex, invUV ).rgb;
-	
+
 	//Diffuse part-----------
 	vec3 normal  = normalize( Normal );							
 	vec3 lightDir = normalize(vec3(lightPos) - Position );				// lightDir
@@ -23,9 +23,9 @@ void main () {
 	vec3 diffuse = diff * texcolor * lightIntensity;
 
 	//specular part-------------
-	//vec3 viewDir  = normalize(vec3(-Position));			    	// viewDir
-	//--onlyforphong--// vec3 reflectDir  = reflect( -lightDir, normal  );			// reflectDir
-	//float Shininess = 4.0f;										// Specular shininess factor
+	//vec3 viewDir  = normalize(vec3(-Position));			    				// viewDir
+	//--onlyforphong--// vec3 reflectDir  = reflect( -lightDir, normal  );		// reflectDir
+	//float Shininess = 4.0f;													// Specular shininess factor
 	//vec3 halfwayDir = normalize(lightDir + viewDir);  
 	//float spec = pow(max(dot(normal, halfwayDir), 0.0), 16.0);
 	//vec3 specular = vec3(1.0f, 1.0f, 1.0f) * spec * lightIntensity;			// assuming bright white light color
@@ -35,6 +35,5 @@ void main () {
 	
 	vec3 resultLight = ambient + diffuse; //+ specular;
 	FragColor = vec4(resultLight, 1.0f);
-	
 }
 

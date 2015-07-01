@@ -24,6 +24,8 @@ class MenuItem : public Entity {
 
 	//! returns the width and depth of the menu item
 	float* getDim() { return dim; };
+	bool getState() { return active;  };
+	void setState(bool state) { active = state; };
 
   private:
 	GLuint vao;				// Vertex array object, the main handle for geometry
@@ -35,5 +37,6 @@ class MenuItem : public Entity {
 	GLuint *indexarray;		// Element index array
 
 	float dim[2];
+	bool active = false;
 };
 

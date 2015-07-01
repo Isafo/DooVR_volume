@@ -18,7 +18,8 @@ using namespace std;
 // ------- Function declerations --------
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
 static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
-
+//! checks if the wand is colliding with a menuItem and sets the menuItems state accordingly
+void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems);
 void GLRenderCallsOculus();
 
 // --- Variable Declerations ------------
@@ -116,8 +117,9 @@ int Oculus::runOvr() {
 	bool buttonReleased = false;
 	bool lines = false;
 
-	vector<MenuItem> menuItem;
-	menuItem.reserve(4);
+	const int nrOfMenuItems = 4;
+	MenuItem menuItem[nrOfMenuItems];
+	
 
 	// Location used for UNIFORMS in shader
 	GLint locationLP;
@@ -351,6 +353,8 @@ int Oculus::runOvr() {
 	meshShader.createShader("vshader.glsl", "fshader.glsl");
 	Shader sphereShader;
 	sphereShader.createShader("vShaderWand.glsl", "fShaderWand.glsl");
+	Shader menuShader;
+	menuShader.createShader("vShaderBloom.glsl", "fShaderBloom.glsl");
 
 	// CREATE MATRIX STACK
 	MatrixStack MVstack;
@@ -360,9 +364,8 @@ int Oculus::runOvr() {
 	Box board(0.0f, -0.27f, -0.25f, 0.50, 0.01, 0.50);
 	Box trackingGrid(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	
-	for (int i = -2; i < 2; i++) {
-		MenuItem tempItem(0.2f, -0.22f, -0.25f + i * 0.08f, 0.07f, 0.07);
-		menuItem.push_back(tempItem);
+	for (int i = -nrOfMenuItems/2; i < nrOfMenuItems / 2; i++) {
+		menuItem[i + nrOfMenuItems/2] = MenuItem(0.2f, -0.245f, -0.25f + i * 0.08f, 0.07f, 0.07);
 	}
 
 	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
@@ -386,6 +389,7 @@ int Oculus::runOvr() {
 	Texture groundTex("../Textures/floor3.DDS");
 	Texture coregister("../Textures/coregister3.DDS");
 	Texture hexTex("../Textures/panel3.DDS");
+	Texture menuItemTex("../Textures/frame.DDS");
 
 	GLuint currentTexID = move.getTextureID();
 
@@ -436,13 +440,13 @@ int Oculus::runOvr() {
 			if (state[1] == 0) {
 				state[1] = 1;
 				activeStates.push_back(1);
-			}
-			else if (state[1] == 1)
+			} else if (state[1] == 1) {
 				state[1] = 2;
+			}
 		} else {
-			if (state[1] == 3)
+			if (state[1] == 3) {
 				state[1] = 0;
-			else if (state[1] != 0) {
+			} else if (state[1] != 0) {
 				state[1] = 3;
 				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 1), activeStates.end());
 			}
@@ -453,14 +457,14 @@ int Oculus::runOvr() {
 			if (state[2] == 0) {
 				state[2] = 1;
 				activeStates.push_back(2);
-			}
-			else if (state[3] == 1)
+			} else if (state[3] == 1) {
 				state[2] = 2;
+			}
 		}
 		else {
-			if (state[2] == 3)
+			if (state[2] == 3) {
 				state[2] = 0;
-			else if (state[2] != 0) {
+			} else if (state[2] != 0) {
 				state[2] = 3;
 				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 2), activeStates.end());
 			}
@@ -468,7 +472,7 @@ int Oculus::runOvr() {
 
 		// Switch to execute active states, checks menu choices if none are active
 		if (activeStates.empty()) {
-			// do menu
+			handleMenu(wand->getWandPosition(), menuItem, nrOfMenuItems);
 		} else {
 			for (int i = 0; i < activeStates.size(); i++) {
 				switch (activeStates[i]) {
@@ -619,9 +623,18 @@ int Oculus::runOvr() {
 						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					MVstack.pop();
 
+					glUseProgram(menuShader.programID);
+					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
 					//  MENU ITEMS
-					for (int i = 0; i < menuItem.size(); i++) {
+					for (int i = 0; i < nrOfMenuItems; i++) {
 						MVstack.push();
+							if (menuItem[i].getState()) {
+								glBindTexture(GL_TEXTURE_2D, coregister.getTextureID());
+							} else {
+								glBindTexture(GL_TEXTURE_2D, menuItemTex.getTextureID());
+							}
+
 							MVstack.translate(menuItem[i].getPosition());
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							menuItem[i].render();
@@ -646,9 +659,9 @@ int Oculus::runOvr() {
 							glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 							mTest->render();
 							glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-						}
-						else
+						} else {
 							mTest->render();
+						}
 					MVstack.pop();
 						
 					glUseProgram(phongShader.programID);
@@ -737,16 +750,31 @@ void GLRenderCallsOculus(){
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glFrontFace(GL_CCW);
+	glEnable(GL_POLYGON_STIPPLE);
+
     if (L_MULTISAMPLING) {
         glEnable(GL_MULTISAMPLE);
-    }
-    else {
+    } else {
         glDisable(GL_MULTISAMPLE);
     }
 }
 
 //! checks if a menu item is choosen and activates or executes the function
-void handleMenu(float* wandPosition, vector<MenuItem> menuItem) {
+void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems) {
 
+	// check if the wandPosition is in the same Y and X position as the menuItem row
+	if (wandPosition[1] == menuItem[0].getPosition()[1] 
+		&& wandPosition[0] > menuItem[0].getPosition()[0] - menuItem[0].getDim()[0]
+		&& wandPosition[0] < menuItem[0].getPosition()[0] + menuItem[0].getDim()[0]) {
 
+		for (int i = 0; i < nrOfMenuItems; i++) {
+			// check what menuitem is pressed
+			if (wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] 
+				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1]) {
+				menuItem[i].setState(true);
+			} else if (menuItem[i].getState() == true){
+				menuItem[i].setState(false);
+			}
+		}
+	}
 }
