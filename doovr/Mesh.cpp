@@ -12,21 +12,17 @@ Mesh::Mesh(float rad) {
 	triangle tempT;
 	vertex tempV;
 	halfEdge* tempE1;
+	int tempIn1;
+	int tempIn2;
 	bool success = true;
 
 	float tempP1[3]; float tempP2[3] = {0.0f, 0.0f, 0.0f};
 	int tempSize = 0;
 	float testLength = 0.0f;
 
-	vertexArray.reserve(1000000);
-	indexArray.reserve(1000000);
 	vector<int> changedVertices;
 	changedVertices.reserve(10000);
 
-	vertexEPtr.reserve(1000000);
-	triEPtr.reserve(1000000);
-	vertexEPtr.resize(6);
-	triEPtr.resize(8);
 	position[0] = 0.0f;
 	position[1] = -0.22f;
 	position[2] = -0.25f;
@@ -55,171 +51,231 @@ Mesh::Mesh(float rad) {
 	vertex * vertexP;
 
 	float scaleF = 1.0f / (ROWS * 2);
+
+	nrofVerts = 6;
+	nrofTris = 8;
+
 	
 	// place vertecies
 	// Y 0
-	tempV.x = 0.0f;	tempV.y = MAX_LENGTH / 2.0f;	tempV.z = 0.0f; 	tempV.nx = 0.0f;	tempV.ny = MAX_LENGTH / 2.0f;	tempV.nz = 0.0f;
-	vertexArray.push_back(tempV);
+	vertexArray[1].x = 0.0f;	vertexArray[1].y = MAX_LENGTH / 2.0f;	vertexArray[1].z = 0.0f; /*normal*/	vertexArray[1].nx = 0.0f;	vertexArray[1].ny = MAX_LENGTH / 2.0f;	vertexArray[1].nz = 0.0f;
 
-	tempV.x = 0.0f;	tempV.y = -MAX_LENGTH / 2.0f;	tempV.z = 0.0f; 	tempV.nx = 0.0f;	tempV.ny = -MAX_LENGTH / 2.0f;	tempV.nz = 0.0f;
-	vertexArray.push_back(tempV);
+	vertexArray[2].x = 0.0f;	vertexArray[2].y = -MAX_LENGTH / 2.0f;	vertexArray[2].z = 0.0f; /*normal*/	vertexArray[2].nx = 0.0f;	vertexArray[2].ny = -MAX_LENGTH / 2.0f;	vertexArray[2].nz = 0.0f;
 
 	// X 2
-	tempV.x = MAX_LENGTH / 2.0f;	tempV.y = 0.0f;	tempV.z = 0.0f; 	tempV.nx = MAX_LENGTH / 2.0f;	tempV.ny = 0.0f;	tempV.nz = 0.0f;
-	vertexArray.push_back(tempV);
+	vertexArray[3].x = MAX_LENGTH / 2.0f;	vertexArray[3].y = 0.0f;	vertexArray[3].z = 0.0f; /*normal*/	vertexArray[3].nx = MAX_LENGTH / 2.0f;	vertexArray[3].ny = 0.0f;	vertexArray[3].nz = 0.0f;
 
-	tempV.x = -MAX_LENGTH / 2.0f;	tempV.y = 0.0f;	tempV.z = 0.0f; 	tempV.nx = -MAX_LENGTH / 2.0f;	tempV.ny = 0.0f;	tempV.nz = 0.0f;
-	vertexArray.push_back(tempV);
+	vertexArray[4].x = -MAX_LENGTH / 2.0f;	vertexArray[4].y = 0.0f;	vertexArray[4].z = 0.0f; /*normal*/	vertexArray[4].nx = -MAX_LENGTH / 2.0f;	vertexArray[4].ny = 0.0f;	vertexArray[4].nz = 0.0f;
 
 	// Z 4
-	tempV.x = 0.0f;	tempV.y = 0.0f;	tempV.z = -MAX_LENGTH / 2.0f; 	tempV.nx = 0.0f;	tempV.ny = 0.0f;	tempV.nz = -MAX_LENGTH / 2.0f;
-	vertexArray.push_back(tempV);
-
-	tempV.x = 0.0f;	tempV.y = 0.0f;	tempV.z = MAX_LENGTH / 2.0f; 	tempV.nx = 0.0f;	tempV.ny = 0.0f;	tempV.nz = MAX_LENGTH / 2.0f;
-	vertexArray.push_back(tempV);
+	vertexArray[5].x = 0.0f;	vertexArray[5].y = 0.0f;	vertexArray[5].z = -MAX_LENGTH / 2.0f; /*normal*/	vertexArray[5].nx = 0.0f;	vertexArray[5].ny = 0.0f;	vertexArray[5].nz = -MAX_LENGTH / 2.0f;
+	
+	vertexArray[6].x = 0.0f;	vertexArray[6].y = 0.0f;	vertexArray[6].z = MAX_LENGTH / 2.0f; /*normal*/	vertexArray[6].nx = 0.0f;	vertexArray[6].ny = 0.0f;	vertexArray[6].nz = MAX_LENGTH / 2.0f;
 
 	// bind triangles
-	tempT.index[0] = 0;	tempT.index[1] = 3; tempT.index[2] = 5;
-	indexArray.push_back(tempT);
+	indexArray[1].index[0] = 0;	indexArray[1].index[1] = 3; indexArray[1].index[2] = 5;
 
-	tempT.index[0] = 0;	tempT.index[1] = 5; tempT.index[2] = 2;
-	indexArray.push_back(tempT);
+	indexArray[2].index[0] = 0;	indexArray[2].index[1] = 5; indexArray[2].index[2] = 2;
 
-	tempT.index[0] = 0;	tempT.index[1] = 2;	tempT.index[2] = 4;
-	indexArray.push_back(tempT);
+	indexArray[3].index[0] = 0;	indexArray[3].index[1] = 2;	indexArray[3].index[2] = 4;
 
-	tempT.index[0] = 0;	tempT.index[1] = 4;	tempT.index[2] = 3;
-	indexArray.push_back(tempT);
+	indexArray[4].index[0] = 0;	indexArray[4].index[1] = 4;	indexArray[4].index[2] = 3;
 
-	tempT.index[0] = 1;	tempT.index[1] = 5;	tempT.index[2] = 3;
-	indexArray.push_back(tempT);
+	indexArray[5].index[0] = 1;	indexArray[5].index[1] = 5;	indexArray[5].index[2] = 3;
 
-	tempT.index[0] = 1;	tempT.index[1] = 2;	tempT.index[2] = 5;
-	indexArray.push_back(tempT);
+	indexArray[6].index[0] = 1;	indexArray[6].index[1] = 2;	indexArray[6].index[2] = 5;
 
-	tempT.index[0] = 1;	tempT.index[1] = 4; tempT.index[2] = 2;
-	indexArray.push_back(tempT);
+	indexArray[7].index[0] = 1;	indexArray[7].index[1] = 4; indexArray[7].index[2] = 2;
 
-	tempT.index[0] = 1; tempT.index[1] = 3; tempT.index[2] = 4;
-	indexArray.push_back(tempT);
+	indexArray[8].index[0] = 1; indexArray[8].index[1] = 3; indexArray[8].index[2] = 4;
 	
 	// Bind halfEdges
-	//TOP
-	//first tri
-	tempE1 = new halfEdge;	tempE1->vertex = 0; tempE1->triangle = 0;
-	triEPtr[0] = tempE1;
-
-	triEPtr[0]->nextEdge = new halfEdge; triEPtr[0]->nextEdge->vertex = 3; triEPtr[0]->nextEdge->triangle = 0;
-	triEPtr[0]->nextEdge->nextEdge = new halfEdge; triEPtr[0]->nextEdge->nextEdge->vertex = 5; triEPtr[0]->nextEdge->nextEdge->triangle = 0;
-	triEPtr[0]->nextEdge->nextEdge->nextEdge = triEPtr[0];
-
-	vertexEPtr[0] = triEPtr[0]->nextEdge->nextEdge;
-
-	//second tri
-	tempE1 = new halfEdge;	tempE1->vertex = 0; tempE1->triangle = 1;
-	triEPtr[1] = tempE1;
+	//TOP///////////////////////
+	//first tri-----------------
+	edgeArray[1].vertex = 1; edgeArray[1].triangle = 1;
+	triEPtr[1] = 1;
 	
-	triEPtr[1]->nextEdge = new halfEdge; triEPtr[1]->nextEdge->vertex = 5; triEPtr[1]->nextEdge->triangle = 1;
-	triEPtr[1]->nextEdge->nextEdge = new halfEdge; triEPtr[1]->nextEdge->nextEdge->vertex = 2; triEPtr[1]->nextEdge->nextEdge->triangle = 1;
-	triEPtr[1]->nextEdge->nextEdge->nextEdge = triEPtr[1];
+	edgeArray[1].nextEdge = 2; edgeArray[2].vertex = 4; edgeArray[2].triangle = 1;
+	edgeArray[2].nextEdge = 3; edgeArray[3].vertex = 6; edgeArray[3].triangle = 1;
+	edgeArray[3].nextEdge = 1;
 
-	vertexEPtr[5] = triEPtr[1];
+	vertexEPtr[1] = 3;
 
-	//third tri
-	tempE1 = new halfEdge;	tempE1->vertex = 0; tempE1->triangle = 2;
-	triEPtr[2] = tempE1;
+	//triEPtr[0]->nextEdge = new halfEdge; triEPtr[0]->nextEdge->vertex = 3; triEPtr[0]->nextEdge->triangle = 0;
+	//triEPtr[0]->nextEdge->nextEdge = new halfEdge; triEPtr[0]->nextEdge->nextEdge->vertex = 5; triEPtr[0]->nextEdge->nextEdge->triangle = 0;
+	//triEPtr[0]->nextEdge->nextEdge->nextEdge = triEPtr[0];
 
-	triEPtr[2]->nextEdge = new halfEdge; triEPtr[2]->nextEdge->vertex = 2; triEPtr[2]->nextEdge->triangle = 2;
-	triEPtr[2]->nextEdge->nextEdge = new halfEdge; triEPtr[2]->nextEdge->nextEdge->vertex = 4; triEPtr[2]->nextEdge->nextEdge->triangle = 2;
-	triEPtr[2]->nextEdge->nextEdge->nextEdge = triEPtr[2];
+	//vertexEPtr[0] = triEPtr[0]->nextEdge->nextEdge;
 
-	vertexEPtr[2] = triEPtr[2];
+	//second tri--------------
+	edgeArray[4].vertex = 1; edgeArray[4].triangle = 2;
+	triEPtr[2] = 4;
 
-	//fourth tri
-	tempE1 = new halfEdge;	tempE1->vertex = 0; tempE1->triangle = 3;
-	triEPtr[3] = tempE1;
+	edgeArray[4].nextEdge = 5; edgeArray[5].vertex = 6; edgeArray[5].triangle = 2;
+	edgeArray[5].nextEdge = 6; edgeArray[6].vertex = 3; edgeArray[6].triangle = 2;
+	edgeArray[6].nextEdge = 4;
 
-	triEPtr[3]->nextEdge = new halfEdge; triEPtr[3]->nextEdge->vertex = 4; triEPtr[3]->nextEdge->triangle = 3;
-	triEPtr[3]->nextEdge->nextEdge = new halfEdge; triEPtr[3]->nextEdge->nextEdge->vertex = 3; triEPtr[3]->nextEdge->nextEdge->triangle = 3;
-	triEPtr[3]->nextEdge->nextEdge->nextEdge = triEPtr[3];
+	vertexEPtr[6] = 4;
 
-	vertexEPtr[4] = triEPtr[3];
 
-	//BOTTOM
-	//fifth tri
-	tempE1 = new halfEdge;	tempE1->vertex = 1; tempE1->triangle = 4;
-	triEPtr[4] = tempE1;
-
-	triEPtr[4]->nextEdge = new halfEdge; triEPtr[4]->nextEdge->vertex = 5; triEPtr[4]->nextEdge->triangle = 4;
-	triEPtr[4]->nextEdge->nextEdge = new halfEdge; triEPtr[4]->nextEdge->nextEdge->vertex = 3; triEPtr[4]->nextEdge->nextEdge->triangle = 4;
-	triEPtr[4]->nextEdge->nextEdge->nextEdge = triEPtr[4];
-
-	vertexEPtr[1] = triEPtr[4]->nextEdge->nextEdge;
-
-	//sixth tri
-	tempE1 = new halfEdge;	tempE1->vertex = 1; tempE1->triangle = 5;
-	triEPtr[5] = tempE1;
+	//tempE1 = new halfEdge;	tempE1->vertex = 0; tempE1->triangle = 1;
+	//triEPtr[1] = tempE1;
 	
-	triEPtr[5]->nextEdge = new halfEdge; triEPtr[5]->nextEdge->vertex = 2; triEPtr[5]->nextEdge->triangle = 5;
-	triEPtr[5]->nextEdge->nextEdge = new halfEdge; triEPtr[5]->nextEdge->nextEdge->vertex = 5; triEPtr[5]->nextEdge->nextEdge->triangle = 5;
-	triEPtr[5]->nextEdge->nextEdge->nextEdge = triEPtr[5];
+	//triEPtr[1]->nextEdge = new halfEdge; triEPtr[1]->nextEdge->vertex = 5; triEPtr[1]->nextEdge->triangle = 1;
+	//triEPtr[1]->nextEdge->nextEdge = new halfEdge; triEPtr[1]->nextEdge->nextEdge->vertex = 2; triEPtr[1]->nextEdge->nextEdge->triangle = 1;
+	//triEPtr[1]->nextEdge->nextEdge->nextEdge = triEPtr[1];
+
+	//vertexEPtr[5] = triEPtr[1];
+
+	//third tri----------------
+	edgeArray[7].vertex = 1; edgeArray[7].triangle = 2;
+	triEPtr[3] = 7;
+
+	edgeArray[7].nextEdge = 8; edgeArray[8].vertex = 3; edgeArray[8].triangle = 3;
+	edgeArray[8].nextEdge = 9; edgeArray[9].vertex = 5; edgeArray[9].triangle = 3;
+	edgeArray[9].nextEdge = 7;
+
+	vertexEPtr[3] = 7;
+
+	//tempE1 = new halfEdge;	tempE1->vertex = 0; tempE1->triangle = 2;
+	//triEPtr[2] = tempE1;
+
+	//triEPtr[2]->nextEdge = new halfEdge; triEPtr[2]->nextEdge->vertex = 2; triEPtr[2]->nextEdge->triangle = 2;
+	//triEPtr[2]->nextEdge->nextEdge = new halfEdge; triEPtr[2]->nextEdge->nextEdge->vertex = 4; triEPtr[2]->nextEdge->nextEdge->triangle = 2;
+	//triEPtr[2]->nextEdge->nextEdge->nextEdge = triEPtr[2];
+
+	//vertexEPtr[2] = triEPtr[2];
+
+	//fourth tri-----------------
+	edgeArray[10].vertex = 1; edgeArray[10].triangle = 4;
+	triEPtr[4] = 10;
+
+	edgeArray[10].nextEdge = 11; edgeArray[11].vertex = 5; edgeArray[11].triangle = 4;
+	edgeArray[11].nextEdge = 12; edgeArray[12].vertex = 4; edgeArray[12].triangle = 4;
+	edgeArray[12].nextEdge = 10;
+
+	vertexEPtr[5] = 10;
+
+
+	//tempE1 = new halfEdge;	tempE1->vertex = 0; tempE1->triangle = 3;
+	//triEPtr[3] = tempE1;
+
+	//triEPtr[3]->nextEdge = new halfEdge; triEPtr[3]->nextEdge->vertex = 4; triEPtr[3]->nextEdge->triangle = 3;
+	//triEPtr[3]->nextEdge->nextEdge = new halfEdge; triEPtr[3]->nextEdge->nextEdge->vertex = 3; triEPtr[3]->nextEdge->nextEdge->triangle = 3;
+	//triEPtr[3]->nextEdge->nextEdge->nextEdge = triEPtr[3];
+
+	//vertexEPtr[4] = triEPtr[3];
+
+	//BOTTOM///////////////////////////////////
+	//fifth tri---------------------------
+	edgeArray[13].vertex = 2; edgeArray[13].triangle = 5;
+	triEPtr[5] = 13;
+
+	edgeArray[13].nextEdge = 14; edgeArray[14].vertex = 6; edgeArray[14].triangle = 5;
+	edgeArray[14].nextEdge = 15; edgeArray[15].vertex = 4; edgeArray[15].triangle = 5;
+	edgeArray[15].nextEdge = 13;
+
+	vertexEPtr[2] = 15;
+
+
+	//tempE1 = new halfEdge;	tempE1->vertex = 1; tempE1->triangle = 4;
+	//triEPtr[4] = tempE1;
+
+	//triEPtr[4]->nextEdge = new halfEdge; triEPtr[4]->nextEdge->vertex = 5; triEPtr[4]->nextEdge->triangle = 4;
+	//triEPtr[4]->nextEdge->nextEdge = new halfEdge; triEPtr[4]->nextEdge->nextEdge->vertex = 3; triEPtr[4]->nextEdge->nextEdge->triangle = 4;
+	//triEPtr[4]->nextEdge->nextEdge->nextEdge = triEPtr[4];
+
+	//vertexEPtr[1] = triEPtr[4]->nextEdge->nextEdge;
+
+	//sixth tri-----------------------
+	edgeArray[16].vertex = 2; edgeArray[16].triangle = 6;
+	triEPtr[6] = 16;
+
+	edgeArray[16].nextEdge = 17; edgeArray[17].vertex = 3; edgeArray[17].triangle = 6;
+	edgeArray[17].nextEdge = 18; edgeArray[18].vertex = 6; edgeArray[18].triangle = 6;
+	edgeArray[18].nextEdge = 16;
+
+	//tempE1 = new halfEdge;	tempE1->vertex = 1; tempE1->triangle = 5;
+	//triEPtr[5] = tempE1;
+	
+	//triEPtr[5]->nextEdge = new halfEdge; triEPtr[5]->nextEdge->vertex = 2; triEPtr[5]->nextEdge->triangle = 5;
+	//triEPtr[5]->nextEdge->nextEdge = new halfEdge; triEPtr[5]->nextEdge->nextEdge->vertex = 5; triEPtr[5]->nextEdge->nextEdge->triangle = 5;
+	//triEPtr[5]->nextEdge->nextEdge->nextEdge = triEPtr[5];
+
+	//seventh tri---------------------
+	edgeArray[19].vertex = 2; edgeArray[19].triangle = 7;
+	triEPtr[7] = 19;
+
+	edgeArray[19].nextEdge = 20; edgeArray[20].vertex = 5; edgeArray[20].triangle = 7;
+	edgeArray[20].nextEdge = 21; edgeArray[21].vertex = 3; edgeArray[21].triangle = 7;
+	edgeArray[21].nextEdge = 19;
+
+
+	//tempE1 = new halfEdge;	tempE1->vertex = 1; tempE1->triangle = 6;
+	//triEPtr[6] = tempE1;
+	
+	//triEPtr[6]->nextEdge = new halfEdge; triEPtr[6]->nextEdge->vertex = 4; triEPtr[6]->nextEdge->triangle = 6;
+	//triEPtr[6]->nextEdge->nextEdge = new halfEdge; triEPtr[6]->nextEdge->nextEdge->vertex = 2; triEPtr[6]->nextEdge->nextEdge->triangle = 6;
+	//triEPtr[6]->nextEdge->nextEdge->nextEdge = triEPtr[6];
 
 	//seventh tri
-	tempE1 = new halfEdge;	tempE1->vertex = 1; tempE1->triangle = 6;
-	triEPtr[6] = tempE1;
-	
-	triEPtr[6]->nextEdge = new halfEdge; triEPtr[6]->nextEdge->vertex = 4; triEPtr[6]->nextEdge->triangle = 6;
-	triEPtr[6]->nextEdge->nextEdge = new halfEdge; triEPtr[6]->nextEdge->nextEdge->vertex = 2; triEPtr[6]->nextEdge->nextEdge->triangle = 6;
-	triEPtr[6]->nextEdge->nextEdge->nextEdge = triEPtr[6];
+	edgeArray[22].vertex = 2; edgeArray[22].triangle = 8;
+	triEPtr[8] = 22;
 
-	//seventh tri
-	tempE1 = new halfEdge;	tempE1->vertex = 1; tempE1->triangle = 7;
-	triEPtr[7] = tempE1;
+	edgeArray[22].nextEdge = 23; edgeArray[23].vertex = 4; edgeArray[23].triangle = 8;
+	edgeArray[23].nextEdge = 24; edgeArray[24].vertex = 5; edgeArray[24].triangle = 8;
+	edgeArray[24].nextEdge = 22;
+
+	vertexEPtr[4] = 22;
+
+
+	//tempE1 = new halfEdge;	tempE1->vertex = 1; tempE1->triangle = 7;
+	//triEPtr[7] = tempE1;
 	
-	triEPtr[7]->nextEdge = new halfEdge; triEPtr[7]->nextEdge->vertex = 3; triEPtr[7]->nextEdge->triangle = 7;
-	triEPtr[7]->nextEdge->nextEdge = new halfEdge; triEPtr[7]->nextEdge->nextEdge->vertex = 4; triEPtr[7]->nextEdge->nextEdge->triangle = 7;
-	triEPtr[7]->nextEdge->nextEdge->nextEdge = triEPtr[7];
+	//triEPtr[7]->nextEdge = new halfEdge; triEPtr[7]->nextEdge->vertex = 3; triEPtr[7]->nextEdge->triangle = 7;
+	//triEPtr[7]->nextEdge->nextEdge = new halfEdge; triEPtr[7]->nextEdge->nextEdge->vertex = 4; triEPtr[7]->nextEdge->nextEdge->triangle = 7;
+	//triEPtr[7]->nextEdge->nextEdge->nextEdge = triEPtr[7];
 
 	vertexEPtr[3] = triEPtr[7];
 
 	//TOP SIBLINGS
-	triEPtr[0]->sibling = triEPtr[3]->nextEdge->nextEdge;
-	triEPtr[3]->nextEdge->nextEdge->sibling = triEPtr[0];
+	edgeArray[triEPtr[1]].sibling = edgeArray[edgeArray[triEPtr[4]].nextEdge].nextEdge;
+	edgeArray[edgeArray[edgeArray[triEPtr[4]].nextEdge].nextEdge].sibling = triEPtr[1];
 
-	triEPtr[3]->sibling = triEPtr[2]->nextEdge->nextEdge;
-	triEPtr[2]->nextEdge->nextEdge->sibling = triEPtr[3];
+	edgeArray[triEPtr[4]].sibling = edgeArray[edgeArray[triEPtr[3]].nextEdge].nextEdge;
+	edgeArray[edgeArray[edgeArray[triEPtr[3]].nextEdge].nextEdge].sibling = triEPtr[4];
 
-	triEPtr[2]->sibling = triEPtr[1]->nextEdge->nextEdge;
-	triEPtr[1]->nextEdge->nextEdge->sibling = triEPtr[2];
+	edgeArray[triEPtr[3]].sibling = edgeArray[edgeArray[triEPtr[2]].nextEdge].nextEdge;
+	edgeArray[edgeArray[edgeArray[triEPtr[2]].nextEdge].nextEdge].sibling = triEPtr[3];
 
-	triEPtr[1]->sibling = triEPtr[0]->nextEdge->nextEdge;
-	triEPtr[0]->nextEdge->nextEdge->sibling = triEPtr[1];
+	edgeArray[triEPtr[2]].sibling = edgeArray[edgeArray[triEPtr[1]].nextEdge].nextEdge;
+	edgeArray[edgeArray[edgeArray[triEPtr[1]].nextEdge].nextEdge].sibling = triEPtr[2];
 
 	//BOTTOM SIBLINGS
-	triEPtr[4]->sibling = triEPtr[5]->nextEdge->nextEdge;
-	triEPtr[5]->nextEdge->nextEdge->sibling = triEPtr[4];
+	edgeArray[triEPtr[5]].sibling = edgeArray[edgeArray[triEPtr[6]].nextEdge].nextEdge;
+	edgeArray[edgeArray[edgeArray[triEPtr[6]].nextEdge].nextEdge].sibling = triEPtr[5];
 
-	triEPtr[5]->sibling = triEPtr[6]->nextEdge->nextEdge;
-	triEPtr[6]->nextEdge->nextEdge->sibling = triEPtr[5];
+	edgeArray[triEPtr[6]].sibling = edgeArray[edgeArray[triEPtr[7]].nextEdge].nextEdge;
+	edgeArray[edgeArray[edgeArray[triEPtr[7]].nextEdge].nextEdge].sibling = triEPtr[6];
 
-	triEPtr[6]->sibling = triEPtr[7]->nextEdge->nextEdge;
-	triEPtr[7]->nextEdge->nextEdge->sibling = triEPtr[6];
+	edgeArray[triEPtr[7]].sibling = edgeArray[edgeArray[triEPtr[8]].nextEdge].nextEdge;
+	edgeArray[edgeArray[edgeArray[triEPtr[8]].nextEdge].nextEdge].sibling = triEPtr[7];
 
-	triEPtr[7]->sibling = triEPtr[4]->nextEdge->nextEdge;
-	triEPtr[4]->nextEdge->nextEdge->sibling = triEPtr[7];
+	edgeArray[triEPtr[8]].sibling = edgeArray[edgeArray[triEPtr[5]].nextEdge].nextEdge;
+	edgeArray[edgeArray[edgeArray[triEPtr[5]].nextEdge].nextEdge].sibling = triEPtr[8];
 
 	//MIDDLE SIBLINGS
-	triEPtr[0]->nextEdge->sibling = triEPtr[4]->nextEdge;
-	triEPtr[4]->nextEdge->sibling = triEPtr[0]->nextEdge;
+	edgeArray[edgeArray[triEPtr[1]].nextEdge].sibling = edgeArray[triEPtr[5]].nextEdge;
+	edgeArray[edgeArray[triEPtr[5]].nextEdge].sibling = edgeArray[triEPtr[1]].nextEdge;
 	
-	triEPtr[1]->nextEdge->sibling = triEPtr[5]->nextEdge;
-	triEPtr[5]->nextEdge->sibling = triEPtr[1]->nextEdge;
+	edgeArray[edgeArray[triEPtr[2]].nextEdge].sibling = edgeArray[triEPtr[6]].nextEdge;
+	edgeArray[edgeArray[triEPtr[6]].nextEdge].sibling = edgeArray[triEPtr[2]].nextEdge;
 
-	triEPtr[2]->nextEdge->sibling = triEPtr[6]->nextEdge;
-	triEPtr[6]->nextEdge->sibling = triEPtr[2]->nextEdge;
+	edgeArray[edgeArray[triEPtr[3]].nextEdge].sibling = edgeArray[triEPtr[7]].nextEdge;
+	edgeArray[edgeArray[triEPtr[7]].nextEdge].sibling = edgeArray[triEPtr[3]].nextEdge;
 
-	triEPtr[3]->nextEdge->sibling = triEPtr[7]->nextEdge;
-	triEPtr[7]->nextEdge->sibling = triEPtr[3]->nextEdge;
+	edgeArray[edgeArray[triEPtr[4]].nextEdge].sibling = edgeArray[triEPtr[8]].nextEdge;
+	edgeArray[edgeArray[triEPtr[8]].nextEdge].sibling = edgeArray[triEPtr[4]].nextEdge;
 
 	// create sphere by subdivision
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -279,12 +335,12 @@ Mesh::Mesh(float rad) {
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	// Present our vertex coordinates to OpenGL
 	glBufferData(GL_ARRAY_BUFFER,
-		(vertexArray.size() + 100000)*sizeof(vertex), NULL, GL_STREAM_DRAW);
+		(1000000)*sizeof(vertex), NULL, GL_STREAM_DRAW);
 
-	vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*vertexArray.size(),
+	vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex) *1000000,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 0; i < vertexArray.size(); i++) {
+	for (int i = 0; i <1000000; i++) {
 		vertexP[i].x = vertexArray[i].x;
 		vertexP[i].y = vertexArray[i].y;
 		vertexP[i].z = vertexArray[i].z;
@@ -313,12 +369,12 @@ Mesh::Mesh(float rad) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 	// Present our vertex indices to OpenGL
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		(indexArray.size() + 100000)*sizeof(triangle), NULL, GL_STREAM_DRAW);
+		(2000000)*sizeof(triangle), NULL, GL_STREAM_DRAW);
 
-	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * indexArray.size(),
+	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * 2000000,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 0; i < indexArray.size(); i++) {
+	for (int i = 0; i < 2000000; i++) {
 		indexP[i].index[0] = indexArray[i].index[0];
 		indexP[i].index[1] = indexArray[i].index[1];
 		indexP[i].index[2] = indexArray[i].index[2];
@@ -350,7 +406,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 
 	triangle* indexP;
 	vertex* vertexP;
-	halfEdge* tempEdge;
+	int tempEdge;
 
 	bool success = false;
 
@@ -368,7 +424,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 	//wPoint[1] = tempvec.y;
 	//wPoint[2] = tempvec.z;
 
-	for (int i = 0; i < vertexArray.size(); i++) {
+	for (int i = 1; i <= nrofVerts; i++) {
 		vPoint[0] = vertexArray[i].x;
 		vPoint[1] = vertexArray[i].y;
 		vPoint[2] = vertexArray[i].z;
@@ -408,11 +464,11 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 				tempEdge = vertexEPtr[index2];
 				
 				do {
-					if (!tempEdge->needsUpdate){
-						index = tempEdge->vertex;
+					if (!edgeArray[tempEdge].needsUpdate){
+						index = edgeArray[tempEdge].vertex;
 
-						tempEdge->sibling->needsUpdate = true;
-						tempEdge->needsUpdate = true;
+						edgeArray[edgeArray[tempEdge].sibling].needsUpdate = true;
+						edgeArray[tempEdge].needsUpdate = true;
 
 						vPoint2[0] = vertexArray[index].x;
 						vPoint2[1] = vertexArray[index].y;
@@ -433,7 +489,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 							changedVertices.push_back(index);
 						}
 					}
-					tempEdge = tempEdge->nextEdge->sibling;
+					tempEdge = edgeArray[edgeArray[tempEdge].nextEdge].sibling;
 
 				} while (tempEdge != vertexEPtr[index2]);
 			}
@@ -453,10 +509,10 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 
-		vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*vertexArray.size(),
+		vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*nrofVerts,
 			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-		for (int i = 0; i < vertexArray.size(); i++) {
+		for (int i = 0; i < nrofVerts; i++) {
 			vertexP[i].x = vertexArray[i].x;
 			vertexP[i].y = vertexArray[i].y;
 			vertexP[i].z = vertexArray[i].z;
@@ -494,10 +550,10 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 		//	sizeof(triangle)*indexArray.size(), &indexArray, GL_STREAM_DRAW);
 
 		// Present our vertex <indices to OpenGL
-		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * indexArray.size(),
+		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * nrofTris,
 			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-		for (int i = 0; i < indexArray.size(); i++) {
+		for (int i = 0; i < nrofTris; i++) {
 			indexP[i].index[0] = indexArray[i].index[0];
 			indexP[i].index[1] = indexArray[i].index[1];
 			indexP[i].index[2] = indexArray[i].index[2];
@@ -526,7 +582,7 @@ void Mesh::render() {
 	glBindVertexArray(vao);
 	//glColor3f(color.x, color.y, color.z);
 
-	glDrawElements(GL_TRIANGLES, indexArray.size() * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_TRIANGLES, nrofTris * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex uN, type, element array buffer offset)
 	glBindVertexArray(0);
 }
@@ -538,7 +594,7 @@ void Mesh::updateArea(int* changeList, int listSize) {
 	static float tempVec1[3], tempVec2[3], tempVec3[3];
 	static float tempNorm1[3] = { 0.0f, 0.0f, 0.0f };
 	static float tempNorm2[3] = { 0.0f, 0.0f, 0.0f };
-	halfEdge* tempEdge; halfEdge* tempE;
+	int tempEdge; halfEdge* tempE;
 	static int vert1, vert2; 
 	static float edgeLength;
 
@@ -551,18 +607,18 @@ void Mesh::updateArea(int* changeList, int listSize) {
 
 		 // Retriangulation //////////////////////////////////////////////////////////////////////////////////////////
 		 // check if edge needs update
-		if (vertexEPtr[changeList[i]] != nullptr)
+		if (vertexEPtr[changeList[i]] != 0)
 			tempEdge = vertexEPtr[changeList[i]];
 		else
 			continue;
 
 		 do {
-			 if (tempEdge->needsUpdate == true) {
-				tempEdge->needsUpdate = false;
-				tempEdge->sibling->needsUpdate = false;
+			 if (edgeArray[tempEdge].needsUpdate == true) {
+				 edgeArray[tempEdge].needsUpdate = false;
+				 edgeArray[edgeArray[tempEdge].sibling].needsUpdate = false;
 
 				// calculate edge lenght
-				vert1 = tempEdge->vertex;
+				 vert1 = edgeArray[tempEdge].vertex;
 
 				vPoint2[0] = vertexArray[vert1].x;
 				vPoint2[1] = vertexArray[vert1].y;
@@ -575,24 +631,24 @@ void Mesh::updateArea(int* changeList, int listSize) {
 				if (edgeLength < MIN_LENGTH) {
 					//tempE = tempEdge
 					edgeCollapse(false, tempEdge);
-					tempEdge = tempEdge->sibling->nextEdge->nextEdge;
+					tempEdge = edgeArray[edgeArray[edgeArray[tempEdge].sibling].nextEdge].nextEdge;
 					//edge already incremented, something needs to be done.
 				} else if (edgeLength > MAX_LENGTH) {
 					edgeSplit(vPoint1, tempVec1, tempEdge);
 				}
 			 }
 			
-			tempEdge = tempEdge->nextEdge->sibling;
+			 tempEdge = edgeArray[edgeArray[tempEdge].nextEdge].sibling;
 
-		 } while (tempEdge->needsUpdate == true);
+		 } while (edgeArray[tempEdge].needsUpdate == true);
 			 
 		 // Update normal /////////////////////////////////////////////////////////////////////////////
-		 if (vertexEPtr[changeList[i]] != nullptr)
+		 if (vertexEPtr[changeList[i]] != 0)
 			 tempEdge = vertexEPtr[changeList[i]];
 		 // loop through the rest of the edges
 		 do {
-			 vert1 = tempEdge->vertex;
-			 vert2 = tempEdge->nextEdge->nextEdge->vertex;
+			 vert1 = edgeArray[tempEdge].vertex;
+			 vert2 = edgeArray[edgeArray[edgeArray[tempEdge].nextEdge].nextEdge].vertex;
 
 			 vPoint2[0] = vertexArray[vert1].x;
 			 vPoint2[1] = vertexArray[vert1].y;
@@ -614,7 +670,7 @@ void Mesh::updateArea(int* changeList, int listSize) {
 			 tempNorm2[2] += tempNorm1[2];
 
 
-			 tempEdge = tempEdge->nextEdge->sibling;
+			 tempEdge = edgeArray[edgeArray[tempEdge].nextEdge].sibling;
 		 } while (tempEdge != vertexEPtr[changeList[i]]);
 
 		 edgeLength = linAlg::vecLength(tempNorm2);
@@ -631,11 +687,11 @@ void Mesh::updateArea(int* changeList, int listSize) {
 	}
 }
 
-void Mesh::edgeSplit(float* vPoint, float* vec, halfEdge* &edge) {
+void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 
-	vertex tempV;
-	triangle tempT;
-	halfEdge* tempE;
+	int tempV;
+	int tempT1; int tempT2;
+	int tempE; int tempE2;
 	static int vert1, vert2, vert3, vert4;
 	static float temp[3], temp2[3], temp3[3];
 	static float tempNorm1[3], tempNorm2[3];
@@ -643,11 +699,11 @@ void Mesh::edgeSplit(float* vPoint, float* vec, halfEdge* &edge) {
 
 	//TODO: FLIP EDGE, NOT HANDLED PROPERLY BUT SHOULD BE////////////////////////////////////
 	
-	halfEdge* tempE2;
+	int tempE2;
 	
 	
-	vert1 = edge->nextEdge->nextEdge->vertex;
-	vert2 = edge->sibling->nextEdge->nextEdge->vertex;
+	vert1 = edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].vertex;
+	vert2 = edgeArray[edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].nextEdge].vertex;
 
 	temp[0] = vertexArray[vert1].x;
 	temp[1] = vertexArray[vert1].y;
@@ -659,84 +715,126 @@ void Mesh::edgeSplit(float* vPoint, float* vec, halfEdge* &edge) {
 	linAlg::calculateVec(temp3, temp, temp2);
 	linAlg::vecLength(temp3);
 	///*
-	if (linAlg::vecLength(temp3) < MAX_LENGTH && edge != edge->nextEdge->sibling->nextEdge->sibling->nextEdge->sibling && edge != edge->sibling->nextEdge->sibling->nextEdge->sibling->nextEdge) {
+	if (linAlg::vecLength(temp3) < MAX_LENGTH && edge != edgeArray[edgeArray[edgeArray[edgeArray[edgeArray[edgeArray[edge].nextEdge].sibling].nextEdge].sibling].nextEdge].sibling && edge != edgeArray[edgeArray[edgeArray[edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].sibling].nextEdge].sibling].nextEdge) {
 		for (int i = 0; i < 3; i++) {
-			if (indexArray[edge->triangle].index[i] == edge->vertex)
-				indexArray[edge->triangle].index[i] = vert2;
+			if (indexArray[edgeArray[edge].triangle].index[i] == edgeArray[edge].vertex)
+				indexArray[edgeArray[edge].triangle].index[i] = vert2;
 
-  			if (indexArray[edge->sibling->triangle].index[i] == edge->sibling->vertex)
-				indexArray[edge->sibling->triangle].index[i] = vert1;
+			if (indexArray[edgeArray[edgeArray[edge].sibling].triangle].index[i] == edgeArray[edgeArray[edge].sibling].vertex)
+				indexArray[edgeArray[edgeArray[edge].sibling].triangle].index[i] = vert1;
 		}
 		// rebind triangles
-		edge->sibling->nextEdge->nextEdge->triangle = edge->triangle;
-		edge->nextEdge->nextEdge->triangle = edge->sibling->triangle;
+		edgeArray[edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].nextEdge].triangle = edgeArray[edge].triangle;
+		edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].triangle = edgeArray[edgeArray[edge].sibling].triangle;
 		////
-		edge->sibling->nextEdge->nextEdge->nextEdge = edge->nextEdge;
-		edge->nextEdge->nextEdge->nextEdge = edge->sibling->nextEdge;
+		edgeArray[edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].nextEdge].nextEdge = edgeArray[edge].nextEdge;
+		edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].nextEdge = edgeArray[edgeArray[edge].sibling].nextEdge;
 		////
 		
-		tempE = edge->nextEdge->nextEdge;
-		edge->nextEdge->nextEdge = edge;
+		tempE = edgeArray[edgeArray[edge].nextEdge].nextEdge;
+		edgeArray[edgeArray[edge].nextEdge].nextEdge = edge;
 
-		tempE2 = edge->sibling->nextEdge->nextEdge;
-		edge->sibling->nextEdge->nextEdge = edge->sibling;
+		tempE2 = edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].nextEdge;
+		edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].nextEdge = edgeArray[edge].sibling;
 
-		edge->sibling->nextEdge = tempE;
-		edge->nextEdge = tempE2;
+		edgeArray[edgeArray[edge].sibling].nextEdge = tempE;
+		edgeArray[edge].nextEdge = tempE2;
 
-		edge->vertex = edge->sibling->nextEdge->vertex;
-		edge->sibling->vertex = edge->nextEdge->vertex;
+		edgeArray[edge].vertex = edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].vertex;
+		edgeArray[edgeArray[edge].sibling].vertex = edgeArray[edgeArray[edge].nextEdge].vertex;
 
-		vertexEPtr[edge->nextEdge->nextEdge->vertex] = edge->nextEdge;
-		vertexEPtr[edge->sibling->nextEdge->nextEdge->vertex] = edge->sibling->nextEdge;
+		vertexEPtr[edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].vertex] = edgeArray[edge].nextEdge;
+		vertexEPtr[edgeArray[edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].nextEdge].vertex] = edgeArray[edgeArray[edge].sibling].nextEdge;
 
 		//pass on
-		edge = edge->nextEdge;
+		edge = edgeArray[edge].nextEdge;
 	}
 	else
 	{//*/
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// create new vertex point
-	vert1 = edge->vertex;
-	vert2 = edge->sibling->vertex;
-	vert3 = edge->nextEdge->nextEdge->vertex;
-	vert4 = edge->sibling->nextEdge->nextEdge->vertex;
+		vert1 = edgeArray[edge].vertex;
+		vert2 = edgeArray[edgeArray[edge].sibling].vertex;
+	//vert3 = edge->nextEdge->nextEdge->vertex;
+	//vert4 = edge->sibling->nextEdge->nextEdge->vertex;
 
-	tempV.x = (vertexArray[vert1].x + vertexArray[vert2].x) / 2.0f;// + vertexArray[vert3].x + vertexArray[vert4].x) / 4.0f;
-	tempV.y = (vertexArray[vert1].y + vertexArray[vert2].y) / 2.0f;// + vertexArray[vert3].y + vertexArray[vert4].y) / 4.0f;
-	tempV.z = (vertexArray[vert1].z + vertexArray[vert2].z) / 2.0f;// + vertexArray[vert3].z + vertexArray[vert4].z) / 4.0f;
+	tempV = vertexEPtr[0];
+	vertexEPtr[0] = vertexEPtr[tempV];
+	vertexArray[tempV].x = (vertexArray[vert1].x + vertexArray[vert2].x) / 2.0f;
+	vertexArray[tempV].y = (vertexArray[vert1].y + vertexArray[vert2].y) / 2.0f;
+	vertexArray[tempV].z = (vertexArray[vert1].z + vertexArray[vert2].z) / 2.0f;
 
-	vertexArray.push_back(tempV);
+	//tempV.x = (vertexArray[vert1].x + vertexArray[vert2].x) / 2.0f;// + vertexArray[vert3].x + vertexArray[vert4].x) / 4.0f;
+	//tempV.y = (vertexArray[vert1].y + vertexArray[vert2].y) / 2.0f;// + vertexArray[vert3].y + vertexArray[vert4].y) / 4.0f;
+	//tempV.z = (vertexArray[vert1].z + vertexArray[vert2].z) / 2.0f;// + vertexArray[vert3].z + vertexArray[vert4].z) / 4.0f;
+
+	//vertexArray.push_back(tempV);
 
 	//copy triangles
-	tempT.index[0] = indexArray[edge->triangle].index[0];
-	tempT.index[1] = indexArray[edge->triangle].index[1];
-	tempT.index[2] = indexArray[edge->triangle].index[2];
-	indexArray.push_back(tempT);
-
-	tempT.index[0] = indexArray[edge->sibling->triangle].index[0];
-	tempT.index[1] = indexArray[edge->sibling->triangle].index[1];
-	tempT.index[2] = indexArray[edge->sibling->triangle].index[2];
-	indexArray.push_back(tempT);
+	tempT1 = triEPtr[0];
+	triEPtr[0] = triEPtr[tempT1];
+	indexArray[tempT1].index[0] = indexArray[edgeArray[edge].triangle].index[0];
+	indexArray[tempT1].index[1] = indexArray[edgeArray[edge].triangle].index[1];
+	indexArray[tempT1].index[2] = indexArray[edgeArray[edge].triangle].index[2];
+	//tempT.index[0] = indexArray[edge->triangle].index[0];
+	//tempT.index[1] = indexArray[edge->triangle].index[1];
+	//tempT.index[2] = indexArray[edge->triangle].index[2];
+	//indexArray.push_back(tempT);
+	tempT2 = triEPtr[0];
+	triEPtr[0] = triEPtr[tempT2];
+	indexArray[tempT1].index[0] = indexArray[edgeArray[edgeArray[edge].sibling].triangle].index[0];
+	indexArray[tempT1].index[1] = indexArray[edgeArray[edgeArray[edge].sibling].triangle].index[1];
+	indexArray[tempT1].index[2] = indexArray[edgeArray[edgeArray[edge].sibling].triangle].index[2];
+	//tempT.index[0] = indexArray[edge->sibling->triangle].index[0];
+	//tempT.index[1] = indexArray[edge->sibling->triangle].index[1];
+	//tempT.index[2] = indexArray[edge->sibling->triangle].index[2];
+	//indexArray.push_back(tempT);
 
 	// rebind old triangles
 	for (int i = 0; i < 3; i++) {
-		if (indexArray[edge->triangle].index[i] == edge->vertex)
-			indexArray[edge->triangle].index[i] = vertexArray.size() - 1;
+		if (indexArray[edgeArray[edge].triangle].index[i] == edgeArray[edge].vertex)
+			indexArray[edgeArray[edge].triangle].index[i] = tempV;
 
-		if (indexArray[edge->sibling->triangle].index[i] == edge->vertex)
-			indexArray[edge->sibling->triangle].index[i] = vertexArray.size() - 1;
+		if (indexArray[edgeArray[edgeArray[edge].sibling].triangle].index[i] == edgeArray[edge].vertex)
+			indexArray[edgeArray[edgeArray[edge].sibling].triangle].index[i] = tempV;
 	}
 
 	// rebind new triangles
 	for (int i = 0; i < 3; i++) {
-		if (indexArray[indexArray.size() - 2].index[i] == edge->sibling->vertex)
-			indexArray[indexArray.size() - 2].index[i] = vertexArray.size() - 1;
+		if (indexArray[tempT1].index[i] == edgeArray[edgeArray[edge].sibling].vertex)
+			indexArray[tempT1].index[i] = tempV;
 
-		if (indexArray[indexArray.size() - 1].index[i] == edge->sibling->vertex)
-			indexArray[indexArray.size() - 1].index[i] = vertexArray.size() - 1;
+		if (indexArray[tempT2].index[i] == edgeArray[edgeArray[edge].sibling].vertex)
+			indexArray[tempT2].index[i] = tempV;
 	}
+	
+	/////////////////////////////////////////////////////////
+	tempE2 = tempE = edgeArray[0].nextEdge;
+	edgeArray[0].nextEdge = edgeArray[tempE].nextEdge;
 
+	triEPtr[tempT1] = tempE;
+	vertexEPtr[tempV] = tempE;
+
+	edgeArray[tempE].vertex = edgeArray[edge].vertex;
+	edgeArray[tempE].triangle = tempT1;
+	/*nextEdge*/tempE = edgeArray[tempE].nextEdge = edgeArray[0].nextEdge;
+	edgeArray[0].nextEdge = edgeArray[tempE].nextEdge;
+
+	edgeArray[tempE].vertex = tempV;
+	edgeArray[tempE].triangle = tempT1;
+	edgeArray[tempE].sibling = edgeArray[edgeArray[edge].nextEdge].nextEdge;
+	/*nextEdge*/tempE = edgeArray[tempE].nextEdge = edgeArray[0].nextEdge;
+	edgeArray[0].nextEdge = edgeArray[tempE].nextEdge;
+
+	edgeArray[tempE].vertex = edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].vertex;
+	edgeArray[tempE].triangle = tempT1;
+	edgeArray[tempE].nextEdge = tempE2;
+	edgeArray[tempE].sibling = edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].sibling;
+	//rebind sibling of existing triangle
+	edgeArray[edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].sibling].sibling = edgeArray[edgeArray[tempE2].nextEdge].nextEdge;
+	//rebind sibling of old triangle
+	edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].sibling = edgeArray[tempE2].nextEdge;
+	/*
 	triEPtr.push_back(new halfEdge);
 	vert1 = triEPtr.size() - 1;
 	vertexEPtr.push_back(triEPtr[vert1]);
@@ -758,6 +856,30 @@ void Mesh::edgeSplit(float* vPoint, float* vec, halfEdge* &edge) {
 	edge->nextEdge->nextEdge->sibling->sibling = triEPtr[vert1]->nextEdge->nextEdge;
 	//rebind sibling of old triangle
 	edge->nextEdge->nextEdge->sibling = triEPtr[vert1]->nextEdge;
+	*/
+	tempE2 = tempE = edgeArray[0].nextEdge;
+	edgeArray[0].nextEdge = edgeArray[tempE].nextEdge;
+
+	triEPtr[tempT2] = tempE;
+
+	edgeArray[tempE].sibling = triEPtr[tempT1];
+	//bind sibling of first newEdge
+	edgeArray[triEPtr[tempT1]].sibling = tempE;
+	//continue
+	edgeArray[tempE].vertex = tempV;
+	edgeArray[tempE].triangle = tempT2;
+	/*nextedge*/tempE = edgeArray[tempE].nextEdge = edgeArray[0].nextEdge;
+	edgeArray[0].nextEdge = edgeArray[tempE].nextEdge;
+
+	edgeArray[tempE].vertex = edgeArray[edge].vertex;
+	edgeArray[tempE].triangle = tempT2;
+	edgeArray[tempE].sibling = edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].sibling;
+	//rebind sibling of existing triangle
+	edgeArray[edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].sibling].sibling = edgeArray[tempE2].nextEdge;
+	/*nextedge*/tempE = edgeArray[tempE].nextEdge = edgeArray[0].nextEdge;
+	edgeArray[0].nextEdge = edgeArray[tempE].nextEdge;
+
+
 
 	triEPtr.push_back(new halfEdge);
 	vert1 = triEPtr.size() - 1;
@@ -776,6 +898,8 @@ void Mesh::edgeSplit(float* vPoint, float* vec, halfEdge* &edge) {
 	//rebind sibling of existing triangle
 	edge->sibling->nextEdge->sibling->sibling = triEPtr[vert1]->nextEdge;
 	triEPtr[vert1]->nextEdge->nextEdge = new halfEdge;
+
+	//HÄR ÄR DU OLLE
 
 	triEPtr[vert1]->nextEdge->nextEdge->vertex = edge->sibling->nextEdge->nextEdge->vertex;
 	triEPtr[vert1]->nextEdge->nextEdge->triangle = vert1;
@@ -864,7 +988,7 @@ void Mesh::edgeCollapse(bool recursive, halfEdge* &edge) {
 	//if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
 	while (edge->sibling == edge->sibling->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge)
 	{
-                                                                  edgeCollapse(true, edge->sibling->nextEdge->sibling);
+                                                                                  edgeCollapse(true, edge->sibling->nextEdge->sibling);
 	}
 
 	// rebind edges that point to nVert
