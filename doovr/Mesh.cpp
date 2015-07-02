@@ -55,6 +55,25 @@ Mesh::Mesh(float rad) {
 	nrofVerts = 6;
 	nrofTris = 8;
 
+	for (int i = 0; i < 1000000; i++)
+	{
+		vertexEPtr[i] = i + 1;
+	}
+	vertexEPtr[1000000 - 1] = -1;
+	vertexEPtr[0] = 7;
+	for (int i = 0; i < 2000000; i++)
+	{
+		triEPtr[i] = i + 1;
+	}
+	triEPtr[2000000 - 1] = -1;
+	triEPtr[0] = 9;
+	for (int i = 0; i < 3000000; i++)
+	{
+		edgeArray[i].nextEdge = i + 1;
+	}
+	edgeArray[3000000 - 1].nextEdge = -1;
+	edgeArray[0].nextEdge = 25;
+
 	
 	// place vertecies
 	// Y 0
@@ -1065,184 +1084,3 @@ void Mesh::edgeCollapse(bool recursive, halfEdge* &edge) {
 	if (!recursive)
 		edge = tempE;
 }
-
-
-void Mesh::edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad) {
-
-	vertex tempV;
-	triangle tempT;
-
-	int vert1;
-	int vert2;
-	float temp[3];
-	float temp2[3];
-	float temp3[3];
-
-	//halfEdge* tempE; // used in flip edge
-	//halfEdge* tempE2;
-
-	vert1 = edge->nextEdge->nextEdge->vertex;
-	vert2 = edge->sibling->nextEdge->nextEdge->vertex;
-
-	temp[0] = vertexArray[vert1].x;
-	temp[1] = vertexArray[vert1].y;
-	temp[2] = vertexArray[vert1].z;
-
-	temp2[0] = vertexArray[vert2].x;
-	temp2[1] = vertexArray[vert2].y;
-	temp2[2] = vertexArray[vert2].z;
-	linAlg::calculateVec(temp3, temp, temp2);
-	
-	/* TODO: implement flip edges
-	if (linAlg::vecLength(temp3) < MAX_LENGTH) {
-		// flip edges
-		for (int i = 0; i < 3; i++) {
-			if (indexArray[edge->triangle].index[i] == edge->vertex)
-				indexArray[edge->triangle].index[i] = vert2;
-
-			if (indexArray[edge->sibling->triangle].index[i] == edge->sibling->vertex)
-				indexArray[edge->sibling->triangle].index[i] = vert1;
-		}
-		// rebind triangles
-		edge->sibling->nextEdge->nextEdge->triangle = edge->triangle;
-		edge->nextEdge->nextEdge->triangle = edge->sibling->triangle;
-		////
-		edge->sibling->nextEdge->nextEdge->nextEdge = edge->nextEdge;
-		edge->nextEdge->nextEdge->nextEdge = edge->sibling->nextEdge;
-		////
-
-		tempE = edge->nextEdge->nextEdge;
-		edge->nextEdge->nextEdge = edge;
-
-		tempE2 = edge->sibling->nextEdge->nextEdge;
-		edge->sibling->nextEdge->nextEdge = edge->sibling;
-
-		edge->sibling->nextEdge = tempE;
-		edge->nextEdge = tempE2;
-
-		edge->vertex = edge->sibling->nextEdge->vertex;
-		edge->sibling->vertex = edge->nextEdge->vertex;
-
-		vertexEPtr[edge->nextEdge->nextEdge->vertex] = edge->nextEdge;
-		vertexEPtr[edge->sibling->nextEdge->nextEdge->vertex] = edge->sibling->nextEdge;
-
-		//pass on
-		edge = edge->nextEdge;
-	}
-	else {
-	*/
-		temp[0] = pA[0] + (vecA2B[0] / 2.0f);
-		temp[1] = pA[1] + (vecA2B[1] / 2.0f);
-		temp[2] = pA[2] + (vecA2B[2] / 2.0f);
-
-		linAlg::normVec(temp);
-		tempV.nx = temp[0];
-		tempV.ny = temp[1];
-		tempV.nz = temp[2];
-
-		temp[0] = rad*temp[0];
-		temp[1] = rad*temp[1];
-		temp[2] = rad*temp[2];
-
-		tempV.x = temp[0];
-		tempV.y = temp[1];
-		tempV.z = temp[2];
-		
-		vertexArray.push_back(tempV);
-
-		//copy triangles
-		tempT.index[0] = indexArray[edge->triangle].index[0];
-		tempT.index[1] = indexArray[edge->triangle].index[1];
-		tempT.index[2] = indexArray[edge->triangle].index[2];
-		indexArray.push_back(tempT);
-
-		tempT.index[0] = indexArray[edge->sibling->triangle].index[0];
-		tempT.index[1] = indexArray[edge->sibling->triangle].index[1];
-		tempT.index[2] = indexArray[edge->sibling->triangle].index[2];
-		indexArray.push_back(tempT);
-
-		// rebind old triangles
-		for (int i = 0; i < 3; i++) {
-			if (indexArray[edge->triangle].index[i] == edge->vertex)
-				indexArray[edge->triangle].index[i] = vertexArray.size() - 1;
-
-			if (indexArray[edge->sibling->triangle].index[i] == edge->vertex)
-				indexArray[edge->sibling->triangle].index[i] = vertexArray.size() - 1;
-		}
-
-		// rebind new triangles
-		for (int i = 0; i < 3; i++) {
-			if (indexArray[indexArray.size() - 2].index[i] == edge->sibling->vertex)
-				indexArray[indexArray.size() - 2].index[i] = vertexArray.size() - 1;
-
-			if (indexArray[indexArray.size() - 1].index[i] == edge->sibling->vertex)
-				indexArray[indexArray.size() - 1].index[i] = vertexArray.size() - 1;
-		}
-
-		triEPtr.push_back(new halfEdge);
-		vert1 = triEPtr.size() - 1;
-		vertexEPtr.push_back(triEPtr[vert1]);
-
-		triEPtr[vert1]->vertex = edge->vertex;
-		triEPtr[vert1]->triangle = vert1;
-		triEPtr[vert1]->nextEdge = new halfEdge;
-
-		triEPtr[vert1]->nextEdge->vertex = vertexArray.size() - 1;
-		triEPtr[vert1]->nextEdge->triangle = vert1;
-		triEPtr[vert1]->nextEdge->sibling = edge->nextEdge->nextEdge;
-		triEPtr[vert1]->nextEdge->nextEdge = new halfEdge;
-
-		triEPtr[vert1]->nextEdge->nextEdge->vertex = edge->nextEdge->nextEdge->vertex;
-		triEPtr[vert1]->nextEdge->nextEdge->triangle = vert1;
-		triEPtr[vert1]->nextEdge->nextEdge->nextEdge = triEPtr[vert1];
-		triEPtr[vert1]->nextEdge->nextEdge->sibling = edge->nextEdge->nextEdge->sibling;
-		//rebind sibling of existing triangle
-		edge->nextEdge->nextEdge->sibling->sibling = triEPtr[vert1]->nextEdge->nextEdge;
-		//rebind sibling of old triangle
-		edge->nextEdge->nextEdge->sibling = triEPtr[vert1]->nextEdge;
-
-		triEPtr.push_back(new halfEdge);
-		vert1 = triEPtr.size() - 1;
-
-		triEPtr[vert1]->sibling = triEPtr[vert1 - 1];
-		//bind sibling of first newEdge
-		triEPtr[vert1 - 1]->sibling = triEPtr[vert1];
-		//continue
-		triEPtr[vert1]->vertex = vertexArray.size() - 1;
-		triEPtr[vert1]->triangle = vert1;
-		triEPtr[vert1]->nextEdge = new halfEdge;
-
-		triEPtr[vert1]->nextEdge->vertex = edge->vertex;
-		triEPtr[vert1]->nextEdge->triangle = vert1;
-		triEPtr[vert1]->nextEdge->sibling = edge->sibling->nextEdge->sibling;
-		//rebind sibling of existing triangle
-		edge->sibling->nextEdge->sibling->sibling = triEPtr[vert1]->nextEdge;
-		triEPtr[vert1]->nextEdge->nextEdge = new halfEdge;
-
-		triEPtr[vert1]->nextEdge->nextEdge->vertex = edge->sibling->nextEdge->nextEdge->vertex;
-		triEPtr[vert1]->nextEdge->nextEdge->triangle = vert1;
-		triEPtr[vert1]->nextEdge->nextEdge->sibling = edge->sibling->nextEdge;
-		//rebind sibling of old triangle
-		edge->sibling->nextEdge->sibling = triEPtr[vert1]->nextEdge->nextEdge;
-		triEPtr[vert1]->nextEdge->nextEdge->nextEdge = triEPtr[vert1];
-
-		// rebind old edge vertex
-		vertexEPtr[edge->vertex] = triEPtr[vert1];
-
-		edge->vertex = vertexArray.size() - 1;
-		edge->sibling->nextEdge->vertex = vertexArray.size() - 1;
-
-		triEPtr[triEPtr.size() - 1]->nextEdge->nextEdge->needsUpdate = update;
-		triEPtr[triEPtr.size() - 1]->nextEdge->needsUpdate = update;
-		triEPtr[triEPtr.size() - 1]->needsUpdate = update;
-
-		triEPtr[triEPtr.size() - 2]->nextEdge->nextEdge->needsUpdate = update;
-		triEPtr[triEPtr.size() - 2]->nextEdge->needsUpdate = update;
-		triEPtr[triEPtr.size() - 2]->needsUpdate = update;
-
-	//}
-
-	edge->needsUpdate = update;
-	edge->sibling->needsUpdate = update;
-}
-
