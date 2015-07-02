@@ -880,7 +880,7 @@ void GLRenderCallsOculus(){
 void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems) {
 
 	// check if the wandPosition is in the same Y and X position as the menuItem row
-	if (wandPosition[1] == menuItem[0].getPosition()[1] 
+	if (wandPosition[1] < menuItem[0].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[0].getPosition()[1] - 0.01f
 		&& wandPosition[0] > menuItem[0].getPosition()[0] - menuItem[0].getDim()[0]
 		&& wandPosition[0] < menuItem[0].getPosition()[0] + menuItem[0].getDim()[0]) {
 
@@ -889,9 +889,10 @@ void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 			if (wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] 
 				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1]) {
 				menuItem[i].setState(true);
-			} else if (menuItem[i].getState() == true){
-				menuItem[i].setState(false);
-			}
+			} 
 		}
+	} else {
+		for (int i = 0; i < nrOfMenuItems; i++)
+			menuItem[i].setState(false);
 	}
 }
