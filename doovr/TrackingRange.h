@@ -1,12 +1,9 @@
 #pragma once
 #include "Entity.h"
 
-class TrackingRange :
-	public Entity
-{
-public:
-	TrackingRange()
-	{
+class TrackingRange : public Entity {
+  public:
+	TrackingRange() {
 		vao = 0;
 		vertexbuffer = 0;
 		indexbuffer = 0;
@@ -16,6 +13,7 @@ public:
 		nquads = 0;
 	};
 
+	//! renders a "open box" containing left, right, back and bottom walls
 	TrackingRange(float x, float y, float z, float dX, float dY, float dZ);
 	~TrackingRange(void);
 
@@ -23,7 +21,7 @@ public:
 
 	void render();
 
-private:
+  private:
 	GLuint vao;          // Vertex array object, the main handle for geometry
 	int nverts; // Number of vertices in the vertex array
 	int nquads;  // Number of triangles in the index array (may be zero)

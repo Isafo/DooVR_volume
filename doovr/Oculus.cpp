@@ -390,7 +390,7 @@ int Oculus::runOvr() {
 	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70);
 	TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	
-	MenuItem title(0.0f, 0.5f, -0.75f, 0.5f, 0.5f);
+	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
 
 	for (int i = -nrOfMenuItems/2; i < nrOfMenuItems / 2; i++) {
 		menuItem[i + nrOfMenuItems/2] = MenuItem(0.2f, -0.26f, -0.25f + i * 0.055f, 0.05f, 0.05);
