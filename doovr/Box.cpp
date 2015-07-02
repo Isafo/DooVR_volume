@@ -52,7 +52,7 @@ void Box::createBox(float xSize, float ySize, float zSize) {
 	static const GLuint index_array_data[] = {
 		0, 1, 2, 3,			// Front
 		7, 6, 5, 4,			// Back
-		8, 9, 13, 12,		// Bottom 
+		12, 13, 9, 8,		// Bottom 
 		10, 14, 15, 11,		// Top
 		17, 21, 22, 18,		// Right
 		16, 19, 23, 20		// Left
