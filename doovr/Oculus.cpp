@@ -12,6 +12,7 @@
 #include "Texture.h"
 #include "Wand.h"
 #include "Passive3D.h"
+#include "TrackingRange.h"
 
 using namespace std;
 
@@ -387,7 +388,7 @@ int Oculus::runOvr() {
 	
 	// DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
 	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70);
-	Box trackingGrid(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
+	TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	
 	MenuItem title(0.0f, 0.5f, -0.75f, 0.5f, 0.5f);
 
@@ -684,12 +685,13 @@ int Oculus::runOvr() {
 
 					glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
 					//TRACKINGRANGE
+
 					MVstack.push();
-						MVstack.translate(trackingGrid.getPosition());
+						MVstack.translate(trackingRange.getPosition());
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 						glLineWidth(2.0f);
-						trackingGrid.render();
+						trackingRange.render();
 						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					MVstack.pop();
 
@@ -851,7 +853,7 @@ void GLRenderCallsOculus(){
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glFrontFace(GL_CCW);
-	glEnable(GL_POLYGON_STIPPLE);
+	//glEnable(GL_POLYGON_STIPPLE);
 
     if (L_MULTISAMPLING) {
         glEnable(GL_MULTISAMPLE);
@@ -860,7 +862,7 @@ void GLRenderCallsOculus(){
     }
 }
 
-//! checks if a menu item is choosen and activates or executes the function
+//! checks if a menu item is choosen and sets the appropriate state 
 bool handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state) {
 
 	bool change = false;
@@ -881,6 +883,8 @@ bool handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 					change = true;
 				} else if (state[i] == 1) {
 					state[i] = 2;				// set to active
+					change = true;
+				} else if ( i <= 3 ) { // functions that should run when held in
 					change = true;
 				}
 			} 
