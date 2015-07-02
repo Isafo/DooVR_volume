@@ -74,10 +74,9 @@ int Oculus::runOvr() {
 	 *
 	 * state[0] is the modelling state
 	 * state[1] is the moveMesh state
-	 * state[2] is the changeToolSize state
  	 */
-	int state[4] = { 0 };
-	state[0] = 1;
+	const int nrOfStates = 2;
+	int state[nrOfStates] = { 0 };
 
 	// Lightposition 
 	float lPos[4] = { 2.0f, 2.0f, 2.0f, 1.0f};
@@ -457,13 +456,13 @@ int Oculus::runOvr() {
 			if (state[0] == 0) {
 				state[0] = 1;
 				activeStates.push_back(0);
-			}
-			else if (state[0] == 1)
+			} else if (state[0] == 1) {
 				state[0] = 2;
+			}
 		} else {
-			if (state[0] == 3)
+			if (state[0] == 3) {
 				state[0] = 0;
-			else if (state[0] != 0) {
+			} else if (state[0] != 0) {
 				state[0] = 3;
 				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 0), activeStates.end());
 			}
@@ -483,24 +482,6 @@ int Oculus::runOvr() {
 			} else if (state[1] != 0) {
 				state[1] = 3;
 				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 1), activeStates.end());
-			}
-		}
-
-		// changeToolSize state
-		if (glfwGetKey(l_Window, GLFW_KEY_LEFT_SHIFT)) {
-			if (state[2] == 0) {
-				state[2] = 1;
-				activeStates.push_back(2);
-			} else if (state[3] == 1) {
-				state[2] = 2;
-			}
-		}
-		else {
-			if (state[2] == 3) {
-				state[2] = 0;
-			} else if (state[2] != 0) {
-				state[2] = 3;
-				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 2), activeStates.end());
 			}
 		}
 
@@ -592,11 +573,6 @@ int Oculus::runOvr() {
 					pmat4[2] += moveVec[2];
 
 					mTest->setPosition(pmat4);
-					break;
-				  }
-				  case 2: {
-					//wandRadius += 0.01f;
-					//wandRadius -= 0.01f;
 					break;
 				  }
 				  default: {
