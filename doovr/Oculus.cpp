@@ -386,14 +386,14 @@ int Oculus::runOvr() {
 	MVstack.init();
 	
 	// DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
-	Box board(0.0f, -0.27f, -0.25f, 0.50, 0.01, 0.50);
+	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70);
 	Box trackingGrid(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	
-	for (int i = -nrOfMenuItems/2; i < nrOfMenuItems / 2; i++) {
-		menuItem[i + nrOfMenuItems/2] = MenuItem(0.2f, -0.245f, -0.25f + i * 0.055f, 0.05f, 0.05);
-	}
+	MenuItem title(0.0f, 0.5f, -0.75f, 0.5f, 0.5f);
 
-	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
+	for (int i = -nrOfMenuItems/2; i < nrOfMenuItems / 2; i++) {
+		menuItem[i + nrOfMenuItems/2] = MenuItem(0.2f, -0.26f, -0.25f + i * 0.055f, 0.05f, 0.05);
+	}
 
 	// Wand = Box + sphere
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
@@ -411,7 +411,7 @@ int Oculus::runOvr() {
 	Texture dnp("../Textures/push.DDS");
 	
 	// Scene textures
-	Texture groundTex("../Textures/floor3.DDS");
+	Texture groundTex("../Textures/stone.DDS");
 	Texture coregister("../Textures/coregister3.DDS");
 	Texture hexTex("../Textures/panel3.DDS");
 	Texture menuInfoTex("../Textures/info.DDS");
@@ -421,6 +421,7 @@ int Oculus::runOvr() {
 	Texture menuResetTex("../Textures/reset.DDS");
 	Texture menuSaveTex("../Textures/save.DDS");
 	Texture menuWireTex("../Textures/wireframe.DDS");
+	Texture titleTex("../Textures/Title.DDS");
 
 	GLuint currentTexID = move.getTextureID();
 
@@ -530,9 +531,8 @@ int Oculus::runOvr() {
 						// wireframe
 						if (menuState[i] == 1){
 							lines = true;
-						}
-						else if (menuState[i] == 3){
-							lines = true;
+						} else if (menuState[i] == 3){
+							lines = false;
 						}
 						break;
 					  }
@@ -667,7 +667,6 @@ int Oculus::runOvr() {
 					glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());
 
 					//RENDER DIFFERENT HEXBOXES---------------------------------------------------------------------
-					refBox.render();
 					glUniform4fv(locationLP, 1, LP);
 					MVstack.push();
 						MVstack.translate(board.getPosition());
@@ -686,6 +685,18 @@ int Oculus::runOvr() {
 						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					MVstack.pop();
 
+					// TITLE
+					glUseProgram(menuShader.programID);
+					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+					MVstack.push();
+						MVstack.translate(title.getPosition());
+						MVstack.rotX(1.57079f);
+						glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						title.render();
+					MVstack.pop();
+
 					//  MENU ITEMS -----------------------------------------------------------------------------------------------------
 					// info
 					for (int i = 0; i < nrOfMenuItems; i++) {
@@ -693,8 +704,7 @@ int Oculus::runOvr() {
 						if (menuItem[i].getState()) {
 							glUseProgram(bloomShader.programID);
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-						}
-						else {
+						} else {
 							glUseProgram(menuShader.programID);
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 						}
@@ -722,100 +732,7 @@ int Oculus::runOvr() {
 
 
 
-					/*MVstack.push();
-						if (menuItem[0].getState()) {
-							glBindTexture(GL_TEXTURE_2D, menuInfoTex.getTextureID());
-						} else {
-							glBindTexture(GL_TEXTURE_2D, menuInfoTex.getTextureID());
-						}
-
-						MVstack.translate(menuItem[0].getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						menuItem[0].render();
-					MVstack.pop();
-
-					// save
-					MVstack.push();
-						if (menuItem[1].getState()) {
-							glBindTexture(GL_TEXTURE_2D, menuInfoTex.getTextureID());
-						}
-						else {
-							glBindTexture(GL_TEXTURE_2D, menuInfoTex.getTextureID());
-						}
-
-						MVstack.translate(menuItem[1].getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						menuItem[1].render();
-					MVstack.pop();
-
-					// load
-					MVstack.push();
-						if (menuItem[i].getState()) {
-							glBindTexture(GL_TEXTURE_2D, menuLoadTex.getTextureID()); // use program
-						}
-						else {
-							glBindTexture(GL_TEXTURE_2D, menuLoadTex.getTextureID());
-						}
-
-						MVstack.translate(menuItem[i].getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						menuItem[i].render();
-					MVstack.pop();
-
-					// reset mesh
-					MVstack.push();
-						if (menuItem[i].getState()) {
-							glBindTexture(GL_TEXTURE_2D, menuResetTex.getTextureID()); // use program
-						}
-						else {
-							glBindTexture(GL_TEXTURE_2D, menuResetTex.getTextureID());
-						}
-
-						MVstack.translate(menuItem[i].getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						menuItem[i].render();
-					MVstack.pop();
-
-					// wire frame
-					MVstack.push();
-						if (menuItem[i].getState()) {
-							glBindTexture(GL_TEXTURE_2D, menuWireTex.getTextureID()); // use program
-						}
-						else {
-							glBindTexture(GL_TEXTURE_2D, menuWireTex.getTextureID());
-						}
-
-						MVstack.translate(menuItem[i].getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						menuItem[i].render();
-					MVstack.pop();
-
-					// plus
-					MVstack.push();
-						if (menuItem[i].getState()) {
-							glBindTexture(GL_TEXTURE_2D, menuPlusTex.getTextureID()); // use program
-						}
-						else {
-							glBindTexture(GL_TEXTURE_2D, menuPlusTex.getTextureID());
-						}
-
-						MVstack.translate(menuItem[i].getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						menuItem[i].render();
-					MVstack.pop();
-
-					MVstack.push();
-						if (menuItem[i].getState()) {
-							glBindTexture(GL_TEXTURE_2D, menuMinusTex.getTextureID()); // use program
-						}
-						else {
-							glBindTexture(GL_TEXTURE_2D, menuMinusTex.getTextureID());
-						}
-
-						MVstack.translate(menuItem[i].getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						menuItem[i].render();
-					MVstack.pop();*/
+				
 
 					glBindTexture(GL_TEXTURE_2D, 0);
 					//RENDER MESH -----------------------------------------------------------------------
@@ -942,13 +859,13 @@ bool handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 
 	// check if the wandPosition is in the same Y and X position as the menuItem row
 	if (wandPosition[1] < menuItem[0].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[0].getPosition()[1] - 0.01f
-		&& wandPosition[0] > menuItem[0].getPosition()[0] - menuItem[0].getDim()[0]
-		&& wandPosition[0] < menuItem[0].getPosition()[0] + menuItem[0].getDim()[0]) {
+		&& wandPosition[0] > menuItem[0].getPosition()[0] - menuItem[0].getDim()[0] / 2.f
+		&& wandPosition[0] < menuItem[0].getPosition()[0] + menuItem[0].getDim()[0] / 2.f) {
 
 		for (int i = 0; i < nrOfMenuItems; i++) {
 			// check what menuitem is pressed
-			if (wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] 
-				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1]) {
+			if (wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] / 2.f
+				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1] / 2.f) {
 				menuItem[i].setState(true);
 
 				if (state[i] == 0) {
