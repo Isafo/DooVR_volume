@@ -92,21 +92,21 @@ Mesh::Mesh(float rad) {
 	vertexArray[6].x = 0.0f;	vertexArray[6].y = 0.0f;	vertexArray[6].z = MAX_LENGTH / 2.0f; /*normal*/	vertexArray[6].nx = 0.0f;	vertexArray[6].ny = 0.0f;	vertexArray[6].nz = MAX_LENGTH / 2.0f;
 
 	// bind triangles
-	indexArray[1].index[0] = 0;	indexArray[1].index[1] = 3; indexArray[1].index[2] = 5;
+	indexArray[1].index[0] = 1;	indexArray[1].index[1] = 4; indexArray[1].index[2] = 6;
 
-	indexArray[2].index[0] = 0;	indexArray[2].index[1] = 5; indexArray[2].index[2] = 2;
+	indexArray[2].index[0] = 1;	indexArray[2].index[1] = 6; indexArray[2].index[2] = 3;
 
-	indexArray[3].index[0] = 0;	indexArray[3].index[1] = 2;	indexArray[3].index[2] = 4;
+	indexArray[3].index[0] = 1;	indexArray[3].index[1] = 3;	indexArray[3].index[2] = 5;
 
-	indexArray[4].index[0] = 0;	indexArray[4].index[1] = 4;	indexArray[4].index[2] = 3;
+	indexArray[4].index[0] = 1;	indexArray[4].index[1] = 5;	indexArray[4].index[2] = 4;
 
-	indexArray[5].index[0] = 1;	indexArray[5].index[1] = 5;	indexArray[5].index[2] = 3;
+	indexArray[5].index[0] = 2;	indexArray[5].index[1] = 6;	indexArray[5].index[2] = 4;
 
-	indexArray[6].index[0] = 1;	indexArray[6].index[1] = 2;	indexArray[6].index[2] = 5;
+	indexArray[6].index[0] = 2;	indexArray[6].index[1] = 3;	indexArray[6].index[2] = 6;
 
-	indexArray[7].index[0] = 1;	indexArray[7].index[1] = 4; indexArray[7].index[2] = 2;
+	indexArray[7].index[0] = 2;	indexArray[7].index[1] = 5; indexArray[7].index[2] = 3;
 
-	indexArray[8].index[0] = 1; indexArray[8].index[1] = 3; indexArray[8].index[2] = 4;
+	indexArray[8].index[0] = 2; indexArray[8].index[1] = 4; indexArray[8].index[2] = 5;
 	
 	// Bind halfEdges
 	//TOP///////////////////////
@@ -147,7 +147,7 @@ Mesh::Mesh(float rad) {
 	//vertexEPtr[5] = triEPtr[1];
 
 	//third tri----------------
-	edgeArray[7].vertex = 1; edgeArray[7].triangle = 2;
+	edgeArray[7].vertex = 1; edgeArray[7].triangle = 3;
 	triEPtr[3] = 7;
 
 	edgeArray[7].nextEdge = 8; edgeArray[8].vertex = 3; edgeArray[8].triangle = 3;
@@ -255,8 +255,6 @@ Mesh::Mesh(float rad) {
 	//triEPtr[7]->nextEdge->nextEdge = new halfEdge; triEPtr[7]->nextEdge->nextEdge->vertex = 4; triEPtr[7]->nextEdge->nextEdge->triangle = 7;
 	//triEPtr[7]->nextEdge->nextEdge->nextEdge = triEPtr[7];
 
-	vertexEPtr[3] = triEPtr[7];
-
 	//TOP SIBLINGS
 	edgeArray[triEPtr[1]].sibling = edgeArray[edgeArray[triEPtr[4]].nextEdge].nextEdge;
 	edgeArray[edgeArray[edgeArray[triEPtr[4]].nextEdge].nextEdge].sibling = triEPtr[1];
@@ -359,7 +357,7 @@ Mesh::Mesh(float rad) {
 	vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex) *1000000,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 0; i <1000000; i++) {
+	for (int i = 1; i < 1000000; i++) {
 		vertexP[i].x = vertexArray[i].x;
 		vertexP[i].y = vertexArray[i].y;
 		vertexP[i].z = vertexArray[i].z;
@@ -393,7 +391,7 @@ Mesh::Mesh(float rad) {
 	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * 2000000,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 0; i < 2000000; i++) {
+	for (int i = 1; i < 2000000; i++) {
 		indexP[i].index[0] = indexArray[i].index[0];
 		indexP[i].index[1] = indexArray[i].index[1];
 		indexP[i].index[2] = indexArray[i].index[2];
@@ -531,7 +529,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 		vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*nrofVerts,
 			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-		for (int i = 0; i < nrofVerts; i++) {
+		for (int i = 1; i <= nrofVerts; i++) {
 			vertexP[i].x = vertexArray[i].x;
 			vertexP[i].y = vertexArray[i].y;
 			vertexP[i].z = vertexArray[i].z;
@@ -572,7 +570,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * nrofTris,
 			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-		for (int i = 0; i < nrofTris; i++) {
+		for (int i = 1; i <= nrofTris; i++) {
 			indexP[i].index[0] = indexArray[i].index[0];
 			indexP[i].index[1] = indexArray[i].index[1];
 			indexP[i].index[2] = indexArray[i].index[2];
@@ -644,13 +642,13 @@ void Mesh::updateArea(int* changeList, int listSize) {
 				vPoint2[2] = vertexArray[vert1].z;
 				 
 				linAlg::calculateVec(tempVec1, vPoint2, vPoint1);
-				edgeLength = linAlg::vecLength(tempVec1);
+                edgeLength = linAlg::vecLength(tempVec1);
 
 				// check if edge is to long/short
 				if (edgeLength < MIN_LENGTH) {
 					//tempE = tempEdge
-					edgeCollapse(false, tempEdge);
-					tempEdge = edgeArray[edgeArray[edgeArray[tempEdge].sibling].nextEdge].nextEdge;
+					//edgeCollapse(false, tempEdge);
+					//tempEdge = edgeArray[edgeArray[edgeArray[tempEdge].sibling].nextEdge].nextEdge;
 					//edge already incremented, something needs to be done.
 				} else if (edgeLength > MAX_LENGTH) {
 					edgeSplit(vPoint1, tempVec1, tempEdge);
@@ -700,7 +698,7 @@ void Mesh::updateArea(int* changeList, int listSize) {
 
 		 linAlg::normVec(tempNorm2);
 
-		 vertexArray[changeList[i]].nx = tempNorm2[0];
+                            		 vertexArray[changeList[i]].nx = tempNorm2[0];
 		 vertexArray[changeList[i]].ny = tempNorm2[1];
 		 vertexArray[changeList[i]].nz = tempNorm2[2];
 	}
@@ -717,9 +715,6 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	static float tempVec1[3], tempVec2[3];
 
 	//TODO: FLIP EDGE, NOT HANDLED PROPERLY BUT SHOULD BE////////////////////////////////////
-	
-	int tempE2;
-	
 	
 	vert1 = edgeArray[edgeArray[edgeArray[edge].nextEdge].nextEdge].vertex;
 	vert2 = edgeArray[edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].nextEdge].vertex;
@@ -898,8 +893,13 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	/*nextedge*/tempE = edgeArray[tempE].nextEdge = edgeArray[0].nextEdge;
 	edgeArray[0].nextEdge = edgeArray[tempE].nextEdge;
 
-
-
+	edgeArray[tempE].vertex = edgeArray[edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].nextEdge].vertex;
+	edgeArray[tempE].triangle = tempT2;
+	edgeArray[tempE].sibling = edgeArray[edgeArray[edge].sibling].nextEdge;
+	//rebind sibling of old triangle
+	edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].sibling = tempE;
+	edgeArray[tempE].nextEdge = tempE2;
+	/*
 	triEPtr.push_back(new halfEdge);
 	vert1 = triEPtr.size() - 1;
 
@@ -918,31 +918,32 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	edge->sibling->nextEdge->sibling->sibling = triEPtr[vert1]->nextEdge;
 	triEPtr[vert1]->nextEdge->nextEdge = new halfEdge;
 
-	//HÄR ÄR DU OLLE
-
 	triEPtr[vert1]->nextEdge->nextEdge->vertex = edge->sibling->nextEdge->nextEdge->vertex;
 	triEPtr[vert1]->nextEdge->nextEdge->triangle = vert1;
 	triEPtr[vert1]->nextEdge->nextEdge->sibling = edge->sibling->nextEdge; // =======
 	//rebind sibling of old triangle
 	edge->sibling->nextEdge->sibling = triEPtr[vert1]->nextEdge->nextEdge;
 	triEPtr[vert1]->nextEdge->nextEdge->nextEdge = triEPtr[vert1];
-
+	*/
 
 	// rebind old edge vertex
-	vertexEPtr[edge->vertex] = triEPtr[vert1];
+	vertexEPtr[edgeArray[edge].vertex] = tempE2;
+	//	vertexEPtr[edge->vertex] = triEPtr[vert1];
 
-	edge->vertex = vertexArray.size() - 1;
-	edge->sibling->nextEdge->vertex = vertexArray.size() - 1;
+	edgeArray[edge].vertex = tempV;
+	edgeArray[edgeArray[edgeArray[edge].sibling].nextEdge].vertex = tempV;
+	//	edge->vertex = vertexArray.size() - 1;
+	//edge->sibling->nextEdge->vertex = vertexArray.size() - 1;
 
 	// Update normal /////////////////////////////////////////////////////////////////////////////
-	tempE = vertexEPtr[vertexEPtr.size() - 1];
-	temp[0] = vertexArray[tempE->sibling->vertex].x;
-	temp[1] = vertexArray[tempE->sibling->vertex].y;
-	temp[2] = vertexArray[tempE->sibling->vertex].z;
+	tempE = vertexEPtr[tempV];
+	temp[0] = vertexArray[edgeArray[edgeArray[tempE].sibling].vertex].x;
+	temp[1] = vertexArray[edgeArray[edgeArray[tempE].sibling].vertex].y;
+	temp[2] = vertexArray[edgeArray[edgeArray[tempE].sibling].vertex].z;
 	// loop through the edges
 	do {
-		vert1 = tempE->vertex;
-		vert2 = tempE->nextEdge->nextEdge->vertex;
+		vert1 = edgeArray[tempE].vertex;
+		vert2 = edgeArray[edgeArray[edgeArray[tempE].nextEdge].nextEdge].vertex;
 
 		temp2[0] = vertexArray[vert1].x;
 		temp2[1] = vertexArray[vert1].y;
@@ -964,8 +965,8 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 		tempNorm2[2] += tempNorm1[2];
 
 
-		tempE = tempE->nextEdge->sibling;
-	} while (tempE != vertexEPtr[vertexEPtr.size() - 1]);
+		tempE = edgeArray[edgeArray[tempE].nextEdge].sibling;
+	} while (tempE != vertexEPtr[tempV]);
 
 	static float vecLenght = linAlg::vecLength(tempNorm2);
 
@@ -974,15 +975,16 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	tempNorm2[2] = tempNorm2[2] / vecLenght;
 
 	linAlg::normVec(tempNorm2);
-	vertexArray[vertexEPtr.size() - 1].nx = tempNorm2[0];
-	vertexArray[vertexEPtr.size() - 1].ny = tempNorm2[1];
-	vertexArray[vertexEPtr.size() - 1].nz = tempNorm2[2];
+	vertexArray[tempV].nx = tempNorm2[0];
+	vertexArray[tempV].ny = tempNorm2[1];
+	vertexArray[tempV].nz = tempNorm2[2];
 
 	}
 
-
+	nrofVerts++;
+	nrofTris = nrofTris + 2;
 }
-
+/*
 void Mesh::edgeCollapse(bool recursive, halfEdge* &edge) {
 
 	halfEdge* tempE;
@@ -1084,3 +1086,4 @@ void Mesh::edgeCollapse(bool recursive, halfEdge* &edge) {
 	if (!recursive)
 		edge = tempE;
 }
+*/

@@ -81,8 +81,8 @@ class Mesh {
 	triangle indexArray[2000000];
 	vertex vertexArray[1000000];
 
-	int vertexEPtr[1000000] = { 0 };
-	int triEPtr[2000000] = { 0 };
+	int vertexEPtr[1000000];
+	int triEPtr[2000000];
 
 	int nrofVerts;
 	int nrofTris;

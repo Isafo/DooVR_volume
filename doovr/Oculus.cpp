@@ -625,8 +625,8 @@ int Oculus::runOvr() {
 						glUniform4fv(locationMeshLP, 1, LP);
 						glUniform4fv(locationMeshLP2, 1, lPosTemp);
 
-						//if (lines) {
-						if (true) {
+						if (lines) {
+						//if (true) {
 							glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 							mTest->render();
 							glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
