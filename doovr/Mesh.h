@@ -58,7 +58,7 @@ class Mesh {
 	//! removes the vertexpoint nVert and moves currVert halfway towards nVert.
 	/*! vPoint is the position of currVert, vec is the vector between the vertecies that are to close to each other,
 	and edge is a pointer to the edge that is to short*/
-	void edgeCollapse(bool recursive, int  &edge);
+	void edgeCollapse(bool recursive, int &edge);
 
 	//! subdivides the surface into a sphere
 	void edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad);
@@ -77,7 +77,8 @@ class Mesh {
 	//vector<GLfloat> vertexArray; // Vertex array on interleaved format: x y z nx ny nz s t
 	//vector<GLuint> indexArray;   // Element index array
 
-	halfEdge edgeArray[3000000];
+	//edgeArray the array that stores all edges of the mesh
+	halfEdge e[3000000];
 	triangle indexArray[2000000];
 	vertex vertexArray[1000000];
 
