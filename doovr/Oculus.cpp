@@ -18,8 +18,8 @@ using namespace std;
 // ------- Function declerations --------
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
 static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
-//! checks if the wand is colliding with a menuItem and sets the menuItems state accordingly
-void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems);
+//! checks if the wand is colliding with a menuItem and sets the menuItems state accordingly, returns true if a menuItem choise has occured
+bool handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state);
 void GLRenderCallsOculus();
 
 // --- Variable Declerations ------------
@@ -117,9 +117,32 @@ int Oculus::runOvr() {
 	bool buttonReleased = false;
 	bool lines = false;
 
-	const int nrOfMenuItems = 4;
+	const int nrOfMenuItems = 6;
+	/*!
+		[0] save
+		[1] load
+		[2] reset
+		[3] Wireframe
+		[4] increase wand size
+		[5] decrease wand size
+	*/
 	MenuItem menuItem[nrOfMenuItems];
 	
+	/*!
+	0 indicates that the state is not active,
+	1 indicates that the state has just been activated
+	2 indicates that the state is active
+	3 indicates that the state has just been deactivated
+
+	[0] save
+	[1] load
+	[2] reset
+	[3] Wireframe
+	[4] increase wand size
+	[5] decrease wand size
+	*/
+	static int menuState[nrOfMenuItems];
+
 
 	// Location used for UNIFORMS in shader
 	GLint locationLP;
@@ -367,7 +390,7 @@ int Oculus::runOvr() {
 	Box trackingGrid(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	
 	for (int i = -nrOfMenuItems/2; i < nrOfMenuItems / 2; i++) {
-		menuItem[i + nrOfMenuItems/2] = MenuItem(0.2f, -0.245f, -0.25f + i * 0.08f, 0.07f, 0.07);
+		menuItem[i + nrOfMenuItems/2] = MenuItem(0.2f, -0.245f, -0.25f + i * 0.055f, 0.05f, 0.05);
 	}
 
 	hexBox refBox(0.0f, -eyeHeight + 1.5f, -2.0f, 0, 0);
@@ -480,7 +503,54 @@ int Oculus::runOvr() {
 
 		// Switch to execute active states, checks menu choices if none are active
 		if (activeStates.empty()) {
-			handleMenu(wand->getWandPosition(), menuItem, nrOfMenuItems);
+			if (handleMenu(wand->getWandPosition(), menuItem, nrOfMenuItems, menuState)) {
+				for (int i = 0; i < nrOfMenuItems; i++) {
+					switch (i) {
+					  case 0: {
+						if (menuState[i] == 1) {
+							// save file
+						}
+						break;
+					  }
+					  case 1: {
+						if (menuState[i] == 1) {
+							// loadfile
+						}
+						break;
+					  }
+					  case 2: {
+						if (menuState[i] == 1){
+							// reset mesh
+							delete mTest; // Reset mesh
+							mTest = new Mesh(0.3f);
+						}
+						break;
+					  }
+					  case 3: {
+						// wireframe
+						if (menuState[i] == 1){
+							lines = true;
+						}
+						else if (menuState[i] == 3){
+							lines = true;
+						}
+						break;
+					  }
+					  case 4: {
+						if (menuState[i] == 2 || menuState[i] == 1) {
+							wandRadius += 0.001f;
+						}
+						break;
+					  }
+					  case 5: {
+						if (menuState[i] == 2 || menuState[i] == 1) {
+							wandRadius -= 0.001f;
+						}
+						break;
+					  }
+					}
+				}
+			}
 		} else {
 			for (int i = 0; i < activeStates.size(); i++) {
 				switch (activeStates[i]) {
@@ -539,22 +609,7 @@ int Oculus::runOvr() {
 		if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose(l_Window, GL_TRUE);
 		}
-		if (glfwGetKey(l_Window, GLFW_KEY_Q)) {
-			wandRadius += 0.001f;
-		}
-		if (glfwGetKey(l_Window, GLFW_KEY_W)) {
-			wandRadius -= 0.001f;
-		}
-		if (glfwGetKey(l_Window, GLFW_KEY_R)) {
-			delete mTest; // Reset mesh
-			mTest = new Mesh(0.3f);
-		}
-		// Activate wireframe (hold L)
-		if (glfwGetKey(l_Window, GLFW_KEY_L) == GLFW_PRESS && !lines) {
-			lines = true;
-		} else if (glfwGetKey(l_Window, GLFW_KEY_L) == GLFW_RELEASE && lines){
-			lines = false;
-		}
+
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
 		lastPos = wand->getWandPosition();
 
@@ -652,8 +707,12 @@ int Oculus::runOvr() {
 								glBindTexture(GL_TEXTURE_2D, menuLoadTex.getTextureID());
 							else if (i == 2)
 								glBindTexture(GL_TEXTURE_2D, menuResetTex.getTextureID());
-							else
+							else if (i == 3)
 								glBindTexture(GL_TEXTURE_2D, menuWireTex.getTextureID());
+							else if (i == 4)
+								glBindTexture(GL_TEXTURE_2D, menuPlusTex.getTextureID());
+							else
+								glBindTexture(GL_TEXTURE_2D, menuMinusTex.getTextureID());
 
 							MVstack.translate(menuItem[i].getPosition());
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -877,7 +936,9 @@ void GLRenderCallsOculus(){
 }
 
 //! checks if a menu item is choosen and activates or executes the function
-void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems) {
+bool handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state) {
+
+	bool change = false;
 
 	// check if the wandPosition is in the same Y and X position as the menuItem row
 	if (wandPosition[1] < menuItem[0].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[0].getPosition()[1] - 0.01f
@@ -889,10 +950,29 @@ void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 			if (wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] 
 				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1]) {
 				menuItem[i].setState(true);
+
+				if (state[i] == 0) {
+					state[i] = 1;				// set to just pressed
+					change = true;
+				} else if (state[i] == 1) {
+					state[i] = 2;				// set to active
+					change = true;
+				}
 			} 
 		}
 	} else {
-		for (int i = 0; i < nrOfMenuItems; i++)
+		for (int i = 0; i < nrOfMenuItems; i++){
 			menuItem[i].setState(false);
+			if (state[i] == 2 || state[i] == 1) {
+				state[i] = 3;				// set to just released
+				change = true;
+			}
+			else if (state[i] == 3) {
+				state[i] = 0;				// set to deactivated
+				change = true;
+			}
+		}
 	}
+
+	return change;
 }
