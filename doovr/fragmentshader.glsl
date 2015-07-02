@@ -15,6 +15,7 @@ void main () {
 	//(coord.u, 1.0-coord.v) to fetch the correct texel.
 	vec2 invUV = vec2(UV.x, 1.0-UV.y);
 	vec3 texcolor = texture( tex, invUV ).rgb;
+	float texAlpha = texture( tex, invUV ).a;
 
 	//Diffuse part-----------
 	vec3 normal  = normalize( Normal );							
@@ -34,6 +35,6 @@ void main () {
 	vec3 ambient = 0.3 * texcolor * lightIntensity;
 	
 	vec3 resultLight = ambient + diffuse; //+ specular;
-	FragColor = vec4(resultLight, 1.0f);
+	FragColor = vec4(resultLight, texAlpha);
 }
 
