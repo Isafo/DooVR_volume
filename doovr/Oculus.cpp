@@ -411,6 +411,7 @@ int Oculus::runOvr() {
 	Texture dnp("../Textures/push.DDS");
 	
 	// Scene textures
+	Texture whiteTex("../Textures/light.DDS");
 	Texture groundTex("../Textures/stone.DDS");
 	Texture coregister("../Textures/coregister3.DDS");
 	Texture hexTex("../Textures/panel3.DDS");
@@ -609,6 +610,12 @@ int Oculus::runOvr() {
 		if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose(l_Window, GL_TRUE);
 		}
+		if (glfwGetKey(l_Window, GLFW_KEY_Q)) {
+			wandRadius += 0.001f;
+		}
+		if (glfwGetKey(l_Window, GLFW_KEY_W)) {
+			wandRadius -= 0.001f;
+		}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
 		lastPos = wand->getWandPosition();
@@ -675,6 +682,7 @@ int Oculus::runOvr() {
 						board.render();
 					MVstack.pop();
 
+					glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
 					//TRACKINGRANGE
 					MVstack.push();
 						MVstack.translate(trackingGrid.getPosition());
