@@ -63,10 +63,6 @@ class Mesh {
 	//! subdivides the surface into a sphere
 	void edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad);
 
-	const int ROWS = 100;
-	const int COLS = 100;
-
-
 	const float MAX_LENGTH = 0.025f;// *0.2f; // 0.08f*0.1f;
 	const float MIN_LENGTH = 0.0124f;// *0.2f;
 
