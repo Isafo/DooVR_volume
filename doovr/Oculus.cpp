@@ -862,9 +862,9 @@ void GLRenderCallsOculus(){
 void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state) {
 
 	// check if the wandPosition is in the same Y and X position as the menuItem row
-	if (wandPosition[1] < menuItem[0].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[0].getPosition()[1] - 0.01f
-		&& wandPosition[0] > menuItem[0].getPosition()[0] - menuItem[0].getDim()[0] / 2.f
-		&& wandPosition[0] < menuItem[0].getPosition()[0] + menuItem[0].getDim()[0] / 2.f) {
+	if (wandPosition[1] < menuItem[1].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[1].getPosition()[1] - 0.01f
+		&& wandPosition[0] > menuItem[1].getPosition()[0] - menuItem[1].getDim()[0] / 2.f
+		&& wandPosition[0] < menuItem[1].getPosition()[0] + menuItem[1].getDim()[0] / 2.f) {
 
 		for (int i = 0; i < nrOfMenuItems; i++) {
 			// check what menuitem is pressed
@@ -892,6 +892,29 @@ void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 					state[i] = 0;				// deactivate on/off function
 				}
 			} 
+		}
+	} else if (wandPosition[1] < menuItem[0].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[0].getPosition()[1] - 0.01f
+		&& wandPosition[0] > menuItem[0].getPosition()[0] - menuItem[0].getDim()[0] / 2.f
+		&& wandPosition[0] < menuItem[0].getPosition()[0] + menuItem[0].getDim()[0] / 2.f
+		&& wandPosition[2] > menuItem[0].getPosition()[2] - menuItem[0].getDim()[1] / 2.f
+		&& wandPosition[2] < menuItem[0].getPosition()[2] + menuItem[0].getDim()[1] / 2.f) {
+		
+		// active on off state?
+		if (state[0] != 5)
+			menuItem[0].setState(true);
+		else {
+			menuItem[0].setState(false);
+		}
+
+		// set state
+		if (state[0] == 0) {
+			state[0] = 1;				// set to just pressed
+		}
+		else if (state[0] == 1) {
+			state[0] = 2;				// set to pressed down
+		}
+		else {
+			state[0] = 0;				// deactivate on/off function
 		}
 	} else {
 		for (int i = 0; i < nrOfMenuItems; i++) {
