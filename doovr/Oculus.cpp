@@ -391,12 +391,12 @@ int Oculus::runOvr() {
 	TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
-	MenuItem wandSizePanel(0.2f, -0.24f, -0.13f, 0.10f, 0.03f);
+	MenuItem wandSizePanel(0.2f, -0.25f, -0.12f, 0.10f, 0.03f);
 
-	menuItem[0] = MenuItem(-0.2f, -0.26f, -0.2f, 0.05f, 0.05); // place reset menuItem on the other side
+	menuItem[0] = MenuItem(-0.2f, -0.26f, -0.2f, 0.08f, 0.08); // place reset menuItem on the other side
 
 	for (int i = -(nrOfMenuItems - 1) / 2 + 1; i <= (nrOfMenuItems - 1) / 2; i++) {
-		menuItem[i + (nrOfMenuItems - 1) / 2] = MenuItem(0.2f, -0.26f, -0.20f + i * 0.055f, 0.05f, 0.05);
+		menuItem[i + (nrOfMenuItems - 1) / 2] = MenuItem(0.2f, -0.26f, -0.25f + i * 0.0801f, 0.08f, 0.08);
 	}
 
 	// Wand = Box + sphere
@@ -574,8 +574,8 @@ int Oculus::runOvr() {
 					break;
 				  }
 				  case 2: {
-					  if (wand->getWandPosition()[1] < wandSizePanel.getDim()[1] + 0.03
-						  && wand->getWandPosition()[1] > wandSizePanel.getDim()[1] - 0.03){
+					  if (wand->getWandPosition()[1] < wandSizePanel.getDim()[1] + 0.07
+						  && wand->getWandPosition()[1] > wandSizePanel.getDim()[1] - 0.07){
 						  wandRadius += lastPos[0] - wand->getWandPosition()[0];
 					  }
 					  else {
@@ -725,20 +725,20 @@ int Oculus::runOvr() {
 						MVstack.pop();
 					}
 
-					if (state[2] == 2) {
+					//if (state[2] == 2) {
 						// render change wand size panel
 						glUseProgram(menuShader.programID);
 						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 						MVstack.push();
 							MVstack.translate(wandSizePanel.getPosition());
-							MVstack.rotX(1.57079f);
+							MVstack.rotX(0.70711f);
 
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
 							wandSizePanel.render();
 						MVstack.pop();
-					}
+					//}
 
 					glBindTexture(GL_TEXTURE_2D, 0);
 					//RENDER MESH -----------------------------------------------------------------------
@@ -864,9 +864,9 @@ void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 	// check if the wandPosition is in the same Y and X position as the menuItem row
 	if (wandPosition[1] < menuItem[1].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[1].getPosition()[1] - 0.01f
 		&& wandPosition[0] > menuItem[1].getPosition()[0] - menuItem[1].getDim()[0] / 2.f
-		&& wandPosition[0] < menuItem[1].getPosition()[0] + menuItem[1].getDim()[0] / 2.f) {
+		&& wandPosition[0] < menuItem[1].getPosition()[0] + menuItem[1].getDim()[0] / 2.f) {									// check items on the right side
 
-		for (int i = 0; i < nrOfMenuItems; i++) {
+		for (int i = 1; i < nrOfMenuItems; i++) { // check all items on right side
 			// check what menuitem is pressed
 			if (wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] / 2.f
 				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1] / 2.f) {
@@ -897,7 +897,7 @@ void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 		&& wandPosition[0] > menuItem[0].getPosition()[0] - menuItem[0].getDim()[0] / 2.f
 		&& wandPosition[0] < menuItem[0].getPosition()[0] + menuItem[0].getDim()[0] / 2.f
 		&& wandPosition[2] > menuItem[0].getPosition()[2] - menuItem[0].getDim()[1] / 2.f
-		&& wandPosition[2] < menuItem[0].getPosition()[2] + menuItem[0].getDim()[1] / 2.f) {
+		&& wandPosition[2] < menuItem[0].getPosition()[2] + menuItem[0].getDim()[1] / 2.f) {									// check the item on left side
 		
 		// active on off state?
 		if (state[0] != 5)
@@ -913,16 +913,8 @@ void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 		else if (state[0] == 1) {
 			state[0] = 2;				// set to pressed down
 		}
-		else {
-			state[0] = 0;				// deactivate on/off function
-		}
 	} else {
-		for (int i = 0; i < nrOfMenuItems; i++) {
-			
-			if (state[i] == 4){
-				state[i] = 5;
-			}
-			
+		for (int i = 0; i < nrOfMenuItems; i++) {	
 			menuItem[i].setState(false);
 
 			if (state[i] == 2 || state[i] == 1) {
