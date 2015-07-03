@@ -68,16 +68,15 @@ int Oculus::runOvr() {
 	vector<int> activeStates;
 
 	/*! 0 indicates that the state is not active, 
-	 * 1 indicates that the state has just been activated
-	 * 2 indicates that the state is pressed
-	 * 3 indicates that the state has just been deactivated
-	 * 4 indicates that the state is active (on/off)
-	 *
-	 *
-	 * state[0] is the modelling state
-	 * state[1] is the moveMesh state
+		1 indicates that the state has just been activated
+		2 indicates that the state is active
+		3 indicates that the state has just been deactivated
+	 
+		state[0] is the modelling state
+		state[1] is the moveMesh state
+		state[2] is the changeWandSize state
  	 */
-	const int nrOfStates = 2;
+	const int nrOfStates = 3;
 	int state[nrOfStates] = { 0 };
 
 	// Lightposition 
@@ -119,29 +118,29 @@ int Oculus::runOvr() {
 	bool buttonReleased = false;
 	bool lines = false;
 
-	const int nrOfMenuItems = 6;
+	const int nrOfMenuItems = 5;
 	/*!
-		[0] save
-		[1] load
-		[2] reset
+		[0] resetMesh
+		[1] save
+		[2] load
 		[3] Wireframe
 		[4] increase wand size
-		[5] decrease wand size
 	*/
 	MenuItem menuItem[nrOfMenuItems];
 	
 	/*!
-	0 indicates that the state is not active,
-	1 indicates that the state has just been activated
-	2 indicates that the state is active
-	3 indicates that the state has just been deactivated
+		0 indicates that the state is not active,
+		1 indicates that the state has just been activated
+		2 indicates that the state is active
+		3 indicates that the state has just been deactivated
+		4 indicates that the state is active (on/off)
+		5 indicates that the state has been activated and then the button was released
 
-	[0] save
-	[1] load
-	[2] reset
-	[3] Wireframe
-	[4] increase wand size
-	[5] decrease wand size
+		[0] reset
+		[1] save
+		[2] load
+		[3] Wireframe
+		[4] change wand size
 	*/
 	static int menuState[nrOfMenuItems];
 
@@ -392,9 +391,12 @@ int Oculus::runOvr() {
 	TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
+	MenuItem wandSizePanel(0.2f, -0.24f, -0.06f, 0.10f, 0.03f);
 
-	for (int i = -nrOfMenuItems/2; i < nrOfMenuItems / 2; i++) {
-		menuItem[i + nrOfMenuItems/2] = MenuItem(0.2f, -0.26f, -0.25f + i * 0.055f, 0.05f, 0.05);
+	menuItem[0] = MenuItem(-0.2f, -0.26f, -0.15f, 0.05f, 0.05); // place reset menuItem on the other side
+
+	for (int i = -(nrOfMenuItems - 1) / 2 + 1; i <= (nrOfMenuItems - 1) / 2; i++) {
+		menuItem[i + (nrOfMenuItems - 1) / 2] = MenuItem(0.2f, -0.26f, -0.15f + i * 0.055f, 0.05f, 0.05);
 	}
 
 	// Wand = Box + sphere
@@ -494,27 +496,27 @@ int Oculus::runOvr() {
 				switch (i) {
 					case 0: {
 						if (menuState[i] == 1) {
-							// save file
-						}
-					break;
-					}
-					case 1: {
-						if (menuState[i] == 1) {
-							// loadfile
-						}
-						break;
-					}
-					case 2: {
-						if (menuState[i] == 1){
 							// reset mesh
 							delete mTest; // Reset mesh
 							mTest = new Mesh(0.3f);
 						}
 						break;
 					}
+					case 1: {
+						if (menuState[i] == 1) {
+							// save file
+						}
+					break;
+					}
+					case 2: {
+						if (menuState[i] == 1) {
+							// loadfile
+						}
+						break;
+					}
 					case 3: {
 						// wireframe
-						if (menuState[i] == 4){
+						if (menuState[i] == 1) {
 							lines = true;
 						} else if (menuState[i] == 0){
 							lines = false;
@@ -522,14 +524,9 @@ int Oculus::runOvr() {
 						break;
 					}
 					case 4: {
-						if (menuState[i] == 2 || menuState[i] == 1) {
-							wandRadius += 0.001f;
-						}
-					break;
-					}
-					case 5: {
-						if (menuState[i] == 2 || menuState[i] == 1) {
-							wandRadius -= 0.001f;
+						if (menuState[i] == 1) {
+							state[2] = 2;
+							activeStates.push_back(2);
 						}
 						break;
 					}
@@ -576,6 +573,19 @@ int Oculus::runOvr() {
 					mTest->setPosition(pmat4);
 					break;
 				  }
+				  case 2: {
+					  if (wand->getWandPosition()[1] < wandSizePanel.getDim()[1] + 0.03
+						  && wand->getWandPosition()[1] > wandSizePanel.getDim()[1] - 0.03){
+						  wandRadius += lastPos[0] - wand->getWandPosition()[0];
+					  }
+					  else {
+						  // wand left the change wand size area set to inactive
+						  state[2] = 0;
+						  activeStates.erase(remove(activeStates.begin(), activeStates.end(), 2), activeStates.end());
+						  menuState[4] = 0;
+					  }
+				  }
+
 				  default: {
 					  break;
 				  }
@@ -661,8 +671,8 @@ int Oculus::runOvr() {
 					MVstack.pop();
 
 					glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-					//TRACKINGRANGE
 
+					//TRACKINGRANGE
 					MVstack.push();
 						MVstack.translate(trackingRange.getPosition());
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -699,17 +709,16 @@ int Oculus::runOvr() {
 						MVstack.push();
 
 							if (i == 0)
-								glBindTexture(GL_TEXTURE_2D, menuSaveTex.getTextureID());
-							else if (i == 1)
-								glBindTexture(GL_TEXTURE_2D, menuLoadTex.getTextureID());
-							else if (i == 2)
 								glBindTexture(GL_TEXTURE_2D, menuResetTex.getTextureID());
+							else if (i == 1)
+								glBindTexture(GL_TEXTURE_2D, menuSaveTex.getTextureID());
+							else if (i == 2)
+								glBindTexture(GL_TEXTURE_2D, menuLoadTex.getTextureID());
 							else if (i == 3)
 								glBindTexture(GL_TEXTURE_2D, menuWireTex.getTextureID());
-							else if (i == 4)
-								glBindTexture(GL_TEXTURE_2D, menuPlusTex.getTextureID());
 							else
 								glBindTexture(GL_TEXTURE_2D, menuMinusTex.getTextureID());
+
 
 							MVstack.translate(menuItem[i].getPosition());
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -717,9 +726,20 @@ int Oculus::runOvr() {
 						MVstack.pop();
 					}
 
+					if (state[2] == 1) {
+						// render change wand size panel
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
+						MVstack.push();
+							MVstack.translate(wandSizePanel.getPosition());
+							MVstack.rotX(1.57079f);
 
-				
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+							wandSizePanel.render();
+						MVstack.pop();
+					}
 
 					glBindTexture(GL_TEXTURE_2D, 0);
 					//RENDER MESH -----------------------------------------------------------------------
@@ -853,32 +873,35 @@ void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1] / 2.f) {
 				
 				// active on off state?
-				if (state[i] != 4)
+				if (state[i] != 5)
 					menuItem[i].setState(true);
-				else
+				else {
 					menuItem[i].setState(false);
+				}
 
 				// set state
 				if (state[i] == 0) {
 					state[i] = 1;				// set to just pressed
+				} else if (state[i] == 1) {
+					state[i] = 2;				// set to pressed down
 
-					if (i == 3) {				// state 3 has on/off switch
+					if (i <= 3) {				// state 3 and above on/off switch
 						state[i] = 4;
 					}
 
-				} else if (state[i] == 1) {
-					state[i] = 2;				// set to pressed down
 				} else {
 					state[i] = 0;				// deactivate on/off function
 				}
-
 			} 
 		}
 	} else {
 		for (int i = 0; i < nrOfMenuItems; i++) {
 			
-			if (state[i] != 4)
-				menuItem[i].setState(false);
+			if (state[i] == 4){
+				state[i] = 5;
+			}
+			
+			menuItem[i].setState(false);
 
 			if (state[i] == 2 || state[i] == 1) {
 				state[i] = 3;				// set to just released
