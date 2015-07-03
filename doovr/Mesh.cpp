@@ -643,9 +643,10 @@ void Mesh::updateArea(int* changeList, int listSize) {
 				 
 				linAlg::calculateVec(tempVec1, vPoint2, vPoint1);
                 edgeLength = linAlg::vecLength(tempVec1);
-
+				
 				// check if edge is to long/short
 				if (edgeLength < MIN_LENGTH) {
+					cout << "yo";
 					//tempE = tempEdge
 					edgeCollapse(false, tempEdge);
 					tempEdge = e[e[e[tempEdge].sibling].nextEdge].nextEdge;
@@ -992,7 +993,7 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	int tempE2;
 	static int currVert; 
 	static int nVert;
-   	currVert = e[e[edge].sibling].vertex;
+    currVert = e[e[edge].sibling].vertex;
 	nVert = e[edge].vertex;
 	bool edgeRemoved = false;
 
@@ -1003,7 +1004,7 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	//if (edge = edge->nextEdge->nextEdge->sibling->nextEdge->sibling->nextEdge->sibling->nextEdge->nextEdge)
 	while (edge == e[e[e[e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
 	{
-		tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
+      	tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
 		edgeCollapse(true, e[e[edge].nextEdge].sibling);
 		edge = tempE;
 	}
