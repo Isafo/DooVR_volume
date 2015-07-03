@@ -19,7 +19,7 @@ namespace linAlg {
 	void calculateVec(float* newVec, float* a, float* b);
 	//! normalize vector
 	void normVec(float* vec);
-	// takes the crossproduct between vec1 and vec2 and places the resulting vector in normal
+	//! takes the crossproduct between vec1 and vec2 and places the resulting vector in normal
 	void crossProd(float normal[3], float* vec1, float* vec2);
 	//! Calculates the vector lenght
 	float vecLength(float vec[3]);

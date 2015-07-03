@@ -21,8 +21,8 @@ struct triangle {
 
 //! Data structure halfEdge pointing to the next edge in the triangle counter clockwise.
 struct halfEdge {
-	halfEdge* nextEdge;
-	halfEdge* sibling;
+	int nextEdge;
+	int sibling;
 	int triangle;
 	int vertex;
 	bool needsUpdate = false;
@@ -39,7 +39,6 @@ class Mesh {
 	void test(float bRad, int vNR, bool plus);
 
 	void render();
-
 	vertex* getVertexList();
 	triangle* getIndexList();
 
@@ -55,18 +54,14 @@ class Mesh {
 	void updateArea(int* changeList, int listSize);
 	//! adds a vertex in the middle between the vertexpoints pA and pB.
 	/*! pA is the position of currVert, edge is the edge that is to long*/
-	void edgeSplit(float* vPoint, float* vec, halfEdge* &edge);
+	void edgeSplit(float* vPoint, float* vec, int &edge);
 	//! removes the vertexpoint nVert and moves currVert halfway towards nVert.
 	/*! vPoint is the position of currVert, vec is the vector between the vertecies that are to close to each other,
 	and edge is a pointer to the edge that is to short*/
-	void edgeCollapse(float* vPoint, float* vec, halfEdge* &edge);
+	void edgeCollapse(bool recursive, int &edge);
 
 	//! subdivides the surface into a sphere
 	void edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad);
-
-	const int ROWS = 100;
-	const int COLS = 100;
-
 
 	const float MAX_LENGTH = 0.025f;// *0.2f; // 0.08f*0.1f;
 	const float MIN_LENGTH = 0.0124f;// *0.2f;
@@ -78,11 +73,16 @@ class Mesh {
 	//vector<GLfloat> vertexArray; // Vertex array on interleaved format: x y z nx ny nz s t
 	//vector<GLuint> indexArray;   // Element index array
 
-	std::vector<triangle> indexArray;
-	std::vector<vertex> vertexArray;
+	//edgeArray the array that stores all edges of the mesh
+	halfEdge e[3000000];
+	triangle indexArray[2000000];
+	vertex vertexArray[1000000];
 
-	std::vector<halfEdge*> vertexEPtr;
-	std::vector<halfEdge*> triEPtr;
+	int vertexEPtr[1000000];
+	int triEPtr[2000000];
+
+	int nrofVerts;
+	int nrofTris;
 
 	float position[3];
 	float orientation[16];

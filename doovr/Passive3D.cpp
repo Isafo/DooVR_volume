@@ -11,25 +11,35 @@ Passive3D::Passive3D()
 	catch (Wand3dSerialException error) {
 		std::cout << error.what() << std::endl;
 	}
-	/*
-	Network newNet;
 	
-	newNet.setSensorPosition(0, 0.15, 0.0, 0.082);
-	newNet.setSensorPosition(1, -0.15, 0.0, 0.082);
-	newNet.setSensorPosition(2, -0.15, 0.0, -0.082);
-	newNet.setSensorPosition(3, 0.15, 0.0, -0.082);
+	//Network newNet;
+	//
+	//newNet.setSensorPosition(0, 0.15, 0.0, 0.082);
+	//newNet.setSensorPosition(1, -0.15, 0.0, 0.082);
+	//newNet.setSensorPosition(2, -0.15, 0.0, -0.082);
+	//newNet.setSensorPosition(3, 0.15, 0.0, -0.082);
 
-	double rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
-		0.f, 0.f, 1.f, 0.f,
-		0.f, 1.f, 0.f, 0.f,
-		0.f, 0.f, 0.f, 1.0f };
-	//newNet.setSensorRotation(0, rotZX);
-	//newNet.setSensorRotation(1, inv(rotZX));
-	//newNet.setSensorRotation(2, inv(rotZX));
-	//newNet.setSensorRotation(3, rotZX);
+	////double rotZX[9] = { -1.f, 0.f, 0.f,
+	////	                  0.f, 0.f, 1.f,
+	////	                  0.f, 1.f, 0.f};
+	//double rot[9] = { 1.0f, 0.0f, 0.0f,
+	//				  0.0f, 1.0f, 0.0f,
+	//				  0.0f, 0.0f, 1.0f };
+	//double rotZ[9] = { -1.0f, 0.0f, 0.0f,
+	//					0.0f, -1.0f, 0.0f,
+	//					0.0f, 0.0f, 1.0f };
 
-	wand->setNetwork(newNet);
-	*/
+	///*double rotZXY[9] = {  1.f, 0.f, 0.f,
+	//					   0.f, 0.f, 1.f,
+	//	                   0.f, -1.f, 0.f};*/
+
+	//newNet.setSensorRotation(0, rot);
+	//newNet.setSensorRotation(1, rotZ);
+	//newNet.setSensorRotation(2, rotZ);
+	//newNet.setSensorRotation(3, rot);
+
+	//wand->setNetwork(newNet);
+	
 	Wand3dObserver* observer = this;
 	wand->addObserver(observer);
 	
