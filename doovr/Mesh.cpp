@@ -983,9 +983,6 @@ void Mesh::edgeCollapse(float* vPoint, float* vec, halfEdge* &edge) {
 	}
 	*/
 
-
-
-
 	if (tempE->sibling->triangle == tempE->nextEdge->nextEdge->sibling->triangle) {
 
 		vertexEPtr[tempE->sibling->vertex] = tempE->nextEdge->sibling;

@@ -8,6 +8,7 @@ public:
 	~Wand();
 
 	float* getWandPosition() { return wandPosition; }
+	float* getWandLastPos() { return wandLastPos; }
 	float* getWandOrientation() { return wandOrientation; }
 	float* getTransformMatrix() { return wandTransform; }
 
@@ -17,6 +18,7 @@ public:
 
 protected:
 
+	float wandLastPos[3];
 	float wandPosition[3];
 	float wandOrientation[16];
 	float wandTransform[16];

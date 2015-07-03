@@ -22,7 +22,7 @@ static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
 //! checks if the wand is colliding with a menuItem and sets the menuItems state accordingly, returns true if a menuItem choise has occured
 void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state);
 void GLRenderCallsOculus();
-
+// --------------------------------------
 // --- Variable Declerations ------------
 const bool L_MULTISAMPLING = false;
 const int G_DISTORTIONCAPS = 0
@@ -35,8 +35,6 @@ const int G_DISTORTIONCAPS = 0
 ovrHmd hmd;
 ovrGLConfig g_Cfg;
 ovrEyeRenderDesc g_EyeRenderDesc[2];
-
-const float EYEHEIGHT{OVR_DEFAULT_EYE_HEIGHT};
 // --------------------------------------
 
 // Global Constant variables
@@ -90,10 +88,11 @@ int Oculus::runOvr() {
 	// Save old positions and transforms
 	float changePos[3] = { 0.0f };
 	float differenceR[16] = { 0.0f };
-	float* lastPos;
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
 	float moveVec[3];
+	float lastPos[3];
+	float lastPos2[3];
 
 	// Configuration variables
 	int regCounter = 0;
@@ -102,15 +101,13 @@ int Oculus::runOvr() {
 
 	float pos[16] = { 0.0f };
 	float invPos[16] = { 0.0f };
-	float eyeHeight = OVR_DEFAULT_EYE_HEIGHT;
-	float MAX_HEX_HEIGHT = -eyeHeight + 0.95f;
-	float MIN_HEX_HEIGHT = -eyeHeight + 0.9f;
 
 	// FPS
 	double fps = 0;
 
 	// Size of the wand tool
 	float wandRadius = 0.01f;
+	float lastRadius;
 
 	// States
 	bool buttonPressed = false;
@@ -473,9 +470,15 @@ int Oculus::runOvr() {
 		}
 
 		// moveMesh state
-		if (glfwGetKey(l_Window, GLFW_KEY_LEFT_SHIFT)) {
+		if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 			if (state[1] == 0) {
 				state[1] = 1;
+				lastPos[0] = wand->getWandPosition()[0];
+				lastPos[1] = wand->getWandPosition()[1];
+				lastPos[2] = wand->getWandPosition()[2];
+				lastPos2[0] = mTest->getPosition()[0];
+				lastPos2[1] = mTest->getPosition()[1];
+				lastPos2[2] = mTest->getPosition()[2];
 				activeStates.push_back(1);
 			} else if (state[1] == 1) {
 				state[1] = 2;
@@ -499,6 +502,11 @@ int Oculus::runOvr() {
 							// reset mesh
 							delete mTest; // Reset mesh
 							mTest = new Mesh(0.3f);
+
+							menuItem[i].setState(true);
+
+						} else if (menuState[i] == 3) {
+							menuItem[i].setState(false);
 						}
 						break;
 					}
@@ -517,17 +525,32 @@ int Oculus::runOvr() {
 					case 3: {
 						// wireframe
 						if (menuState[i] == 1) {
-							lines = true;
-						} else if (menuState[i] == 0){
-							lines = false;
+							if (menuItem[i].getState() == true){
+								menuItem[i].setState(false);
+								lines = false;
+							} else {
+								menuItem[i].setState(true);
+								lines = true;
+							}
 						}
 						break;
 					}
 					case 4: {
 						if (menuState[i] == 1) {
+							menuItem[i].setState(true);
+
+							lastPos[0] = wand->getWandPosition()[0];
+							lastPos[1] = wand->getWandPosition()[1];
+							lastPos[2] = wand->getWandPosition()[2];
+							lastRadius = wandRadius;
+
 							state[2] = 2;
 							activeStates.push_back(2);
 						}
+
+						if (menuState[i] == 3)
+							menuItem[i].setState(false);
+
 						break;
 					}
 				}
@@ -536,53 +559,31 @@ int Oculus::runOvr() {
 			for (int i = 0; i < activeStates.size(); i++) {
 				switch (activeStates[i]) {
 				  case 0: {
-					mTest->sculpt(wand->getWandPosition(), lastPos, wandRadius, true);
+					  mTest->sculpt(wand->getWandPosition(), wand->getWandLastPos(), wandRadius, true);
 					break;
 				  }
 				  case 1: {
-					pmat4 = mTest->getPosition();
-
-					/*
-					cout << "#";
-					cout << moveVec[0];
-					cout << moveVec[1];
-					cout << moveVec[2] << endl;
-					cout << "::";
-					cout << lastPos[0];
-					cout << lastPos[1];
-					cout << lastPos[2] << endl;
-					cout << "||";
-					cout << wand->getWandPosition()[0];
-					cout << wand->getWandPosition()[1];
-					cout << wand->getWandPosition()[2] << endl;
-					currPos[0] = 1.0f; currPos[1] = 1.0f; currPos[2] = 1.0f;
-					translateVector[0] = 1.5f; translateVector[1] = 1.5f; translateVector[2] = 1.5f;
-					linAlg::calculateVec(moveVec, currPos, translateVector);
-					cout << "#2";
-					cout << moveVec[0];
-					cout << moveVec[1];
-					cout << moveVec[2] << endl;
-					cout << 0.0001f - 0.00015f;
-					*/
-
+				//	pmat4 = mTest->getPosition();
 					linAlg::calculateVec(moveVec, wand->getWandPosition(), lastPos);
-					pmat4[0] += moveVec[0];
-					pmat4[1] += moveVec[1];
-					pmat4[2] += moveVec[2];
+					moveVec[0] = lastPos2[0] + moveVec[0];
+					moveVec[1] = lastPos2[1] + moveVec[1];
+					moveVec[2] = lastPos2[2] + moveVec[2];
 
-					mTest->setPosition(pmat4);
+					mTest->setPosition(moveVec);
 					break;
 				  }
 				  case 2: {
-					  if (wand->getWandPosition()[1] < wandSizePanel.getDim()[1] + 0.07
-						  && wand->getWandPosition()[1] > wandSizePanel.getDim()[1] - 0.07){
-						  wandRadius += lastPos[0] - wand->getWandPosition()[0];
+					  if (wand->getWandPosition()[1] < wandSizePanel.getPosition()[1] + 0.02
+						  && wand->getWandPosition()[1] > wandSizePanel.getPosition()[1] - 0.02){
+
+						  wandRadius = lastRadius + (wand->getWandPosition()[0] - lastPos[0])/3.0f;
 					  }
 					  else {
 						  // wand left the change wand size area set to inactive
 						  state[2] = 0;
 						  activeStates.erase(remove(activeStates.begin(), activeStates.end(), 2), activeStates.end());
-						  menuState[4] = 0;
+						  menuState[4] = 2;
+						  
 					  }
 				  }
 
@@ -606,7 +607,6 @@ int Oculus::runOvr() {
 		}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
-		lastPos = wand->getWandPosition();
 
 		// Begin the frame...
 		ovrHmd_BeginFrame(hmd, l_FrameIndex);
@@ -724,21 +724,6 @@ int Oculus::runOvr() {
 							menuItem[i].render();
 						MVstack.pop();
 					}
-
-					//if (state[2] == 2) {
-						// render change wand size panel
-						glUseProgram(menuShader.programID);
-						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-						MVstack.push();
-							MVstack.translate(wandSizePanel.getPosition());
-							MVstack.rotX(0.70711f);
-
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-							wandSizePanel.render();
-						MVstack.pop();
-					//}
 
 					glBindTexture(GL_TEXTURE_2D, 0);
 					//RENDER MESH -----------------------------------------------------------------------
@@ -861,64 +846,26 @@ void GLRenderCallsOculus(){
 //! checks if a menu item is choosen and sets the appropriate state 
 void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state) {
 
-	// check if the wandPosition is in the same Y and X position as the menuItem row
-	if (wandPosition[1] < menuItem[1].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[1].getPosition()[1] - 0.01f
-		&& wandPosition[0] > menuItem[1].getPosition()[0] - menuItem[1].getDim()[0] / 2.f
-		&& wandPosition[0] < menuItem[1].getPosition()[0] + menuItem[1].getDim()[0] / 2.f) {									// check items on the right side
 
-		for (int i = 1; i < nrOfMenuItems; i++) { // check all items on right side
-			// check what menuitem is pressed
-			if (wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] / 2.f
-				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1] / 2.f) {
-				
-				// active on off state?
-				if (state[i] != 5)
-					menuItem[i].setState(true);
-				else {
-					menuItem[i].setState(false);
-				}
+	for (int i = 0; i < nrOfMenuItems; i++) {
+		if (wandPosition[1] < menuItem[i].getPosition()[1] + 0.01f 
+			&& wandPosition[1] > menuItem[i].getPosition()[1] - 0.01f
+			&& wandPosition[0] > menuItem[i].getPosition()[0] - menuItem[i].getDim()[0] / 4.f
+			&& wandPosition[0] < menuItem[i].getPosition()[0] + menuItem[i].getDim()[0] / 4.f
+			&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1] / 4.f
+			&& wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] / 4.f) {									// check the item on left side
 
-				// set state
-				if (state[i] == 0) {
-					state[i] = 1;				// set to just pressed
-				} else if (state[i] == 1) {
-					state[i] = 2;				// set to pressed down
-
-					if (i <= 3) {				// state 3 and above on/off switch
-						state[i] = 4;
-					}
-
-				} else {
-					state[i] = 0;				// deactivate on/off function
-				}
-			} 
-		}
-	} else if (wandPosition[1] < menuItem[0].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[0].getPosition()[1] - 0.01f
-		&& wandPosition[0] > menuItem[0].getPosition()[0] - menuItem[0].getDim()[0] / 2.f
-		&& wandPosition[0] < menuItem[0].getPosition()[0] + menuItem[0].getDim()[0] / 2.f
-		&& wandPosition[2] > menuItem[0].getPosition()[2] - menuItem[0].getDim()[1] / 2.f
-		&& wandPosition[2] < menuItem[0].getPosition()[2] + menuItem[0].getDim()[1] / 2.f) {									// check the item on left side
-		
-		// active on off state?
-		if (state[0] != 5)
-			menuItem[0].setState(true);
-		else {
-			menuItem[0].setState(false);
-		}
-
-		// set state
-		if (state[0] == 0) {
-			state[0] = 1;				// set to just pressed
-		}
-		else if (state[0] == 1) {
-			state[0] = 2;				// set to pressed down
-		}
-	} else {
-		for (int i = 0; i < nrOfMenuItems; i++) {	
-			menuItem[i].setState(false);
-
+			// set state
+			if (state[i] == 0) {
+				state[i] = 1;				// set to just pressed
+			}
+			else {
+				state[i] = 2;				// set to held down
+			}
+		} else {
 			if (state[i] == 2 || state[i] == 1) {
 				state[i] = 3;				// set to just released
+				//menuItem[i].setState(false);
 			}
 			else if (state[i] == 3) {
 				state[i] = 0;				// set to deactivated
