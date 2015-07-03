@@ -997,9 +997,6 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	int tempE2;
 	static int currVert; 
 	static int nVert;
-    currVert = e[e[edge].sibling].vertex;
-	nVert = e[edge].vertex;
-	bool edgeRemoved = false;
 
 	//tempE = edge->nextEdge->sibling;
 	//tempE2 = edge->sibling->nextEdge->sibling;
@@ -1019,6 +1016,9 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
         edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
 	}
 	
+	currVert = e[e[edge].sibling].vertex;
+	nVert = e[edge].vertex;
+
 	// rebind edges that point to nVert
 	tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
 	while (tempE != e[e[edge].sibling].nextEdge)
