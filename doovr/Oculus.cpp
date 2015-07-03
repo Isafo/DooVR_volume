@@ -391,12 +391,12 @@ int Oculus::runOvr() {
 	TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
-	MenuItem wandSizePanel(0.2f, -0.24f, -0.06f, 0.10f, 0.03f);
+	MenuItem wandSizePanel(0.2f, -0.24f, -0.13f, 0.10f, 0.03f);
 
-	menuItem[0] = MenuItem(-0.2f, -0.26f, -0.15f, 0.05f, 0.05); // place reset menuItem on the other side
+	menuItem[0] = MenuItem(-0.2f, -0.26f, -0.2f, 0.05f, 0.05); // place reset menuItem on the other side
 
 	for (int i = -(nrOfMenuItems - 1) / 2 + 1; i <= (nrOfMenuItems - 1) / 2; i++) {
-		menuItem[i + (nrOfMenuItems - 1) / 2] = MenuItem(0.2f, -0.26f, -0.15f + i * 0.055f, 0.05f, 0.05);
+		menuItem[i + (nrOfMenuItems - 1) / 2] = MenuItem(0.2f, -0.26f, -0.20f + i * 0.055f, 0.05f, 0.05);
 	}
 
 	// Wand = Box + sphere
@@ -707,7 +707,6 @@ int Oculus::runOvr() {
 						}
 
 						MVstack.push();
-
 							if (i == 0)
 								glBindTexture(GL_TEXTURE_2D, menuResetTex.getTextureID());
 							else if (i == 1)
@@ -726,7 +725,7 @@ int Oculus::runOvr() {
 						MVstack.pop();
 					}
 
-					if (state[2] == 1) {
+					if (state[2] == 2) {
 						// render change wand size panel
 						glUseProgram(menuShader.programID);
 						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
