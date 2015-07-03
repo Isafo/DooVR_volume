@@ -20,7 +20,7 @@ using namespace std;
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
 static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
 //! checks if the wand is colliding with a menuItem and sets the menuItems state accordingly, returns true if a menuItem choise has occured
-bool handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state);
+void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state);
 void GLRenderCallsOculus();
 
 // --- Variable Declerations ------------
@@ -69,8 +69,10 @@ int Oculus::runOvr() {
 
 	/*! 0 indicates that the state is not active, 
 	 * 1 indicates that the state has just been activated
-	 * 2 indicates that the state is active
+	 * 2 indicates that the state is pressed
 	 * 3 indicates that the state has just been deactivated
+	 * 4 indicates that the state is active (on/off)
+	 *
 	 *
 	 * state[0] is the modelling state
 	 * state[1] is the moveMesh state
@@ -487,50 +489,49 @@ int Oculus::runOvr() {
 
 		// Switch to execute active states, checks menu choices if none are active
 		if (activeStates.empty()) {
-			if (handleMenu(wand->getWandPosition(), menuItem, nrOfMenuItems, menuState)) {
-				for (int i = 0; i < nrOfMenuItems; i++) {
-					switch (i) {
-					  case 0: {
+			handleMenu(wand->getWandPosition(), menuItem, nrOfMenuItems, menuState);
+			for (int i = 0; i < nrOfMenuItems; i++) {
+				switch (i) {
+					case 0: {
 						if (menuState[i] == 1) {
 							// save file
 						}
-						break;
-					  }
-					  case 1: {
+					break;
+					}
+					case 1: {
 						if (menuState[i] == 1) {
 							// loadfile
 						}
 						break;
-					  }
-					  case 2: {
+					}
+					case 2: {
 						if (menuState[i] == 1){
 							// reset mesh
 							delete mTest; // Reset mesh
 							mTest = new Mesh(0.3f);
 						}
 						break;
-					  }
-					  case 3: {
+					}
+					case 3: {
 						// wireframe
-						if (menuState[i] == 1){
+						if (menuState[i] == 4){
 							lines = true;
-						} else if (menuState[i] == 3){
+						} else if (menuState[i] == 0){
 							lines = false;
 						}
 						break;
-					  }
-					  case 4: {
+					}
+					case 4: {
 						if (menuState[i] == 2 || menuState[i] == 1) {
 							wandRadius += 0.001f;
 						}
-						break;
-					  }
-					  case 5: {
+					break;
+					}
+					case 5: {
 						if (menuState[i] == 2 || menuState[i] == 1) {
 							wandRadius -= 0.001f;
 						}
 						break;
-					  }
 					}
 				}
 			}
@@ -839,9 +840,7 @@ void GLRenderCallsOculus(){
 }
 
 //! checks if a menu item is choosen and sets the appropriate state 
-bool handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state) {
-
-	bool change = false;
+void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state) {
 
 	// check if the wandPosition is in the same Y and X position as the menuItem row
 	if (wandPosition[1] < menuItem[0].getPosition()[1] + 0.01f && wandPosition[1] > menuItem[0].getPosition()[1] - 0.01f
@@ -852,32 +851,41 @@ bool handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 			// check what menuitem is pressed
 			if (wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] / 2.f
 				&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1] / 2.f) {
-				menuItem[i].setState(true);
+				
+				// active on off state?
+				if (state[i] != 4)
+					menuItem[i].setState(true);
+				else
+					menuItem[i].setState(false);
 
+				// set state
 				if (state[i] == 0) {
 					state[i] = 1;				// set to just pressed
-					change = true;
+
+					if (i == 3) {				// state 3 has on/off switch
+						state[i] = 4;
+					}
+
 				} else if (state[i] == 1) {
-					state[i] = 2;				// set to active
-					change = true;
-				} else if ( i <= 3 ) { // functions that should run when held in
-					change = true;
+					state[i] = 2;				// set to pressed down
+				} else {
+					state[i] = 0;				// deactivate on/off function
 				}
+
 			} 
 		}
 	} else {
-		for (int i = 0; i < nrOfMenuItems; i++){
-			menuItem[i].setState(false);
+		for (int i = 0; i < nrOfMenuItems; i++) {
+			
+			if (state[i] != 4)
+				menuItem[i].setState(false);
+
 			if (state[i] == 2 || state[i] == 1) {
 				state[i] = 3;				// set to just released
-				change = true;
 			}
 			else if (state[i] == 3) {
 				state[i] = 0;				// set to deactivated
-				change = true;
 			}
 		}
 	}
-
-	return change;
 }
