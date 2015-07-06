@@ -623,18 +623,13 @@ int Oculus::runOvr() {
 		ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
 
 		//PICKING PHASE////////////////////////////////////////////////////
-		
+
 		m_pickingTexture.EnableWriting();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(pickingShader.programID);
 
 		MVstack.push();
 			ovrEyeType l_Eye = hmd->EyeRenderOrder[0];
-
-			glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
-				g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
-				g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
-				g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
 
 			// Pass projection matrix on to OpenGL...
 			glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
@@ -647,6 +642,8 @@ int Oculus::runOvr() {
 			float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
 			MVstack.translate(eyePoses);
 
+		//	glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+
 			MVstack.push();
 				MVstack.translate(mTest->getPosition());
 				MVstack.multiply(mTest->getOrientation());
@@ -657,6 +654,8 @@ int Oculus::runOvr() {
 		MVstack.pop();
 		m_pickingTexture.DisableWriting();
 		
+		PickingTexture::PixelInfo Pixel = m_pickingTexture.ReadPixel(500, 250);
+		cout << Pixel.DrawID << endl;
 		//PICKING END/////////////////////////////////////////////////////
 
 		//RENDER OVR PHASE///////////////////////////////////////////////
@@ -774,6 +773,7 @@ int Oculus::runOvr() {
 					//RENDER MESH -----------------------------------------------------------------------
 					//render selected triangle/////////////////////////
 					PickingTexture::PixelInfo Pixel = m_pickingTexture.ReadPixel(500, 250);
+					cout << Pixel.DrawID;
 					if (Pixel.PrimID != 0) {
 						glUseProgram(menuShader.programID);
 						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
@@ -838,6 +838,16 @@ int Oculus::runOvr() {
 
 			MVstack.pop();			
 		}
+
+		//test
+		/*glBindFramebuffer(GL_READ_FRAMEBUFFER, l_FBOId);
+		glReadBuffer(GL_COLOR_ATTACHMENT0);
+		float testPixel[3];
+		glReadPixels(500, 500, 1, 1, GL_RGB, GL_FLOAT, &testPixel);
+		cout << testPixel[1];
+		glReadBuffer(GL_NONE);*/
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
 		// Back to the default framebuffer...
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
