@@ -13,6 +13,7 @@
 #include "Wand.h"
 #include "Passive3D.h"
 #include "TrackingRange.h"
+#include "picking_texture.h"
 
 using namespace std;
 
@@ -367,6 +368,10 @@ int Oculus::runOvr() {
 	//glfwSetKeyCallback(l_Window, KeyCallback);
 	glfwSetWindowSizeCallback(l_Window, WindowSizeCallback);
 
+	//DECLARE the fbo/textures needed for checking triangle collision
+	PickingTexture m_pickingTexture;
+	m_pickingTexture.Init(l_ClientSize.w, l_ClientSize.h);
+
 	//DECLARE AND CREATE SHADERS ///////////////////////////////////////////////////////////////////////////////////
 	Shader phongShader;
 	phongShader.createShader("vertexshader.glsl", "fragmentshader.glsl");
@@ -378,6 +383,8 @@ int Oculus::runOvr() {
 	bloomShader.createShader("vShaderBloom.glsl", "fShaderBloom.glsl");
 	Shader menuShader;
 	menuShader.createShader("vShaderMenuItem.glsl", "fShaderMenuItem.glsl");
+	Shader pickingShader;
+	pickingShader.createShader("vpicking.glsl", "fpicking.glsl");
 
 	// CREATE MATRIX STACK
 	MatrixStack MVstack;
@@ -615,6 +622,44 @@ int Oculus::runOvr() {
 		// the IPD in the form of the input variable g_EyeOffsets.
 		ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
 
+		//PICKING PHASE////////////////////////////////////////////////////
+		
+		m_pickingTexture.EnableWriting();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(pickingShader.programID);
+
+		MVstack.push();
+			ovrEyeType l_Eye = hmd->EyeRenderOrder[0];
+
+			glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
+				g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
+				g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
+				g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
+
+			// Pass projection matrix on to OpenGL...
+			glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+			// Multiply with orientation retrieved from sensor...
+			OVR::Quatf l_Orientation = OVR::Quatf(g_EyePoses[l_Eye].Orientation);
+			OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
+			MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
+			//!-- Translation due to positional tracking (DK2) and IPD...
+			float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
+			MVstack.translate(eyePoses);
+
+			MVstack.push();
+				MVstack.translate(mTest->getPosition());
+				MVstack.multiply(mTest->getOrientation());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+
+				mTest->render();
+			MVstack.pop();
+		MVstack.pop();
+		m_pickingTexture.DisableWriting();
+		
+		//PICKING END/////////////////////////////////////////////////////
+
+		//RENDER OVR PHASE///////////////////////////////////////////////
 		// Bind the FBO...
 		glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
 
@@ -727,6 +772,19 @@ int Oculus::runOvr() {
 
 					glBindTexture(GL_TEXTURE_2D, 0);
 					//RENDER MESH -----------------------------------------------------------------------
+					//render selected triangle/////////////////////////
+					PickingTexture::PixelInfo Pixel = m_pickingTexture.ReadPixel(500, 250);
+					if (Pixel.PrimID != 0) {
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+						MVstack.push();
+							MVstack.translate(mTest->getPosition());
+							MVstack.multiply(mTest->getOrientation());
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							mTest->render(Pixel.PrimID);
+						MVstack.pop();
+					}
+					/////////////////////////////////////
 					glUseProgram(meshShader.programID);
 					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 

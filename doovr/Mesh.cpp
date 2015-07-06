@@ -597,9 +597,15 @@ triangle* Mesh::getIndexList() {
 
 void Mesh::render() {
 	glBindVertexArray(vao);
-	//glColor3f(color.x, color.y, color.z);
 
 	glDrawElements(GL_TRIANGLES, nrofTris * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
+	// (mode, vertex uN, type, element array buffer offset)
+	glBindVertexArray(0);
+}
+void Mesh::render(unsigned int PrimID) {
+	glBindVertexArray(vao);
+
+	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (const GLvoid*)(PrimID * 3 * sizeof(GLuint)));
 	// (mode, vertex uN, type, element array buffer offset)
 	glBindVertexArray(0);
 }

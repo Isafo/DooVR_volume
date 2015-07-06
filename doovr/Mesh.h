@@ -39,6 +39,8 @@ class Mesh {
 	void test(float bRad, int vNR, bool plus);
 
 	void render();
+	void render(unsigned int PrimID);
+
 	vertex* getVertexList();
 	triangle* getIndexList();
 
