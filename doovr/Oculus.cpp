@@ -501,6 +501,7 @@ int Oculus::runOvr() {
 
 		// Switch to execute active states, checks menu choices if none are active
 		if (activeStates.empty()) {
+			mTest->markUp(wand->getWandPosition(), wand->getWandLastPos(), wandRadius, true);
 			handleMenu(wand->getWandPosition(), menuItem, nrOfMenuItems, menuState);
 			for (int i = 0; i < nrOfMenuItems; i++) {
 				switch (i) {
@@ -621,7 +622,7 @@ int Oculus::runOvr() {
 		// Get eye poses for both the left and the right eye. g_EyePoses contains all Rift information: orientation, positional tracking and
 		// the IPD in the form of the input variable g_EyeOffsets.
 		ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
-
+		/*
 		//PICKING PHASE////////////////////////////////////////////////////
 
 		m_pickingTexture.EnableWriting();
@@ -657,7 +658,7 @@ int Oculus::runOvr() {
 		PickingTexture::PixelInfo Pixel = m_pickingTexture.ReadPixel(500, 250);
 		cout << Pixel.DrawID << endl;
 		//PICKING END/////////////////////////////////////////////////////
-
+		*/
 		//RENDER OVR PHASE///////////////////////////////////////////////
 		// Bind the FBO...
 		glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
@@ -771,7 +772,7 @@ int Oculus::runOvr() {
 
 					glBindTexture(GL_TEXTURE_2D, 0);
 					//RENDER MESH -----------------------------------------------------------------------
-					//render selected triangle/////////////////////////
+					/*//render selected triangle/////////////////////////
 					PickingTexture::PixelInfo Pixel = m_pickingTexture.ReadPixel(500, 250);
 					cout << Pixel.DrawID;
 					if (Pixel.PrimID != 0) {
@@ -784,7 +785,7 @@ int Oculus::runOvr() {
 							mTest->render(Pixel.PrimID);
 						MVstack.pop();
 					}
-					/////////////////////////////////////
+					/////////////////////////////////////*/
 					glUseProgram(meshShader.programID);
 					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 

@@ -12,6 +12,7 @@ struct vertex {
 	GLfloat nx;
 	GLfloat ny;
 	GLfloat nz;
+	GLfloat selected = 0.0f;
 };
 
 //! Data structure containing three indices of the vertexArray that make a certain triangle. Points to one edge in the triangle
@@ -36,6 +37,7 @@ class Mesh {
 
 	//dilate/erode based modelling
 	void sculpt(float* p, float lp[3], float rad, bool but);
+	void markUp(float* p, float lp[3], float rad, bool but);
 	void test(float bRad, int vNR, bool plus);
 
 	void render();
@@ -82,7 +84,9 @@ class Mesh {
 
 	int vertexEPtr[1000000];
 	int triEPtr[2000000];
+	int selected[100];
 
+	int nrofSelected = 0;
 	int nrofVerts;
 	int nrofTris;
 

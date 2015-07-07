@@ -1,6 +1,7 @@
 #version 400
 layout(location = 0) in vec3 VertexPosition;
 layout(location = 1) in vec3 VertexNormal;
+layout(location = 2) in float Selected;
 
 //out vec3 Position;
 //out vec3 Normal;
@@ -15,9 +16,14 @@ void main ()
 {
 	vec3 Position =  vec3( MV * vec4(VertexPosition, 1.0));
 	vec3 Normal = normalize(mat3(MV) * VertexNormal);
-
+	vec3 LightIntensity;
 	//vec3 LightIntensity = vec3(0.58039f,0.423529f, 0.282352f);
-	vec3 LightIntensity = vec3(0.68039f,0.182352f, 0.182352f);
+	if(Selected > 0.5f){
+		LightIntensity = vec3(0.68039f,0.182352f, 0.182352f);
+	} else {
+		LightIntensity = vec3(0.182352f,0.182352f, 0.68039f);
+	}
+	
 
 	vec3 Kd = vec3(0.8f, 0.8f, 0.8f);                // Diffuse reflectivity
 	vec3 Ka = vec3(0.1f, 0.1f, 0.1f);                // Ambient reflectivity
