@@ -11,7 +11,7 @@ using namespace std;
 Mesh::Mesh(float rad) {
 	triangle tempT;
 	vertex tempV;
-	halfEdge* tempE1;
+	int tempE1;
 	int tempIn1;
 	int tempIn2;
 	bool success = true;
@@ -22,6 +22,8 @@ Mesh::Mesh(float rad) {
 
 	vector<int> changedVertices;
 	changedVertices.reserve(10000);
+	vector<int> changedEdges;
+	changedEdges.reserve(30000);
 
 	position[0] = 0.0f;
 	position[1] = -0.22f;
@@ -294,21 +296,17 @@ Mesh::Mesh(float rad) {
 
 	// create sphere by subdivision
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
-	/*
+	
 	while (success)
 	{
 		
 		success = false;
-		tempSize = vertexArray.size() / 2;
-		tempP2[0] = vertexArray[tempSize].x;
-		tempP2[1] = vertexArray[tempSize].y;
-		tempP2[2] = vertexArray[tempSize].z;
-
-		for (int j = 0; j < vertexArray.size(); j++)
+		tempSize = nrofVerts;
+		for (int j = 0; j < nrofVerts; j++)
 		{
 			tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
 			testLength = linAlg::vecLength(tempP1);
-			if (vertexEPtr[j] != nullptr && testLength < rad)
+			if (vertexEPtr[j] > 0 && testLength < rad)
 			{
 				success = true;
 				linAlg::normVec(tempP1);
@@ -317,20 +315,29 @@ Mesh::Mesh(float rad) {
 				vertexArray[j].y += tempP1[1] * MIN_LENGTH;
 				vertexArray[j].z += tempP1[2] * MIN_LENGTH;
 
-				vertexEPtr[j]->needsUpdate = true;
-				tempE1 = vertexEPtr[j]->nextEdge->sibling;
-				while (tempE1 != vertexEPtr[j]) {
-					tempE1->needsUpdate = true;
-					tempE1 = tempE1->nextEdge->sibling;
-				}
+				//vertexEPtr[j]->needsUpdate = true;
+				//tempE1 = e[e[vertexEPtr[j]].nextEdge].sibling;
+				tempE1 = vertexEPtr[j];
+				do {
+					if (vertexArray[e[tempE1].vertex].selected != 1.0f){
+						changedEdges.push_back(tempE1);
+						
+						cout << j;
+					}
+					tempE1 = e[e[tempE1].nextEdge].sibling;
+					
+				} while (tempE1 != vertexEPtr[j]);
 
 				changedVertices.push_back(j);
+				vertexArray[j].selected = true;
 			}
 		}
 		
-		updateArea(&changedVertices[0], changedVertices.size());
+		updateArea(&changedVertices[0], changedVertices.size(), &changedEdges[0], changedEdges.size());
+		if (tempSize != nrofVerts)
+			success = true;
 	}
-	*/
+	
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 	vector<triangle> tempList;
 	triangle tempTri;
@@ -456,7 +463,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 		mLength = linAlg::vecLength(tempVec1);
 		if (mLength < rad) {
    			changedVertices.push_back(i);
-			vertexArray[i].selected = 1.0f;
+			//vertexArray[i].selected = 1.0f;
 			//normVec(tempVec1);
 			//mLength = 0.002f*(0.05f / (mLength + 0.05f));
 			linAlg::normVec(tempVec1);
@@ -498,12 +505,14 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 							vertexArray[index].z = newWPoint[2] + tempVec1[2] * rad;
 							
 							changedVertices.push_back(index);
-							vertexArray[index].selected = 1.0f;
+							
 						}
 					}
 					tempEdge = e[e[tempEdge].nextEdge].sibling;
 
 				} while (tempEdge != vertexEPtr[index2]);
+
+				vertexArray[index2].selected = 1.0f;
 			}
 			success = true;
 			break;
@@ -1162,15 +1171,15 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	//if (tempE == tempE->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
 	//if (edge = edge->nextEdge->nextEdge->sibling->nextEdge->sibling->nextEdge->sibling->nextEdge->nextEdge)
 	
-	while (edge == e[e[e[e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
+	if (edge == e[e[e[e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
 	{
         tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
 		edgeCollapse(true, e[e[edge].nextEdge].sibling);
 		edge = tempE;
-                                  		currVert = currVert;
+        //currVert = currVert;
 	}
 	//if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
-	while (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
+	if (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
 	{
         edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
 	}
@@ -1250,6 +1259,6 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 
 	e[0].nextEdge = -edge;
 
-	if (!recursive)
-		edge = tempE;
+	//if (!recursive)
+	//	edge = tempE;
 }
