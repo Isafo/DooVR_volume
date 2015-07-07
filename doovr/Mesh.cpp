@@ -614,7 +614,7 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 	bool success = false;
 
 	for (int i = 0; i < nrofSelected; i++)
-		vertexArray[selected[i]].selected = false;
+		vertexArray[selected[i]].selected = 0.0f;
 
 	nrofSelected = 0;
 
@@ -648,9 +648,9 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 
 			vertexArray[i].selected = 1.0f;
 
-			for (int j = 0; j < changedVertices.size(); j++) {
+			for (int j = 0; j < nrofSelected; j++) {
 
-				index2 = changedVertices[j];
+				index2 = selected[j];
 
 				tempEdge = vertexEPtr[index2];
 
@@ -658,8 +658,8 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 					if (!e[tempEdge].needsUpdate){
 						index = e[tempEdge].vertex;
 
-						e[e[tempEdge].sibling].needsUpdate = true;
-						e[tempEdge].needsUpdate = true;
+						//e[e[tempEdge].sibling].needsUpdate = true;
+						//e[tempEdge].needsUpdate = true;
 
 						vPoint2[0] = vertexArray[index].x;
 						vPoint2[1] = vertexArray[index].y;
@@ -688,7 +688,8 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 		}
 	}
 
-	if (success == true) {
+	//if (success == true) {
+	if (true) {
 
 		vertexP = &vertexArray[0];
 
@@ -704,7 +705,7 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 			vertexP[i].nx = vertexArray[i].nx;
 			vertexP[i].ny = vertexArray[i].ny;
 			vertexP[i].nz = vertexArray[i].nz;
-			//vertexP[i].selected = vertexArray[i].selected;
+			vertexP[i].selected = vertexArray[i].selected;
 		}
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 
