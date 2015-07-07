@@ -421,8 +421,8 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 
 	vector<int> changedVertices;
 	changedVertices.reserve(100);
-	//vector<int> changedEdges;
-	//changedEdges.reserve(300);
+	vector<int> changedEdges;
+	changedEdges.reserve(300);
 	int changeCount = 0;
 
 	triangle* indexP;
@@ -456,27 +456,14 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 		mLength = linAlg::vecLength(tempVec1);
 		if (mLength < rad) {
    			changedVertices.push_back(i);
+			vertexArray[i].selected = 1.0f;
 			//normVec(tempVec1);
 			//mLength = 0.002f*(0.05f / (mLength + 0.05f));
 			linAlg::normVec(tempVec1);
 
-			//tempVec2[0] = vertexArray[i].nx;
-			//tempVec2[1] = vertexArray[i].ny;
-			//tempVec2[2] = vertexArray[i].nz;
-
-			//if (linAlg::dotProd(tempVec1, tempVec2) > 0){
-				vertexArray[i].x = newWPoint[0] + tempVec1[0]  *rad;
-				vertexArray[i].y = newWPoint[1] + tempVec1[1] * rad;
-				vertexArray[i].z = newWPoint[2] + tempVec1[2] * rad;
-				//vertexArray[i].x = vertexArray[i].x + vertexArray[i].nx * (rad - mLength);
-				//vertexArray[i].y = vertexArray[i].y + vertexArray[i].ny * (rad - mLength);
-				//vertexArray[i].z = vertexArray[i].z + vertexArray[i].nz * (rad - mLength);
-			//}
-			//else{
-			//	vertexArray[i].x = newWPoint[0] + tempVec1[0] * rad;
-			//	vertexArray[i].y = newWPoint[1] + tempVec1[1] * rad;
-			//	vertexArray[i].z = newWPoint[2] + tempVec1[2] * rad;
-			//}
+			vertexArray[i].x = newWPoint[0] + tempVec1[0]  *rad;
+			vertexArray[i].y = newWPoint[1] + tempVec1[1] * rad;
+			vertexArray[i].z = newWPoint[2] + tempVec1[2] * rad;
 
 			for (int j = 0; j < changedVertices.size(); j++) {
 				
@@ -484,12 +471,15 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 				
 				tempEdge = vertexEPtr[index2];
 				
+				
 				do {
-					if (!e[tempEdge].needsUpdate){
+					if (vertexArray[e[tempEdge].vertex].selected != 1.0f){
 						index = e[tempEdge].vertex;
 
-						e[e[tempEdge].sibling].needsUpdate = true;
-						e[tempEdge].needsUpdate = true;
+						//e[e[tempEdge].sibling].needsUpdate = true;
+						//e[tempEdge].needsUpdate = true;
+						
+                       	changedEdges.push_back(tempEdge);
 
 						vPoint2[0] = vertexArray[index].x;
 						vPoint2[1] = vertexArray[index].y;
@@ -508,6 +498,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 							vertexArray[index].z = newWPoint[2] + tempVec1[2] * rad;
 							
 							changedVertices.push_back(index);
+							vertexArray[index].selected = 1.0f;
 						}
 					}
 					tempEdge = e[e[tempEdge].nextEdge].sibling;
@@ -521,7 +512,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 
 	changeCount = 0;
 	if (changedVertices.size() > 0)
-		updateArea(&changedVertices[0], changedVertices.size());
+		updateArea(&changedVertices[0], changedVertices.size(), &changedEdges[0], changedEdges.size());
 
 	if (success == true) {
 
@@ -540,7 +531,7 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 			vertexP[i].nx = vertexArray[i].nx;
 			vertexP[i].ny = vertexArray[i].ny;
 			vertexP[i].nz = vertexArray[i].nz;
-			//vertexP[i].selected = vertexArray[i].selected;
+			vertexP[i].selected = vertexArray[i].selected;
 		}
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 
@@ -627,10 +618,6 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 	wPoint[3] = 1.0f;
 
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
-	//tempvec = glm::transpose(glm::make_mat4(orientation)) * glm::vec4(wPoint[0], wPoint[1], wPoint[2], 1.0f);
-	//wPoint[0] = tempvec.x;
-	//wPoint[1] = tempvec.y;
-	//wPoint[2] = tempvec.z;
 
 	for (int i = 1; i <= nrofVerts; i++) {
 		vPoint[0] = vertexArray[i].x;
@@ -642,20 +629,18 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 
 		mLength = linAlg::vecLength(tempVec1);
 		if (mLength < rad) {
-			selected[nrofSelected] = i;
-			nrofSelected++;
-			linAlg::normVec(tempVec1);
 
 			vertexArray[i].selected = 1.0f;
+			selected[nrofSelected] = i;
+			nrofSelected++;
 
 			for (int j = 0; j < nrofSelected; j++) {
 
 				index2 = selected[j];
-
 				tempEdge = vertexEPtr[index2];
 
 				do {
-					if (!e[tempEdge].needsUpdate){
+					if (vertexArray[e[tempEdge].vertex].selected != 1.0f){
 						index = e[tempEdge].vertex;
 
 						//e[e[tempEdge].sibling].needsUpdate = true;
@@ -672,9 +657,8 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 
 						if (mLength < rad)
 						{
-							linAlg::normVec(tempVec1);
-							vertexArray[index].selected = 1.0f;
 
+							vertexArray[index].selected = 1.0f;
 							selected[nrofSelected] = index;
 							nrofSelected++;
 						}
@@ -684,7 +668,8 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 				} while (tempEdge != vertexEPtr[index2]);
 			}
 			success = true;
-			break;
+			cout << nrofSelected;
+   			break;
 		}
 	}
 
@@ -699,12 +684,12 @@ void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
 			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 		for (int i = 1; i <= nrofVerts; i++) {
-			vertexP[i].x = vertexArray[i].x;
-			vertexP[i].y = vertexArray[i].y;
-			vertexP[i].z = vertexArray[i].z;
-			vertexP[i].nx = vertexArray[i].nx;
-			vertexP[i].ny = vertexArray[i].ny;
-			vertexP[i].nz = vertexArray[i].nz;
+			//vertexP[i].x = vertexArray[i].x;
+			//vertexP[i].y = vertexArray[i].y;
+			//vertexP[i].z = vertexArray[i].z;
+			//vertexP[i].nx = vertexArray[i].nx;
+			//vertexP[i].ny = vertexArray[i].ny;
+			//vertexP[i].nz = vertexArray[i].nz;
 			vertexP[i].selected = vertexArray[i].selected;
 		}
 		glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -784,7 +769,7 @@ void Mesh::render(unsigned int PrimID) {
 }
 
 
-void Mesh::updateArea(int* changeList, int listSize) {
+void Mesh::updateArea(int* changeList, int listSize, int* changeEList, int eListSize) {
 
 	static float vPoint1[3], vPoint2[3], vPoint3[3], vPoint4[3];
 	static float tempVec1[3], tempVec2[3], tempVec3[3];
@@ -795,97 +780,91 @@ void Mesh::updateArea(int* changeList, int listSize) {
 	static float edgeLength;
 	vector<int> edges[10];
 
-	for (int i = 0; i < listSize; i++) {
+	for (int i = 0; i < eListSize; i++) {
 
+		// Retriangulation //////////////////////////////////////////////////////////////////////////////////////////
+		// check if edge needs updat
+
+		if (e[changeEList[i]].nextEdge > 0)
+			tempEdge = changeEList[i];
+		else
+			continue;
+
+		vertexArray[e[tempEdge].vertex].selected = 0.0f;
+		vertexArray[e[e[tempEdge].sibling].vertex].selected = 0.0f;
+
+		vert1 = e[tempEdge].vertex;
+		vert2 = e[e[tempEdge].sibling].vertex;
+
+		vPoint1[0] = vertexArray[vert1].x; vPoint1[1] = vertexArray[vert1].y; vPoint1[2] = vertexArray[vert1].z;
 		
-		vPoint1[0] = vertexArray[changeList[i]].x;
-		vPoint1[1] = vertexArray[changeList[i]].y;
-		vPoint1[2] = vertexArray[changeList[i]].z;
+		vPoint2[0] = vertexArray[vert2].x; vPoint2[1] = vertexArray[vert2].y; vPoint2[2] = vertexArray[vert2].z;
 
-		 // Retriangulation //////////////////////////////////////////////////////////////////////////////////////////
-		 // check if edge needs update
+		linAlg::calculateVec(tempVec1, vPoint2, vPoint1);
+		edgeLength = linAlg::vecLength(tempVec1);
+
+		// check if edge is to long/short
+		if (edgeLength < MIN_LENGTH) {
+			edgeCollapse(false, tempEdge);
+		}
+		else if (edgeLength > MAX_LENGTH) {
+			edgeSplit(vPoint1, tempVec1, tempEdge);
+		}
+	}
+
+    for (int i = 0; i < listSize; i++)
+	{
+		// Update normal /////////////////////////////////////////////////////////////////////////////
 		if (vertexEPtr[changeList[i]] > 0)
 			tempEdge = vertexEPtr[changeList[i]];
 		else
 			continue;
 
-		 do {
-			 if (e[tempEdge].needsUpdate == true) {
-				 e[tempEdge].needsUpdate = false;
-				 e[e[tempEdge].sibling].needsUpdate = false;
+		vPoint1[0] = vertexArray[changeList[i]].x;
+		vPoint1[1] = vertexArray[changeList[i]].y;
+		vPoint1[2] = vertexArray[changeList[i]].z;
 
-				// calculate edge lenght
-				 vert1 = e[tempEdge].vertex;
+		// loop through the rest of the edges
+		do {
+			vert1 = e[tempEdge].vertex;
+			vert2 = e[e[e[tempEdge].nextEdge].nextEdge].vertex;
 
-				vPoint2[0] = vertexArray[vert1].x;
-				vPoint2[1] = vertexArray[vert1].y;
-				vPoint2[2] = vertexArray[vert1].z;
-				 
-				linAlg::calculateVec(tempVec1, vPoint2, vPoint1);
-                edgeLength = linAlg::vecLength(tempVec1);
-				
-				// check if edge is to long/short
-				if (edgeLength < MIN_LENGTH) {
-					cout << "yo";
-					//tempE = tempEdge
-					edgeCollapse(false, tempEdge);
-					//tempEdge = e[e[e[tempEdge].sibling].nextEdge].nextEdge;
-					
-				} else if (edgeLength > MAX_LENGTH) {
-					edgeSplit(vPoint1, tempVec1, tempEdge);
-					tempEdge = e[e[tempEdge].nextEdge].sibling;
-				}
-				else
-					tempEdge = e[e[tempEdge].nextEdge].sibling;
-			 }
-			 else
-				 tempEdge = e[e[tempEdge].nextEdge].sibling;
+			vPoint2[0] = vertexArray[vert1].x;
+			vPoint2[1] = vertexArray[vert1].y;
+			vPoint2[2] = vertexArray[vert1].z;
 
-		 } while (e[tempEdge].needsUpdate == true);
-			 
-		 // Update normal /////////////////////////////////////////////////////////////////////////////
-		 if (vertexEPtr[changeList[i]] > 0)
-			 tempEdge = vertexEPtr[changeList[i]];
-		 // loop through the rest of the edges
-		 do {
-			 vert1 = e[tempEdge].vertex;
-			 vert2 = e[e[e[tempEdge].nextEdge].nextEdge].vertex;
+			vPoint3[0] = vertexArray[vert2].x;
+			vPoint3[1] = vertexArray[vert2].y;
+			vPoint3[2] = vertexArray[vert2].z;
 
-			 vPoint2[0] = vertexArray[vert1].x;
-			 vPoint2[1] = vertexArray[vert1].y;
-			 vPoint2[2] = vertexArray[vert1].z;
+			linAlg::calculateVec(tempVec1, vPoint2, vPoint1);
+			linAlg::calculateVec(tempVec2, vPoint3, vPoint1);
 
-			 vPoint3[0] = vertexArray[vert2].x;
-			 vPoint3[1] = vertexArray[vert2].y;
-			 vPoint3[2] = vertexArray[vert2].z;
+			linAlg::crossProd(tempNorm1, tempVec2, tempVec1);
 
-			 linAlg::calculateVec(tempVec1, vPoint2, vPoint1);
-			 linAlg::calculateVec(tempVec2, vPoint3, vPoint1);
+			linAlg::normVec(tempNorm1);
 
-			 linAlg::crossProd(tempNorm1, tempVec2, tempVec1);
-
-			 linAlg::normVec(tempNorm1);
-
-			 tempNorm2[0] += tempNorm1[0];
-			 tempNorm2[1] += tempNorm1[1];
-			 tempNorm2[2] += tempNorm1[2];
+			tempNorm2[0] += tempNorm1[0];
+			tempNorm2[1] += tempNorm1[1];
+			tempNorm2[2] += tempNorm1[2];
 
 
-			 tempEdge = e[e[tempEdge].nextEdge].sibling;
-		 } while (tempEdge != vertexEPtr[changeList[i]]);
+			tempEdge = e[e[tempEdge].nextEdge].sibling;
+		} while (tempEdge != vertexEPtr[changeList[i]]);
 
-		 edgeLength = linAlg::vecLength(tempNorm2);
+		edgeLength = linAlg::vecLength(tempNorm2);
 
-		 tempNorm2[0] = tempNorm2[0] / edgeLength;
-		 tempNorm2[1] = tempNorm2[1] / edgeLength;
-		 tempNorm2[2] = tempNorm2[2] / edgeLength;
+		tempNorm2[0] = tempNorm2[0] / edgeLength;
+		tempNorm2[1] = tempNorm2[1] / edgeLength;
+		tempNorm2[2] = tempNorm2[2] / edgeLength;
 
-		 linAlg::normVec(tempNorm2);
+		linAlg::normVec(tempNorm2);
 
-                            		 vertexArray[changeList[i]].nx = tempNorm2[0];
-		 vertexArray[changeList[i]].ny = tempNorm2[1];
-		 vertexArray[changeList[i]].nz = tempNorm2[2];
+                            		vertexArray[changeList[i]].nx = tempNorm2[0];
+		vertexArray[changeList[i]].ny = tempNorm2[1];
+		vertexArray[changeList[i]].nz = tempNorm2[2];
 	}
+	
 }
 
 void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
@@ -1188,6 +1167,7 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
         tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
 		edgeCollapse(true, e[e[edge].nextEdge].sibling);
 		edge = tempE;
+                                  		currVert = currVert;
 	}
 	//if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
 	while (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)

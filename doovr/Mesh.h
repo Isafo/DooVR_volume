@@ -26,7 +26,6 @@ struct halfEdge {
 	int sibling;
 	int triangle;
 	int vertex;
-	bool needsUpdate = false;
 };
 
 //! A class representing a modifiable 3D mesh 
@@ -55,7 +54,7 @@ class Mesh {
   private:
 
 	//! updates the changed vertecies normal and checks if retriangulation is needed.
-	void updateArea(int* changeList, int listSize);
+	void updateArea(int* changeList, int listSize, int* changeEList, int eListSize);
 	//! adds a vertex in the middle between the vertexpoints pA and pB.
 	/*! pA is the position of currVert, edge is the edge that is to long*/
 	void edgeSplit(float* vPoint, float* vec, int &edge);
@@ -84,7 +83,7 @@ class Mesh {
 
 	int vertexEPtr[1000000];
 	int triEPtr[2000000];
-	int selected[100];
+	int selected[1000];
 
 	int nrofSelected = 0;
 	int nrofVerts;

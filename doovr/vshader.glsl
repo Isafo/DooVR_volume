@@ -14,7 +14,7 @@ uniform vec4 lightPos2;
 
 void main () 
 {
-	vec3 Position =  vec3( MV * vec4(VertexPosition, 1.0));
+	vec3 Position =  vec3(  MV * vec4(VertexPosition, 1.0));
 	vec3 Normal = normalize(mat3(MV) * VertexNormal);
 	vec3 LightIntensity;
 	//vec3 LightIntensity = vec3(0.58039f,0.423529f, 0.282352f);
@@ -39,6 +39,8 @@ void main ()
 	// 0th
 	vec3 s = normalize( vec3(lightPos) - Position ); // lightDir
 	vec3 r = reflect( -s, norm );						 // reflectDir
+	//vec3 halfwayDir = normalize(lightDir + viewDir);  
+	//float spec = pow(max(dot(normal, halfwayDir), 0.0), 16.0);
 	vec3 LI = LightIntensity * (  Ka + Kd * max( dot(s, norm), 0.0 )) + Ks * pow( max( dot(r,vie), 0.0 ), Shininess ) * strength;
 
 	vec3 s2 = normalize( vec3(lightPos2) - Position ); // lightDir
