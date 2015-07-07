@@ -362,12 +362,14 @@ Mesh::Mesh(float rad) {
 		vertexP[i].nx = vertexArray[i].nx;
 		vertexP[i].ny = vertexArray[i].ny;
 		vertexP[i].nz = vertexArray[i].nz;
+		vertexP[i].selected = vertexArray[i].selected;
 	}
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	// Specify how many attribute arrays we have in our VAO
 	glEnableVertexAttribArray(0); // Vertex coordinates
 	glEnableVertexAttribArray(1); // Normals
+	glEnableVertexAttribArray(2); // Selected
 	// Specify how OpenGL should interpret the vertex buffer data:
 	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
 	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
@@ -376,9 +378,11 @@ Mesh::Mesh(float rad) {
 	// Stride 8 (interleaved array with 8 floats per vertex)
 	// Array buffer offset 0, 3, 6 (offset into first vertex)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-		6 * sizeof(GLfloat), (void*)0); // xyz coordinates
+		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)0); // xyz coordinates
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-		6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))); // normals
 
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
@@ -536,12 +540,14 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 			vertexP[i].nx = vertexArray[i].nx;
 			vertexP[i].ny = vertexArray[i].ny;
 			vertexP[i].nz = vertexArray[i].nz;
+			//vertexP[i].selected = vertexArray[i].selected;
 		}
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 
 		// Specify how many attribute arrays we have in our VAO
 		glEnableVertexAttribArray(0); // Vertex coordinates
 		glEnableVertexAttribArray(1); // Normals
+		glEnableVertexAttribArray(2); // selected
 
 		// Specify how OpenGL should interpret the vertex buffer data:
 		// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
@@ -551,9 +557,175 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 		// Stride 8 (interleaved array with 8 floats per vertex)
 		// Array buffer offset 0, 3, 6 (offset into first vertex)
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-			6 * sizeof(GLfloat), (void*)0); // xyz coordinates
+			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)0); // xyz coordinates
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-			6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))); // normals
+
+		// Activate the index buffer
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+
+		//vector<triangle> tempList;
+		//tempList.reserve(indexArray.size());
+		//indexP = &tempList[0];
+
+
+		//glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+		//	sizeof(triangle)*indexArray.size(), &indexArray, GL_STREAM_DRAW);
+
+		// Present our vertex <indices to OpenGL
+		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * nrofTris,
+			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+		for (int i = 1; i <= nrofTris; i++) {
+			indexP[i].index[0] = indexArray[i].index[0];
+			indexP[i].index[1] = indexArray[i].index[1];
+			indexP[i].index[2] = indexArray[i].index[2];
+		}
+
+		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+
+		// Deactivate (unbind) the VAO and the buffers again.
+		// Do NOT unbind the buffers while the VAO is still bound.
+		// The index buffer is an essential part of the VAO state.
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
+}
+
+void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
+	float newWPoint[4];
+	float tempVec1[3]; float tempVec2[3];
+	float wPoint[4]; float vPoint[3]; float vPoint2[3];
+	int index; int index2;
+
+	vector<int> changedVertices;
+	changedVertices.reserve(100);
+	//vector<int> changedEdges;
+	//changedEdges.reserve(300);
+	int changeCount = 0;
+
+	triangle* indexP;
+	vertex* vertexP;
+	int tempEdge;
+
+	bool success = false;
+
+	for (int i = 0; i < nrofSelected; i++)
+		vertexArray[selected[i]].selected = false;
+
+	nrofSelected = 0;
+
+	//MOVEMENT BETWEEN LAST FRAME AND THIS FRAME
+	float mLength = 0.0f;
+
+	wPoint[0] = p[0] - position[0];
+	wPoint[1] = p[1] - position[1];
+	wPoint[2] = p[2] - position[2];
+	wPoint[3] = 1.0f;
+
+	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
+	//tempvec = glm::transpose(glm::make_mat4(orientation)) * glm::vec4(wPoint[0], wPoint[1], wPoint[2], 1.0f);
+	//wPoint[0] = tempvec.x;
+	//wPoint[1] = tempvec.y;
+	//wPoint[2] = tempvec.z;
+
+	for (int i = 1; i <= nrofVerts; i++) {
+		vPoint[0] = vertexArray[i].x;
+		vPoint[1] = vertexArray[i].y;
+		vPoint[2] = vertexArray[i].z;
+		tempVec1[0] = vPoint[0] - newWPoint[0];
+		tempVec1[1] = vPoint[1] - newWPoint[1];
+		tempVec1[2] = vPoint[2] - newWPoint[2];
+
+		mLength = linAlg::vecLength(tempVec1);
+		if (mLength < rad) {
+			selected[nrofSelected] = i;
+			nrofSelected++;
+			linAlg::normVec(tempVec1);
+
+			vertexArray[i].selected = 1.0f;
+
+			for (int j = 0; j < changedVertices.size(); j++) {
+
+				index2 = changedVertices[j];
+
+				tempEdge = vertexEPtr[index2];
+
+				do {
+					if (!e[tempEdge].needsUpdate){
+						index = e[tempEdge].vertex;
+
+						e[e[tempEdge].sibling].needsUpdate = true;
+						e[tempEdge].needsUpdate = true;
+
+						vPoint2[0] = vertexArray[index].x;
+						vPoint2[1] = vertexArray[index].y;
+						vPoint2[2] = vertexArray[index].z;
+						tempVec1[0] = vPoint2[0] - newWPoint[0];
+						tempVec1[1] = vPoint2[1] - newWPoint[1];
+						tempVec1[2] = vPoint2[2] - newWPoint[2];
+
+						mLength = linAlg::vecLength(tempVec1);
+
+						if (mLength < rad)
+						{
+							linAlg::normVec(tempVec1);
+							vertexArray[index].selected = 1.0f;
+
+							selected[nrofSelected] = index;
+							nrofSelected++;
+						}
+					}
+					tempEdge = e[e[tempEdge].nextEdge].sibling;
+
+				} while (tempEdge != vertexEPtr[index2]);
+			}
+			success = true;
+			break;
+		}
+	}
+
+	if (success == true) {
+
+		vertexP = &vertexArray[0];
+
+		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+		vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*nrofVerts,
+			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+		for (int i = 1; i <= nrofVerts; i++) {
+			vertexP[i].x = vertexArray[i].x;
+			vertexP[i].y = vertexArray[i].y;
+			vertexP[i].z = vertexArray[i].z;
+			vertexP[i].nx = vertexArray[i].nx;
+			vertexP[i].ny = vertexArray[i].ny;
+			vertexP[i].nz = vertexArray[i].nz;
+			//vertexP[i].selected = vertexArray[i].selected;
+		}
+		glUnmapBuffer(GL_ARRAY_BUFFER);
+
+		// Specify how many attribute arrays we have in our VAO
+		glEnableVertexAttribArray(0); // Vertex coordinates
+		glEnableVertexAttribArray(1); // Normals
+		glEnableVertexAttribArray(2); // selected
+
+		// Specify how OpenGL should interpret the vertex buffer data:
+		// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+		// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+		// Type GL_FLOAT
+		// Not normalized (GL_FALSE)
+		// Stride 8 (interleaved array with 8 floats per vertex)
+		// Array buffer offset 0, 3, 6 (offset into first vertex)
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)0); // xyz coordinates
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))); // normals
 
 		// Activate the index buffer
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
