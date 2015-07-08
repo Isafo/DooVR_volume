@@ -1,5 +1,6 @@
 #pragma once
 #include "Utilities.h"
+#include "linAlg.h"
 
 class Wand
 {
@@ -7,20 +8,28 @@ public:
 	Wand();
 	~Wand();
 
-	float* getWandPosition() { return wandPosition; }
-	float* getWandLastPos() { return wandLastPos; }
-	float* getWandOrientation() { return wandOrientation; }
-	float* getTransformMatrix() { return wandTransform; }
+	float* getPosition();
+	float* getVelocity();
+	float* getDirection();
+	float* getOrientation() { return OrientationM; }
+	float* getTransformMatrix() { return Transform; }
 
-	virtual void setWandPosition(double* t) = 0;
-	virtual void setWandOrientation(double* o) = 0;
-	virtual void setWandTransform(float* T) = 0;
+	virtual void setPosition(double* t) = 0;
+	virtual void setOrientation(double* o) = 0;
+	virtual void setTransform(float* T) = 0;
 
 protected:
 
-	float wandLastPos[3];
-	float wandPosition[3];
-	float wandOrientation[16];
-	float wandTransform[16];
+	double Position[3];
+	double lastPosition[3];
+	float Fposition[3];
+
+	float Velocity[3];
+
+	float Direction[3];
+
+	float OrientationM[16];
+	float TranslateM[16];
+	float Transform[16];
 };
 

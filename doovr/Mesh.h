@@ -1,5 +1,6 @@
 #include "Utilities.h"
 #include "linAlg.h"
+#include "Wand.h"
 #include <vector>
 
 typedef struct vertex vertex;
@@ -35,7 +36,7 @@ class Mesh {
 	~Mesh();
 
 	//dilate/erode based modelling
-	void sculpt(float* p, float lp[3], float rad, bool but);
+	void sculpt(Wand* p, float rad);
 	void markUp(float* p, float lp[3], float rad, bool but);
 	void test(float bRad, int vNR, bool plus);
 

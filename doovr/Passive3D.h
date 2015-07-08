@@ -27,11 +27,11 @@ public:
 	~Passive3D();
 
 	//! Set the position matrix for the device to a variable
-	virtual void setWandPosition(double* t);
+	virtual void setPosition(double* t);
 	//! Set the rotation matrix for the device to a variable
-	virtual void setWandOrientation(double* o);
+	virtual void setOrientation(double* o);
 
-	virtual void setWandTransform(float* T);
+	virtual void setTransform(float* T);
 
 	void wand3dCallback(wand3d::WandData data);
 	

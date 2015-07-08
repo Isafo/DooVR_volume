@@ -5,6 +5,19 @@ using namespace wand3d;
 
 Passive3D::Passive3D()
 {
+	//variables------------------------
+	lastPosition[0] = Position[0] = 0.0; lastPosition[1] = Position[1] = 0.0; lastPosition[2] = Position[2] = 0.0;
+	Velocity[0] = Fposition[0] = 0.0f; Velocity[1] = Fposition[1] = 0.0f; Velocity[2] = Fposition[2] = 0.0f;
+
+	Transform[0] = 1.0f; Transform[1] = 0.0f; Transform[2] = 0.0f; Transform[3] = 0.0f;
+	Transform[4] = 0.0f; Transform[5] = 1.0f; Transform[6] = 0.0f; Transform[7] = 0.0f;
+	Transform[8] = 0.0f; Transform[9] = 0.0f; Transform[10] = 1.0f; Transform[11] = 0.0f;
+	Transform[12] = 0.0f; Transform[13] = 0.0f; Transform[14] = 0.0f; Transform[15] = 1.0f;
+
+	for (int i = 0; i < 16; i++)
+		OrientationM[i] = TranslateM[i] = Transform[i];
+
+	//connection----------------------
 	try {
 		wand = new Wand3d("COM4"); // usb port
 	}
@@ -53,22 +66,22 @@ Passive3D::~Passive3D() {
 
 void Passive3D::wand3dCallback(WandData data) {
 
-	float Orientation[16];
+	float Orient[16];
 	
-	wandLastPos[0] = wandPosition[0];
-	wandLastPos[1] = wandPosition[1];
-	wandLastPos[2] = wandPosition[2];
+	lastPosition[0] = Position[0];
+	lastPosition[1] = Position[1];
+	lastPosition[2] = Position[2];
 
-	wandPosition[0] = (float)-data.position[0];
-	wandPosition[1] = (float)data.position[2] - 0.27f;
-	wandPosition[2] = (float)data.position[1] - 0.25f;
+	Position[0] = -data.position[0];
+	Position[1] = data.position[2] - 0.27f;
+	Position[2] = data.position[1] - 0.25f;
 
-	utils::getGLRotMatrix(data, Orientation);
+	utils::getGLRotMatrix(data, Orient);
 	float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
 						 0.f, 0.f, 1.f, 0.f,
 						 0.f, 1.f, 0.f, 0.f,
 						 0.f, 0.f, 0.f, 1.0f };
-	linAlg::matrixMult(rotZX, Orientation, wandOrientation);
+	linAlg::matrixMult(rotZX, Orient, OrientationM);
 }
 
 void Passive3D::calibrate()
@@ -76,15 +89,11 @@ void Passive3D::calibrate()
 	wand->reCalibrate();
 }
 
-void Passive3D::setWandPosition(double* t) {
+void Passive3D::setPosition(double* t) {
 	// Change the coordinatesystem to match Oculus x->x, y->z, z->-y
-	wandLastPos[0] = wandPosition[0];
-	wandLastPos[1] = wandPosition[1];
-	wandLastPos[2] = wandPosition[2];
-
-	wandPosition[0] = (float) -t[0];
-	wandPosition[1] = (float) t[2] - 0.27f;
-	wandPosition[2] = (float) t[1] - 0.25f;
+	Position[0] = (float) -t[0];
+	Position[1] = (float) t[2] - 0.27f;
+	Position[2] = (float) t[1] - 0.25f;
 
 	//wandPosition[0] = (float)t[0];
 	//wandPosition[1] = (float)t[1];
@@ -92,11 +101,11 @@ void Passive3D::setWandPosition(double* t) {
 
 }
 
-void Passive3D::setWandOrientation(double* o) {
+void Passive3D::setOrientation(double* o) {
 
-	std::copy(o, o + 16, wandOrientation);
+	std::copy(o, o + 16, OrientationM);
 }
 
-void Passive3D::setWandTransform(float* T) {
-	std::copy(T, T + 16, wandTransform);
+void Passive3D::setTransform(float* T) {
+	std::copy(T, T + 16, Transform);
 }

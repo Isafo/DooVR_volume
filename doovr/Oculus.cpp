@@ -475,9 +475,9 @@ int Oculus::runOvr() {
 		if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 			if (state[1] == 0) {
 				state[1] = 1;
-				lastPos[0] = wand->getWandPosition()[0];
-				lastPos[1] = wand->getWandPosition()[1];
-				lastPos[2] = wand->getWandPosition()[2];
+				lastPos[0] = wand->getPosition()[0];
+				lastPos[1] = wand->getPosition()[1];
+				lastPos[2] = wand->getPosition()[2];
 				lastPos2[0] = mTest->getPosition()[0];
 				lastPos2[1] = mTest->getPosition()[1];
 				lastPos2[2] = mTest->getPosition()[2];
@@ -497,7 +497,7 @@ int Oculus::runOvr() {
 		// Switch to execute active states, checks menu choices if none are active
 		if (activeStates.empty()) {
 			//mTest->markUp(wand->getWandPosition(), wand->getWandLastPos(), wandRadius, true);
-			handleMenu(wand->getWandPosition(), menuItem, nrOfMenuItems, menuState);
+			handleMenu(wand->getPosition(), menuItem, nrOfMenuItems, menuState);
 			for (int i = 0; i < nrOfMenuItems; i++) {
 				switch (i) {
 					case 0: {
@@ -542,9 +542,9 @@ int Oculus::runOvr() {
 						if (menuState[i] == 1) {
 							menuItem[i].setState(true);
 
-							lastPos[0] = wand->getWandPosition()[0];
-							lastPos[1] = wand->getWandPosition()[1];
-							lastPos[2] = wand->getWandPosition()[2];
+							lastPos[0] = wand->getPosition()[0];
+							lastPos[1] = wand->getPosition()[1];
+							lastPos[2] = wand->getPosition()[2];
 							lastRadius = wandRadius;
 
 							state[2] = 2;
@@ -562,24 +562,25 @@ int Oculus::runOvr() {
 			for (int i = 0; i < activeStates.size(); i++) {
 				switch (activeStates[i]) {
 				  case 0: {
-					  mTest->sculpt(wand->getWandPosition(), wand->getWandLastPos(), wandRadius, true);
+					  mTest->sculpt(wand, wandRadius);
 					break;
 				  }
 				  case 1: {
-				//	pmat4 = mTest->getPosition();
-					linAlg::calculateVec(moveVec, wand->getWandPosition(), lastPos);
+					  
+					linAlg::calculateVec(moveVec, wand->getPosition(), lastPos);
 					moveVec[0] = lastPos2[0] + moveVec[0];
 					moveVec[1] = lastPos2[1] + moveVec[1];
 					moveVec[2] = lastPos2[2] + moveVec[2];
-
+					
 					mTest->setPosition(moveVec);
+					
 					break;
 				  }
 				  case 2: {
-					  if (wand->getWandPosition()[1] < wandSizePanel.getPosition()[1] + 0.02
-						  && wand->getWandPosition()[1] > wandSizePanel.getPosition()[1] - 0.02){
+					  if (wand->getPosition()[1] < wandSizePanel.getPosition()[1] + 0.02
+						  && wand->getPosition()[1] > wandSizePanel.getPosition()[1] - 0.02){
 
-						  wandRadius = lastRadius + (wand->getWandPosition()[0] - lastPos[0])/3.0f;
+						  wandRadius = lastRadius + (wand->getPosition()[0] - lastPos[0])/3.0f;
 					  }
 					  else {
 						  // wand left the change wand size area set to inactive
@@ -755,8 +756,8 @@ int Oculus::runOvr() {
 					glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 					//RENDER WAND---------------------------------------------------------------------------
 					MVstack.push();
-						MVstack.translate(wand->getWandPosition());
-						MVstack.multiply(wand->getWandOrientation());
+						MVstack.translate(wand->getPosition());
+					//	MVstack.multiply(wand->getOrientation());
 
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						MVstack.push();
@@ -766,6 +767,12 @@ int Oculus::runOvr() {
 							MVstack.translate(translateVector);
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());
+							boxWand.render();
+						MVstack.pop();
+
+						MVstack.push();
+							MVstack.translate(wand->getDirection());
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							boxWand.render();
 						MVstack.pop();
 

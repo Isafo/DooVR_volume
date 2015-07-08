@@ -321,8 +321,6 @@ Mesh::Mesh(float rad) {
 				do {
 					if (vertexArray[e[tempE1].vertex].selected != 1.0f){
 						changedEdges.push_back(tempE1);
-						
-						cout << j;
 					}
 					tempE1 = e[e[tempE1].nextEdge].sibling;
 					
@@ -420,14 +418,17 @@ Mesh::~Mesh(void) {
 
 }
 
-void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
+void Mesh::sculpt(Wand* wand, float rad) {
 	float newWPoint[4];
 	float tempVec1[3]; float tempVec2[3];
 	float wPoint[4]; float vPoint[3]; float vPoint2[3];
 	int index; int index2;
+	float* vPoint3;
 
 	vector<int> changedVertices;
 	changedVertices.reserve(100);
+	vector<float> changedLengths;
+	changedLengths.reserve(100);
 	vector<int> changedEdges;
 	changedEdges.reserve(300);
 	int changeCount = 0;
@@ -438,12 +439,13 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 
 	bool success = false;
 
-	//MOVEMENT BETWEEN LAST FRAME AND THIS FRAME
 	float mLength = 0.0f;
+	float minLength = 0.0f;
+	int minIndex = 0;
 
-	wPoint[0] = p[0] - position[0];
-	wPoint[1] = p[1] - position[1];
-	wPoint[2] = p[2] - position[2];
+	wPoint[0] = wand->getPosition()[0] - position[0];
+	wPoint[1] = wand->getPosition()[1] - position[1];
+	wPoint[2] = wand->getPosition()[2] - position[2];
 	wPoint[3] = 1.0f;
 
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
@@ -463,14 +465,17 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 		mLength = linAlg::vecLength(tempVec1);
 		if (mLength < rad) {
    			changedVertices.push_back(i);
+			changedLengths.push_back(mLength);
+			minLength = mLength;
+			minIndex = 0;
 			//vertexArray[i].selected = 1.0f;
 			//normVec(tempVec1);
 			//mLength = 0.002f*(0.05f / (mLength + 0.05f));
-			linAlg::normVec(tempVec1);
+			//linAlg::normVec(tempVec1);
 
-			vertexArray[i].x = newWPoint[0] + tempVec1[0]  *rad;
-			vertexArray[i].y = newWPoint[1] + tempVec1[1] * rad;
-			vertexArray[i].z = newWPoint[2] + tempVec1[2] * rad;
+		//	vertexArray[i].x = newWPoint[0] + tempVec1[0]  *rad;
+		//	vertexArray[i].y = newWPoint[1] + tempVec1[1] * rad;
+		//	vertexArray[i].z = newWPoint[2] + tempVec1[2] * rad;
 
 			for (int j = 0; j < changedVertices.size(); j++) {
 				
@@ -497,14 +502,19 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 
 						mLength = linAlg::vecLength(tempVec1);
 
-						if (mLength < rad)
-						{
-							linAlg::normVec(tempVec1);
-							vertexArray[index].x = newWPoint[0] + tempVec1[0] * rad;
-							vertexArray[index].y = newWPoint[1] + tempVec1[1] * rad;
-							vertexArray[index].z = newWPoint[2] + tempVec1[2] * rad;
+						if (mLength < rad) {
+							
+							//linAlg::normVec(tempVec1);
+						//	vertexArray[index].x = newWPoint[0] + tempVec1[0] * rad;
+						//	vertexArray[index].y = newWPoint[1] + tempVec1[1] * rad;
+						//	vertexArray[index].z = newWPoint[2] + tempVec1[2] * rad;
 							
 							changedVertices.push_back(index);
+							changedLengths.push_back(mLength);
+							if (mLength < minLength) {
+								minLength = mLength;
+								minIndex = changedVertices.size() - 1;
+							}
 							
 						}
 					}
@@ -518,81 +528,101 @@ void Mesh::sculpt(float* p, float lp[3], float rad, bool but) {
 			break;
 		}
 	}
+	//swap so that the point closest to the point is first in the list---------------------
+	//index = changedVertices[minIndex];
+	//changedVertices[minIndex] = changedVertices[0];
+	//changedVertices[0] = index;
 
-	changeCount = 0;
-	if (changedVertices.size() > 0)
-		updateArea(&changedVertices[0], changedVertices.size(), &changedEdges[0], changedEdges.size());
+	//mLength = changedLengths[minIndex];
+	//changedLengths[minIndex] = changedLengths[0];
+	//changedLengths[0] = mLength;
+	//-------------------
+	//vPoint[0] = vertexArray[index].x;
+//	vPoint[1] = vertexArray[index].y;
+	//vPoint[2] = vertexArray[index].z;
+	tempVec1[0] = vPoint[0] - newWPoint[0];
+	tempVec1[1] = vPoint[1] - newWPoint[1];
+	tempVec1[2] = vPoint[2] - newWPoint[2];
 
-	if (success == true) {
-
-		vertexP = &vertexArray[0];
-
-
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-
-		vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*nrofVerts,
-			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-
-		for (int i = 1; i <= nrofVerts; i++) {
-			vertexP[i].x = vertexArray[i].x;
-			vertexP[i].y = vertexArray[i].y;
-			vertexP[i].z = vertexArray[i].z;
-			vertexP[i].nx = vertexArray[i].nx;
-			vertexP[i].ny = vertexArray[i].ny;
-			vertexP[i].nz = vertexArray[i].nz;
-			vertexP[i].selected = vertexArray[i].selected;
-		}
-		glUnmapBuffer(GL_ARRAY_BUFFER);
-
-		// Specify how many attribute arrays we have in our VAO
-		glEnableVertexAttribArray(0); // Vertex coordinates
-		glEnableVertexAttribArray(1); // Normals
-		glEnableVertexAttribArray(2); // selected
-
-		// Specify how OpenGL should interpret the vertex buffer data:
-		// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
-		// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
-		// Type GL_FLOAT
-		// Not normalized (GL_FALSE)
-		// Stride 8 (interleaved array with 8 floats per vertex)
-		// Array buffer offset 0, 3, 6 (offset into first vertex)
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)0); // xyz coordinates
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
-			6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))); // normals
-
-		// Activate the index buffer
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
-
-		//vector<triangle> tempList;
-		//tempList.reserve(indexArray.size());
-		//indexP = &tempList[0];
+	vPoint3 = wand->getDirection();
+	cout << vPoint3[0] << " " << vPoint3[1] << " " << vPoint3[2] << endl;
+ 
 
 
-		//glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		//	sizeof(triangle)*indexArray.size(), &indexArray, GL_STREAM_DRAW);
+	//changeCount = 0;
+	//if (changedVertices.size() > 0)
+	//	updateArea(&changedVertices[0], changedVertices.size(), &changedEdges[0], changedEdges.size());
 
-		// Present our vertex <indices to OpenGL
-		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * nrofTris,
-			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	//if (success == true) {
 
-		for (int i = 1; i <= nrofTris; i++) {
-			indexP[i].index[0] = indexArray[i].index[0];
-			indexP[i].index[1] = indexArray[i].index[1];
-			indexP[i].index[2] = indexArray[i].index[2];
-		}
+	//	vertexP = &vertexArray[0];
 
-		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
-		// Deactivate (unbind) the VAO and the buffers again.
-		// Do NOT unbind the buffers while the VAO is still bound.
-		// The index buffer is an essential part of the VAO state.
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	}
+	//	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+	//	vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*nrofVerts,
+	//		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+	//	for (int i = 1; i <= nrofVerts; i++) {
+	//		vertexP[i].x = vertexArray[i].x;
+	//		vertexP[i].y = vertexArray[i].y;
+	//		vertexP[i].z = vertexArray[i].z;
+	//		vertexP[i].nx = vertexArray[i].nx;
+	//		vertexP[i].ny = vertexArray[i].ny;
+	//		vertexP[i].nz = vertexArray[i].nz;
+	//		vertexP[i].selected = vertexArray[i].selected;
+	//	}
+	//	glUnmapBuffer(GL_ARRAY_BUFFER);
+
+	//	// Specify how many attribute arrays we have in our VAO
+	//	glEnableVertexAttribArray(0); // Vertex coordinates
+	//	glEnableVertexAttribArray(1); // Normals
+	//	glEnableVertexAttribArray(2); // selected
+
+	//	// Specify how OpenGL should interpret the vertex buffer data:
+	//	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+	//	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+	//	// Type GL_FLOAT
+	//	// Not normalized (GL_FALSE)
+	//	// Stride 8 (interleaved array with 8 floats per vertex)
+	//	// Array buffer offset 0, 3, 6 (offset into first vertex)
+	//	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+	//		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)0); // xyz coordinates
+	//	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+	//		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+	//	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+	//		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))); // normals
+
+	//	// Activate the index buffer
+	//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+
+	//	//vector<triangle> tempList;
+	//	//tempList.reserve(indexArray.size());
+	//	//indexP = &tempList[0];
+
+
+	//	//glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+	//	//	sizeof(triangle)*indexArray.size(), &indexArray, GL_STREAM_DRAW);
+
+	//	// Present our vertex <indices to OpenGL
+	//	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * nrofTris,
+	//		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+	//	for (int i = 1; i <= nrofTris; i++) {
+	//		indexP[i].index[0] = indexArray[i].index[0];
+	//		indexP[i].index[1] = indexArray[i].index[1];
+	//		indexP[i].index[2] = indexArray[i].index[2];
+	//	}
+
+	//	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+
+	//	// Deactivate (unbind) the VAO and the buffers again.
+	//	// Do NOT unbind the buffers while the VAO is still bound.
+	//	// The index buffer is an essential part of the VAO state.
+	//	glBindVertexArray(0);
+	//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	//}
 }
 
 void Mesh::markUp(float* p, float lp[3], float rad, bool but) {
@@ -1176,12 +1206,13 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
         tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
 		edgeCollapse(true, e[e[edge].nextEdge].sibling);
 		edge = tempE;
-        //currVert = currVert;
+		cout << "1" << endl;
 	}
 	//if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
 	if (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
 	{
         edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
+		cout << "2" << endl;
 	}
 	
 	currVert = e[e[edge].sibling].vertex;
