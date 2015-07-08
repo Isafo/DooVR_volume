@@ -44,15 +44,22 @@ Passive3D::Passive3D()
 	double rotZXZ[9] = { -1.f, 0.f, 0.f,
 							0.f, 0.f, 1.f,
 							0.f, -1.f, 0.f };
+	double rotX[9] = { 1.f, 0.f, 0.f,
+		0.f, 0.f, -1.f,
+		0.f, 1.f, 0.f };
+	double rotY[9] = { -1.f, 0.f, 0.f,
+		0.f, 1.f, 0.f,
+		0.f, 0.f, -1.f };
+
 
 	/*double rotZXY[9] = {  1.f, 0.f, 0.f,
 						   0.f, 0.f, 1.f,
 		                   0.f, -1.f, 0.f};*/
 
-	newNet.setSensorRotation(0, rotZX);
-	newNet.setSensorRotation(1, rotZXZ);
-	newNet.setSensorRotation(2, rotZXZ);
-	newNet.setSensorRotation(3, rotZX);
+	//newNet.setSensorRotation(0, rotZX);
+	//newNet.setSensorRotation(1, rotZXZ);
+	//newNet.setSensorRotation(2, rotZXZ);
+	//newNet.setSensorRotation(3, rotZX);
 
 	wand->setNetwork(newNet);
 	
