@@ -27,17 +27,16 @@ float* Wand::getDirection()
 
 	//linAlg::matrixMult(TranslateM, OrientationM, Transform);
 
-	float v[4] = { 0.0f, 0.0f, 0.2f, 1.0f };
+	float v[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 	float dirr[4];
 	linAlg::vectorMatrixMult(OrientationM, v, dirr);
 	//Direction[0] = Direction[0] - Position[0];
 	//Direction[1] = Direction[1] - Position[1];
 	//Direction[2] = Direction[2] - Position[2];
-
 	//linAlg::normVec(Direction);
-	Direction[0] = dirr[0] + Position[0];
-	Direction[1] = dirr[1] + Position[1];
-	Direction[2] = dirr[2] + Position[2];
+	Direction[0] = dirr[0];// +Position[0];
+	Direction[1] = dirr[1];// + Position[1];
+	Direction[2] = dirr[2];// + Position[2];
 	return Direction;
 
 }

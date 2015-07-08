@@ -656,7 +656,7 @@ int Oculus::runOvr() {
 				for (int i = 0; i < 16; i++)
 					mat4[i] = pmat4[i];
 
-				linAlg::transpose(mat4);
+				//linAlg::transpose(mat4);
 				linAlg::vectorMatrixMult(mat4, lPos, LP);
 				linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -751,14 +751,12 @@ int Oculus::runOvr() {
 							mTest->render();
 						}
 					MVstack.pop();
-						
+					translateVector[0] = 0.0f;
+					translateVector[1] = 0.0f;
+					translateVector[2] = -0.1f;
 					glUseProgram(phongShader.programID);
 					glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-					MVstack.push();
-					MVstack.translate(wand->getDirection());
-					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					boxWand.render();
-					MVstack.pop();
+
 					//RENDER WAND---------------------------------------------------------------------------
 					MVstack.push();
 						MVstack.translate(wand->getPosition());
@@ -766,9 +764,7 @@ int Oculus::runOvr() {
 
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						MVstack.push();
-							translateVector[0] = 0.0f;
-							translateVector[1] = 0.0f;
-							translateVector[2] = -0.1f;
+							
 							MVstack.translate(translateVector);
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());

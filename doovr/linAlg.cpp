@@ -42,10 +42,15 @@ void linAlg::matrixMultTHREE(float* M1, float* M2, float* Mout) {
 }
 
 void linAlg::vectorMatrixMult(float* M1, float* V, float* Vout) {
-	Vout[0] = M1[0] * V[0] + M1[1] * V[1] + M1[2] * V[2] + M1[3] * V[3];
-	Vout[1] = M1[4] * V[0] + M1[5] * V[1] + M1[6] * V[2] + M1[7] * V[3];
-	Vout[2] = M1[8] * V[0] + M1[9] * V[1] + M1[10] * V[2] + M1[11] * V[3];
-	Vout[3] = M1[12] * V[0] + M1[13] * V[1] + M1[14] * V[2] + M1[15] * V[3];
+	//Vout[0] = M1[0] * V[0] + M1[1] * V[1] + M1[2] * V[2] + M1[3] * V[3];
+	//Vout[1] = M1[4] * V[0] + M1[5] * V[1] + M1[6] * V[2] + M1[7] * V[3];
+	//Vout[2] = M1[8] * V[0] + M1[9] * V[1] + M1[10] * V[2] + M1[11] * V[3];
+	//Vout[3] = M1[12] * V[0] + M1[13] * V[1] + M1[14] * V[2] + M1[15] * V[3];
+
+	Vout[0] = M1[0] * V[0] + M1[4] * V[1] + M1[8] * V[2] + M1[12] * V[3];
+	Vout[1] = M1[1] * V[0] + M1[5] * V[1] + M1[9] * V[2] + M1[13] * V[3];
+	Vout[2] = M1[2] * V[0] + M1[6] * V[1] + M1[10] * V[2] + M1[14] * V[3];
+	Vout[3] = M1[3] * V[0] + M1[7] * V[1] + M1[11] * V[2] + M1[15] * V[3];
 }
 
 void linAlg::transpose(float* m)

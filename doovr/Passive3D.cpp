@@ -25,44 +25,51 @@ Passive3D::Passive3D()
 		std::cout << error.what() << std::endl;
 	}
 	
-	Network newNet;
-	
-	newNet.setSensorPosition(0, 0.15, 0.0, 0.082);
-	newNet.setSensorPosition(1, -0.15, 0.0, 0.082);
-	newNet.setSensorPosition(2, -0.15, 0.0, -0.082);
-	newNet.setSensorPosition(3, 0.15, 0.0, -0.082);
+	//Network newNet;
+	//
+	//newNet.setSensorPosition(0, 0.15, 0.0, 0.082);
+	//newNet.setSensorPosition(1, -0.15, 0.0, 0.082);
+	//newNet.setSensorPosition(2, -0.15, 0.0, -0.082);
+	//newNet.setSensorPosition(3, 0.15, 0.0, -0.082);
 
-	double rotZX[9] = { -1.f, 0.f, 0.f,
-		                  0.f, 0.f, 1.f,
-		                  0.f, 1.f, 0.f};
-	double rot[9] = { 1.0f, 0.0f, 0.0f,
-					  0.0f, 1.0f, 0.0f,
-					  0.0f, 0.0f, 1.0f };
-	double rotZ[9] = { -1.0f, 0.0f, 0.0f,
-						0.0f, -1.0f, 0.0f,
-						0.0f, 0.0f, 1.0f };
-	double rotZXZ[9] = { -1.f, 0.f, 0.f,
-							0.f, 0.f, 1.f,
-							0.f, -1.f, 0.f };
-	double rotX[9] = { 1.f, 0.f, 0.f,
-		0.f, 0.f, -1.f,
-		0.f, 1.f, 0.f };
-	double rotY[9] = { -1.f, 0.f, 0.f,
-		0.f, 1.f, 0.f,
-		0.f, 0.f, -1.f };
+	//double rotZX[9] = { -1.f, 0.f, 0.f,
+	//	                  0.f, 0.f, 1.f,
+	//	                  0.f, 1.f, 0.f};
+	//double rot[9] = { 1.0f, 0.0f, 0.0f,
+	//				  0.0f, 1.0f, 0.0f,
+	//				  0.0f, 0.0f, 1.0f };
+	//double rotZ[9] = { -1.0f, 0.0f, 0.0f,
+	//					0.0f, -1.0f, 0.0f,
+	//					0.0f, 0.0f, 1.0f };
+	//double rotZXZ[9] = { -1.f, 0.f, 0.f,
+	//						0.f, 0.f, 1.f,
+	//						0.f, -1.f, 0.f };
+	//double rotX[9] = { 1.f, 0.f, 0.f,
+	//	0.f, 0.f, -1.f,
+	//	0.f, 1.f, 0.f };
+	//double rotY[9] = { -1.f, 0.f, 0.f,
+	//	0.f, 1.f, 0.f,
+	//	0.f, 0.f, -1.f };
+	//double rotXY[9] = { -1.f, 0.f, 0.f,
+	//	0.f, 0.f, 1.f,
+	//	0.f, 1.f, 0.f };
+	//double rotXYY[9] = { 1.f, 0.f, 0.f,
+	//	0.f, 0.f, 1.f,
+	//	0.f, -1.f, 0.f };
 
 
-	/*double rotZXY[9] = {  1.f, 0.f, 0.f,
-						   0.f, 0.f, 1.f,
-		                   0.f, -1.f, 0.f};*/
 
-	//newNet.setSensorRotation(0, rotZX);
-	//newNet.setSensorRotation(1, rotZXZ);
-	//newNet.setSensorRotation(2, rotZXZ);
-	//newNet.setSensorRotation(3, rotZX);
+	///*double rotZXY[9] = {  1.f, 0.f, 0.f,
+	//					   0.f, 0.f, 1.f,
+	//	                   0.f, -1.f, 0.f};*/
 
-	wand->setNetwork(newNet);
-	
+	//newNet.setSensorRotation(0, rotXY);
+	//newNet.setSensorRotation(1, rotXYY);
+	//newNet.setSensorRotation(2, rotXYY);
+	//newNet.setSensorRotation(3, rotXY);
+
+	//wand->setNetwork(newNet);
+	//
 	Wand3dObserver* observer = this;
 	wand->addObserver(observer);
 	
@@ -86,12 +93,12 @@ void Passive3D::wand3dCallback(WandData data) {
 	Position[1] = data.position[2] - 0.27f;
 	Position[2] = data.position[1] - 0.25f;
 
-	utils::getGLRotMatrix(data, OrientationM);
+	utils::getGLRotMatrix(data, Orient);
 	float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
 						 0.f, 0.f, 1.f, 0.f,
 						 0.f, 1.f, 0.f, 0.f,
 						 0.f, 0.f, 0.f, 1.0f };
-	//linAlg::matrixMult(rotZX, Orient, OrientationM);
+	linAlg::matrixMult(rotZX, Orient, OrientationM);
 }
 
 void Passive3D::calibrate()
