@@ -754,10 +754,15 @@ int Oculus::runOvr() {
 						
 					glUseProgram(phongShader.programID);
 					glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					MVstack.push();
+					MVstack.translate(wand->getDirection());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					boxWand.render();
+					MVstack.pop();
 					//RENDER WAND---------------------------------------------------------------------------
 					MVstack.push();
 						MVstack.translate(wand->getPosition());
-					//	MVstack.multiply(wand->getOrientation());
+						MVstack.multiply(wand->getOrientation());
 
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						MVstack.push();
@@ -770,11 +775,7 @@ int Oculus::runOvr() {
 							boxWand.render();
 						MVstack.pop();
 
-						MVstack.push();
-							MVstack.translate(wand->getDirection());
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							boxWand.render();
-						MVstack.pop();
+						
 
 						MVstack.push();
 							MVstack.scale(wandRadius);
@@ -785,7 +786,6 @@ int Oculus::runOvr() {
 						MVstack.pop();	
 					MVstack.pop();
 						
-					glUseProgram(phongShader.programID);
 				MVstack.pop();
 
 			MVstack.pop();			
