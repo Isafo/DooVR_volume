@@ -48,15 +48,6 @@ void Sphere::clean() {
 		glDeleteBuffers(1, &indexbuffer);
 	}
 	indexbuffer = 0;
-
-	if (vertexarray) {
-		delete[] vertexarray;
-	}
-	if (indexarray) 	{
-		delete[] indexarray;
-	}
-	nverts = 0;
-	ntris = 0;
 }
 
 

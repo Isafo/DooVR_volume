@@ -12,10 +12,10 @@
 #endif
 #include "Wand.h"
 #include "Utilities.h"
-#include "wand3d.h"
-#include "wand3d_exception.h"
-#include "wand3d_observer.h"
-#include "wand3d_utils.h"
+#include "wand3d/wand3d.h"
+#include "wand3d/wand3d_exception.h"
+#include "wand3d/wand3d_observer.h"
+#include "wand3d/wand3d_utils.h"
 
 
 //#include "Utilities.h"
