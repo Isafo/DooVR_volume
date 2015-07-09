@@ -205,7 +205,7 @@ void linAlg::invertMatrix(float* m, float* invOut)
 	}
 }
 
-void linAlg::calculateVec(float* newVec, float* a, float* b) {
+void linAlg::calculateVec(float* a, float* b, float* newVec) {
 	newVec[0] = a[0] - b[0];
 	newVec[1] = a[1] - b[1];
 	newVec[2] = a[2] - b[2];

@@ -16,7 +16,7 @@ namespace linAlg {
 	void makeUniform(float* m);
 
 	//! calcualte vector from b to a, the resulting vector is placed in newVec
-	void calculateVec(float* newVec, float* a, float* b);
+	void calculateVec(float* a, float* b, float* newVec);
 	//! normalize vector
 	void normVec(float* vec);
 	//! takes the crossproduct between vec1 and vec2 and places the resulting vector in normal

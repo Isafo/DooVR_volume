@@ -36,8 +36,8 @@ class Mesh {
 	~Mesh();
 
 	//dilate/erode based modelling
-	void sculpt(Wand* p, float rad);
-	void markUp(float* p, float lp[3], float rad, bool but);
+	void sculpt(Wand* wand, float rad);
+	void markUp(Wand* wand, float rad);
 	void test(float bRad, int vNR, bool plus);
 
 	void render();
@@ -84,7 +84,7 @@ class Mesh {
 
 	int vertexEPtr[1000000];
 	int triEPtr[2000000];
-	int selected[1000];
+	int selected[10000];
 
 	int nrofSelected = 0;
 	int nrofVerts;

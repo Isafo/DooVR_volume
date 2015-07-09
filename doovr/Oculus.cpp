@@ -496,7 +496,7 @@ int Oculus::runOvr() {
 
 		// Switch to execute active states, checks menu choices if none are active
 		if (activeStates.empty()) {
-			//mTest->markUp(wand->getWandPosition(), wand->getWandLastPos(), wandRadius, true);
+			//mTest->markUp(wand, wandRadius);
 			handleMenu(wand->getPosition(), menuItem, nrOfMenuItems, menuState);
 			for (int i = 0; i < nrOfMenuItems; i++) {
 				switch (i) {
@@ -563,6 +563,7 @@ int Oculus::runOvr() {
 				switch (activeStates[i]) {
 				  case 0: {
 					  mTest->sculpt(wand, wandRadius);
+					 // mTest->markUp(wand, wandRadius);
 					break;
 				  }
 				  case 1: {
@@ -771,15 +772,13 @@ int Oculus::runOvr() {
 							boxWand.render();
 						MVstack.pop();
 
-						
-
-						MVstack.push();
+						/*MVstack.push();
 							MVstack.scale(wandRadius);
 							glUseProgram(sphereShader.programID);
 							glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 							glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							sphereWand.render();
-						MVstack.pop();	
+						MVstack.pop();	*/
 					MVstack.pop();
 						
 				MVstack.pop();
