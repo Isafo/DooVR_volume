@@ -893,6 +893,7 @@ void Mesh::updateArea(int* changeList, int listSize, int* changeEList, int eList
 	static float edgeLength;
 	vector<int> edges[10];
 
+	cout << "u" << endl;
 	for (int i = 0; i < eListSize; i++) {
 
 		// Retriangulation //////////////////////////////////////////////////////////////////////////////////////////
@@ -918,12 +919,49 @@ void Mesh::updateArea(int* changeList, int listSize, int* changeEList, int eList
 
 		// check if edge is to long/short
 		if (edgeLength < MIN_LENGTH) {
+			cout << "c" << endl;
 			edgeCollapse(false, tempEdge);
+			cout << "cc" << endl;
+			
 		}
 		else if (edgeLength > MAX_LENGTH) {
+			cout << "s" << endl;
 			edgeSplit(vPoint1, tempVec1, tempEdge);
+			cout << "ss" << endl;
+			
 		}
 	}
+	//for (int i = 0; i < eListSize; i++) {
+
+	//	// Retriangulation //////////////////////////////////////////////////////////////////////////////////////////
+	//	// check if edge needs updat
+
+	//	if (e[changeEList[i]].nextEdge > 0)
+	//		tempEdge = changeEList[i];
+	//	else
+	//		continue;
+
+	//	vertexArray[e[tempEdge].vertex].selected = 0.0f;
+	//	vertexArray[e[e[tempEdge].sibling].vertex].selected = 0.0f;
+
+	//	vert1 = e[tempEdge].vertex;
+	//	vert2 = e[e[tempEdge].sibling].vertex;
+
+	//	vPoint1[0] = vertexArray[vert1].x; vPoint1[1] = vertexArray[vert1].y; vPoint1[2] = vertexArray[vert1].z;
+
+	//	vPoint2[0] = vertexArray[vert2].x; vPoint2[1] = vertexArray[vert2].y; vPoint2[2] = vertexArray[vert2].z;
+
+	//	linAlg::calculateVec(vPoint2, vPoint1, tempVec1);
+	//	edgeLength = linAlg::vecLength(tempVec1);
+
+	//	// check if edge is to long/short
+	///*	if (edgeLength < MIN_LENGTH) {
+	//		edgeCollapse(false, tempEdge);
+	//	}*/
+	//	if (edgeLength > MAX_LENGTH) {
+	//		edgeSplit(vPoint1, tempVec1, tempEdge);
+	//	}
+	//}
 
     for (int i = 0; i < listSize; i++)
 	{
@@ -1277,16 +1315,18 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	
 	if (edge == e[e[e[e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
 	{
+		std::cout << "1" << endl;
         tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
 		edgeCollapse(true, e[e[edge].nextEdge].sibling);
 		edge = tempE;
-		std::cout << "1" << endl;
+		std::cout << "11" << endl;
 	}
 	//if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
 	if (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
 	{
-        edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
 		std::cout << "2" << endl;
+        edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
+		std::cout << "22" << endl;
 	}
 	
 	currVert = e[e[edge].sibling].vertex;
