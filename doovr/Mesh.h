@@ -59,6 +59,8 @@ class Mesh {
 	//! adds a vertex in the middle between the vertexpoints pA and pB.
 	/*! pA is the position of currVert, edge is the edge that is to long*/
 	void edgeSplit(float* vPoint, float* vec, int &edge);
+
+	void edgeFlip(int &edge);
 	//! removes the vertexpoint nVert and moves currVert halfway towards nVert.
 	/*! vPoint is the position of currVert, vec is the vector between the vertecies that are to close to each other,
 	and edge is a pointer to the edge that is to short*/

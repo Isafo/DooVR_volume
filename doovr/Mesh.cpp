@@ -888,7 +888,7 @@ void Mesh::updateArea(int* changeList, int listSize, int* changeEList, int eList
 	static float tempVec1[3], tempVec2[3], tempVec3[3];
 	static float tempNorm1[3] = { 0.0f, 0.0f, 0.0f };
 	static float tempNorm2[3] = { 0.0f, 0.0f, 0.0f };
-	int tempEdge; halfEdge* tempE;
+	int tempEdge; int tempE;
 	static int vert1, vert2; 
 	static float edgeLength;
 	vector<int> edges[10];
@@ -971,6 +971,7 @@ void Mesh::updateArea(int* changeList, int listSize, int* changeEList, int eList
 		else
 			continue;
 
+		
 		vPoint1[0] = vertexArray[changeList[i]].x;
 		vPoint1[1] = vertexArray[changeList[i]].y;
 		vPoint1[2] = vertexArray[changeList[i]].z;
@@ -1030,54 +1031,55 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 
 	//TODO: FLIP EDGE, NOT HANDLED PROPERLY BUT SHOULD BE////////////////////////////////////
 	
-   	vert1 = e[e[e[edge].nextEdge].nextEdge].vertex;
-	vert2 = e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex;
+ //  	vert1 = e[e[e[edge].nextEdge].nextEdge].vertex;
+	//vert2 = e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex;
 
-	temp[0] = vertexArray[vert1].x;
-	temp[1] = vertexArray[vert1].y;
-	temp[2] = vertexArray[vert1].z;
+	//temp[0] = vertexArray[vert1].x;
+	//temp[1] = vertexArray[vert1].y;
+	//temp[2] = vertexArray[vert1].z;
 
-	temp2[0] = vertexArray[vert2].x;
-	temp2[1] = vertexArray[vert2].y;
-	temp2[2] = vertexArray[vert2].z;
-	linAlg::calculateVec(temp, temp2, temp3);
-	linAlg::vecLength(temp3);
-	///*
-	if (linAlg::vecLength(temp3) < MAX_LENGTH && edge != e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].sibling].nextEdge].sibling && edge != e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].sibling].nextEdge) {
-		for (int i = 0; i < 3; i++) {
-			if (indexArray[e[edge].triangle].index[i] == e[edge].vertex)
-				indexArray[e[edge].triangle].index[i] = vert2;
+	//temp2[0] = vertexArray[vert2].x;
+	//temp2[1] = vertexArray[vert2].y;
+	//temp2[2] = vertexArray[vert2].z;
+	//linAlg::calculateVec(temp, temp2, temp3);
+	//linAlg::vecLength(temp3);
+	/////*
+	//if (linAlg::vecLength(temp3) < MAX_LENGTH && edge != e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].sibling].nextEdge].sibling && edge != e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].sibling].nextEdge) {
+	//	for (int i = 0; i < 3; i++) {
+	//		if (indexArray[e[edge].triangle].index[i] == e[edge].vertex)
+	//			indexArray[e[edge].triangle].index[i] = vert2;
 
-			if (indexArray[e[e[edge].sibling].triangle].index[i] == e[e[edge].sibling].vertex)
-				indexArray[e[e[edge].sibling].triangle].index[i] = vert1;
-		}
-		// rebind triangles
-		e[e[e[e[edge].sibling].nextEdge].nextEdge].triangle = e[edge].triangle;
-		e[e[e[edge].nextEdge].nextEdge].triangle = e[e[edge].sibling].triangle;
-		////
-		e[e[e[e[edge].sibling].nextEdge].nextEdge].nextEdge = e[edge].nextEdge;
-		e[e[e[edge].nextEdge].nextEdge].nextEdge = e[e[edge].sibling].nextEdge;
-		////
-		
-		tempE = e[e[edge].nextEdge].nextEdge;
-		e[e[edge].nextEdge].nextEdge = edge;
+	//		if (indexArray[e[e[edge].sibling].triangle].index[i] == e[e[edge].sibling].vertex)
+	//			indexArray[e[e[edge].sibling].triangle].index[i] = vert1;
+	//	}
+	//	// rebind triangles
+	//	e[e[e[e[edge].sibling].nextEdge].nextEdge].triangle = e[edge].triangle;
+	//	e[e[e[edge].nextEdge].nextEdge].triangle = e[e[edge].sibling].triangle;
+	//	////
+	//	e[e[e[e[edge].sibling].nextEdge].nextEdge].nextEdge = e[edge].nextEdge;
+	//	e[e[e[edge].nextEdge].nextEdge].nextEdge = e[e[edge].sibling].nextEdge;
+	//	////
+	//	
+	//	tempE = e[e[edge].nextEdge].nextEdge;
+	//	e[e[edge].nextEdge].nextEdge = edge;
 
-		tempE2 = e[e[e[edge].sibling].nextEdge].nextEdge;
-		e[e[e[edge].sibling].nextEdge].nextEdge = e[edge].sibling;
+	//	tempE2 = e[e[e[edge].sibling].nextEdge].nextEdge;
+	//	e[e[e[edge].sibling].nextEdge].nextEdge = e[edge].sibling;
 
-		e[e[edge].sibling].nextEdge = tempE;
-		e[edge].nextEdge = tempE2;
+	//	e[e[edge].sibling].nextEdge = tempE;
+	//	e[edge].nextEdge = tempE2;
 
-		e[edge].vertex = e[e[e[edge].sibling].nextEdge].vertex;
-		e[e[edge].sibling].vertex = e[e[edge].nextEdge].vertex;
+	//	e[edge].vertex = e[e[e[edge].sibling].nextEdge].vertex;
+	//	e[e[edge].sibling].vertex = e[e[edge].nextEdge].vertex;
 
-		vertexEPtr[e[e[e[edge].nextEdge].nextEdge].vertex] = e[edge].nextEdge;
-		vertexEPtr[e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex] = e[e[edge].sibling].nextEdge;
-
-		//pass on
-		edge = e[edge].nextEdge;
-	}
-	else
+	//	vertexEPtr[e[e[e[edge].nextEdge].nextEdge].vertex] = e[edge].nextEdge;
+	//	vertexEPtr[e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex] = e[e[edge].sibling].nextEdge;
+	//	cout << "flip" << endl;
+	//	//pass on
+	//	//edge = e[edge].nextEdge;
+	//}
+	if (true)
+	//else 
 	{//*/
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// create new vertex point
@@ -1279,7 +1281,6 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 		tempNorm2[1] += tempNorm1[1];
 		tempNorm2[2] += tempNorm1[2];
 
-
 		tempE = e[e[tempE].nextEdge].sibling;
 	} while (tempE != vertexEPtr[tempV]);
 
@@ -1300,12 +1301,53 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	nrofTris = nrofTris + 2;
 }
 
+void Mesh::edgeFlip(int &edge)
+{
+	int tempE; int tempE2;
+
+	int vert1 = e[e[e[edge].nextEdge].nextEdge].vertex;
+	int vert2 = e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex;
+
+	for (int i = 0; i < 3; i++) {
+		if (indexArray[e[edge].triangle].index[i] == e[edge].vertex)
+			indexArray[e[edge].triangle].index[i] = vert2;
+
+		if (indexArray[e[e[edge].sibling].triangle].index[i] == e[e[edge].sibling].vertex)
+			indexArray[e[e[edge].sibling].triangle].index[i] = vert1;
+	}
+	// rebind triangles
+	e[e[e[e[edge].sibling].nextEdge].nextEdge].triangle = e[edge].triangle;
+	e[e[e[edge].nextEdge].nextEdge].triangle = e[e[edge].sibling].triangle;
+	////
+	e[e[e[e[edge].sibling].nextEdge].nextEdge].nextEdge = e[edge].nextEdge;
+	e[e[e[edge].nextEdge].nextEdge].nextEdge = e[e[edge].sibling].nextEdge;
+	////
+
+	tempE = e[e[edge].nextEdge].nextEdge;
+	e[e[edge].nextEdge].nextEdge = edge;
+
+	tempE2 = e[e[e[edge].sibling].nextEdge].nextEdge;
+	e[e[e[edge].sibling].nextEdge].nextEdge = e[edge].sibling;
+
+	e[e[edge].sibling].nextEdge = tempE;
+	e[edge].nextEdge = tempE2;
+
+	e[edge].vertex = e[e[e[edge].sibling].nextEdge].vertex;
+	e[e[edge].sibling].vertex = e[e[edge].nextEdge].vertex;
+
+	vertexEPtr[e[e[e[edge].nextEdge].nextEdge].vertex] = e[edge].nextEdge;
+	vertexEPtr[e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex] = e[e[edge].sibling].nextEdge;
+	cout << "flip" << endl;
+	//pass on
+	//edge = e[edge].nextEdge;
+}
 void Mesh::edgeCollapse(bool recursive, int &edge) {
 
 	int tempE;
 	int tempE2;
 	static int currVert; 
 	static int nVert;
+	static int ndVert;
 
 	//tempE = edge->nextEdge->sibling;
 	//tempE2 = edge->sibling->nextEdge->sibling;
@@ -1313,31 +1355,56 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	//if (tempE == tempE->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
 	//if (edge = edge->nextEdge->nextEdge->sibling->nextEdge->sibling->nextEdge->sibling->nextEdge->nextEdge)
 	
-	if (edge == e[e[e[e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
-	{
-		std::cout << "1" << endl;
-        tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
-		edgeCollapse(true, e[e[edge].nextEdge].sibling);
-		edge = tempE;
-		std::cout << "11" << endl;
-	}
-	//if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
-	if (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
-	{
-		std::cout << "2" << endl;
-        edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
-		std::cout << "22" << endl;
-	}
-	
-	currVert = e[e[edge].sibling].vertex;
+	//if (edge == e[e[e[e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
+	//{
+	//	std::cout << "1" << endl;
+ //       tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
+	//	edgeCollapse(true, e[e[edge].nextEdge].sibling);
+	//	edge = tempE;
+	//	std::cout << "11" << endl;
+	//}
+	////if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
+	//if (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
+	//{
+	//	std::cout << "2" << endl;
+ //       edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
+	//	std::cout << "22" << endl;
+	//}
+	                                                 
+	currVert = e[e[edge].sibling].vertex; bool currSuccess = false;
 	nVert = e[edge].vertex;
+	ndVert = e[e[e[edge].nextEdge].nextEdge].vertex; bool ndSuccess = false;
 
 	// rebind edges that point to nVert
-	tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
-	while (tempE != e[e[edge].sibling].nextEdge)
+	tempE = e[e[edge].sibling].nextEdge;
+	while (tempE != edge)
+	{
+		if (e[e[tempE].sibling].vertex == currVert){
+			edgeFlip(tempE); currSuccess = true;
+          	edgeFlip(edge);
+			e[e[edge].sibling].triangle;
+			e[edge].triangle;
+			return;
+		}
+		else if (e[e[tempE].sibling].vertex == ndVert) {
+			//edgeFlip(tempE); ndSuccess = true;
+			//edgeFlip(e[e[edge].nextEdge].nextEdge);
+            return;
+		}
+		tempE = e[e[tempE].sibling].nextEdge;
+
+	}
+	//if (currSuccess)
+	//	edgeFlip(edge);
+	//if (ndSuccess)
+	//	edgeFlip(e[e[edge].nextEdge].nextEdge);
+	//if (currSuccess || ndSuccess)
+	//	return;
+
+	tempE = e[e[edge].sibling].nextEdge;
+	while (tempE != edge)
 	{
 		e[tempE].vertex = currVert;
-
 		// rebind the triangles containing nVert as index
 		for (int i = 0; i < 3; i++) {
 			if (indexArray[e[tempE].triangle].index[i] == nVert) {
@@ -1345,10 +1412,10 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 				break;
 			}
 		}
-		tempE = e[e[e[tempE].nextEdge].nextEdge].sibling;
+		tempE = e[e[tempE].sibling].nextEdge;
 	}
 	
-	tempE = e[e[edge].nextEdge].sibling;
+	//tempE = e[e[edge].nextEdge].sibling;
 	
 
 	// rebind edges
