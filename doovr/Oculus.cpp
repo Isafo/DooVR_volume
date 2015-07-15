@@ -89,7 +89,8 @@ int Oculus::runOvr() {
 	float changePos[3] = { 0.0f };
 	float differenceR[16] = { 0.0f };
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
-	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
+	float translateHandle[3] = { 0.0f, 0.0f, -0.1f };
+	float translatePointer[3] = { 0.0f, 0.0f, 0.025 };
 	float moveVec[3];
 	float lastPos[3];
 	float lastPos2[3];
@@ -400,6 +401,7 @@ int Oculus::runOvr() {
 
 	// Wand = Box + sphere
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
+	Box boxPointer(0.0f, 0.0f, 0.0f, 0.001f, 0.001f, 0.05f);
 	Sphere sphereWand(0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Initilise passive wand
@@ -493,10 +495,10 @@ int Oculus::runOvr() {
 				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 1), activeStates.end());
 			}
 		}
-
+		mTest->markUp(wand, wandRadius);
 		// Switch to execute active states, checks menu choices if none are active
 		if (activeStates.empty()) {
-			//mTest->markUp(wand, wandRadius);
+			
 			handleMenu(wand->getPosition(), menuItem, nrOfMenuItems, menuState);
 			for (int i = 0; i < nrOfMenuItems; i++) {
 				switch (i) {
@@ -562,8 +564,9 @@ int Oculus::runOvr() {
 			for (int i = 0; i < activeStates.size(); i++) {
 				switch (activeStates[i]) {
 				  case 0: {
-					  mTest->sculpt(wand, wandRadius);
+					  //mTest->select(wand, wandRadius);
 					 // mTest->markUp(wand, wandRadius);
+					  mTest->push(wand, wandRadius);
 					break;
 				  }
 				  case 1: {
@@ -573,7 +576,7 @@ int Oculus::runOvr() {
 					moveVec[1] = lastPos2[1] + moveVec[1];
 					moveVec[2] = lastPos2[2] + moveVec[2];
 					
-					mTest->setPosition(moveVec);
+					mTest->setPosition(wand->getPosition());
 					
 					break;
 				  }
@@ -597,6 +600,7 @@ int Oculus::runOvr() {
 				  }
 				}
 			}
+			
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////////////////
@@ -612,7 +616,7 @@ int Oculus::runOvr() {
 		}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
-
+		mTest->updateOGLData();
 		// Begin the frame...
 		ovrHmd_BeginFrame(hmd, l_FrameIndex);
 
@@ -752,9 +756,7 @@ int Oculus::runOvr() {
 							mTest->render();
 						}
 					MVstack.pop();
-					translateVector[0] = 0.0f;
-					translateVector[1] = 0.0f;
-					translateVector[2] = -0.1f;
+					
 					glUseProgram(phongShader.programID);
 					glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
@@ -766,19 +768,22 @@ int Oculus::runOvr() {
 						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						MVstack.push();
 							
-							MVstack.translate(translateVector);
+							MVstack.translate(translateHandle);
 							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());
 							boxWand.render();
 						MVstack.pop();
 
-						/*MVstack.push();
+						MVstack.push();
 							MVstack.scale(wandRadius);
 							glUseProgram(sphereShader.programID);
 							glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 							glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 							sphereWand.render();
-						MVstack.pop();	*/
+							//MVstack.translate(translatePointer);
+							//glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							//boxPointer.render();
+						MVstack.pop();
 					MVstack.pop();
 						
 				MVstack.pop();

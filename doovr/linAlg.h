@@ -25,4 +25,5 @@ namespace linAlg {
 	float vecLength(float vec[3]);
 	//! Calculates the dot product
 	float dotProd(float vec1[3], float vec2[3]);
+	float lengthToSurface(float v[3], float w[3], float rad);
 }

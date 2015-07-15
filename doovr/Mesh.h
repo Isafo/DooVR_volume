@@ -29,14 +29,24 @@ struct halfEdge {
 	int vertex;
 };
 
+struct sVert {
+	int index;
+	float vec[3];
+	float length;
+};
+
 //! A class representing a modifiable 3D mesh 
 class Mesh {
   public:
 	Mesh(float rad);
 	~Mesh();
 
+	void select(Wand* wand, float rad);
+
 	//dilate/erode based modelling
-	void sculpt(Wand* wand, float rad);
+	void pull(Wand* wand, float rad);
+	void push(Wand* wand, float rad);
+	void drag(Wand* wand, float rad);
 	void markUp(Wand* wand, float rad);
 	void test(float bRad, int vNR, bool plus);
 
@@ -52,10 +62,13 @@ class Mesh {
 	void setPosition(float* p) { position[0] = p[0]; position[1] = p[1]; position[2] = p[2]; }
 	void setOrientation(float* o) { std::copy(o, o + 16, orientation); }
 
+	//! updates the changed vertecies normal and checks if retriangulation is needed.
+	void updateArea(sVert* changeList, int listSize);
+
+	void updateOGLData();
+
   private:
 
-	//! updates the changed vertecies normal and checks if retriangulation is needed.
-	void updateArea(int* changeList, int listSize, int* changeEList, int eListSize);
 	//! adds a vertex in the middle between the vertexpoints pA and pB.
 	/*! pA is the position of currVert, edge is the edge that is to long*/
 	void edgeSplit(float* vPoint, float* vec, int &edge);
@@ -69,15 +82,12 @@ class Mesh {
 	//! subdivides the surface into a sphere
 	void edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad);
 
-	const float MAX_LENGTH = 0.025f *0.2f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.0124f *0.2f;
+	const float MAX_LENGTH = 0.025f;// *0.6f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f;// *0.6f;
 
 	GLuint vao;          // Vertex array object, the main handle for geometry
-	
 	GLuint vertexbuffer; // Buffer ID to bind to GL_ARRAY_BUFFER
 	GLuint indexbuffer;  // Buffer ID to bind to GL_ELEMENT_ARRAY_BUFFER
-	//vector<GLfloat> vertexArray; // Vertex array on interleaved format: x y z nx ny nz s t
-	//vector<GLuint> indexArray;   // Element index array
 
 	//edgeArray the array that stores all edges of the mesh
 	halfEdge e[3000000];
@@ -86,14 +96,16 @@ class Mesh {
 
 	int vertexEPtr[1000000];
 	int triEPtr[2000000];
-	int selected[10000];
-
-	int nrofSelected = 0;
 	int nrofVerts;
 	int nrofTris;
+
+	sVert sVerts[10000];
+	int sVertsNR = 0;
+
+	//int sEdges[30000];
+	//int nrofsEdges = 0;
 
 	float position[3];
 	float orientation[16];
 
-	bool isMoved = false;
 };

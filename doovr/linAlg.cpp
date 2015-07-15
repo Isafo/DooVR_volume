@@ -234,3 +234,10 @@ float linAlg::vecLength(float vec[3]) {
 float linAlg::dotProd(float vec1[3], float vec2[3]){
 	return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
 }
+
+float linAlg::lengthToSurface(float v[3], float w[3], float rad)
+{
+	//float t;
+	return (-(v[0]*w[0] + v[1]*w[1] + v[2]*w[2])/(w[0]*w[0] + w[1]*w[1] + w[2]*w[2])) 
+		+ sqrt((rad*rad + (v[0]*w[0] + v[1]*w[1] + v[2]*w[2]) - (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]))/(w[0]*w[0] + w[1]*w[1] + w[2]*w[2]) );
+}
