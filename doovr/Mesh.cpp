@@ -52,8 +52,9 @@ Mesh::Mesh(float rad) {
 	triangle* indexP;
 	vertex * vertexP;
 
-	nrofVerts = 6;
-	nrofTris = 8;
+	nrofVerts = 6; vertexCap = 6;
+	nrofTris = 8; triangleCap = 8;
+	nrofEdges = 24; edgeCap = 24;
 
 	for (int i = 0; i < 1000000; i++)
 	{
@@ -336,7 +337,7 @@ Mesh::Mesh(float rad) {
 	//		success = true;
 	//}
 	
-	for (int i = 0; i < nrofVerts; i++)
+	for (int i = 0; i < vertexCap; i++)
 	{
 		vertexArray[i].selected = 0.0f;
 	}
@@ -386,11 +387,11 @@ Mesh::Mesh(float rad) {
 	// Stride 8 (interleaved array with 8 floats per vertex)
 	// Array buffer offset 0, 3, 6 (offset into first vertex)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)0); // xyz coordinates
+		sizeof(vertex), (void*)0); // xyz coordinates
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+		sizeof(vertex), (void*)(3 * sizeof(GLfloat))); // normals
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
-		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))); // normals
+		sizeof(vertex), (void*)(6 * sizeof(GLfloat))); // normals
 
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
@@ -456,7 +457,7 @@ void Mesh::select(Wand* wand, float rad) {
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 	// 1.0 >--------------------------
 	//--< 2.0 | start searching through vertexarray for points that are within the brush
-	for (int i = 1; i <= nrofVerts; i++) {
+	for (int i = 1; i <= vertexCap; i++) {
 		//--< 2.1 | calculate vector between vertexposition and wandposition
 		vPoint[0] = vertexArray[i].x;
 		vPoint[1] = vertexArray[i].y;
@@ -949,7 +950,7 @@ void Mesh::drag(Wand* wand, float rad) {
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 
-	for (int i = 1; i <= nrofVerts; i++) {
+	for (int i = 1; i <= vertexCap; i++) {
 		vPoint[0] = vertexArray[i].x;
 		vPoint[1] = vertexArray[i].y;
 		vPoint[2] = vertexArray[i].z;
@@ -1067,7 +1068,7 @@ void Mesh::markUp(Wand* wand , float rad) {
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 	// 1.0 >--------------------------
 	//--< 2.0 | start searching through vertexarray for points that are within the brush
-	for (int i = 1; i <= nrofVerts; i++) {
+	for (int i = 1; i <= vertexCap; i++) {
 		//--< 2.1 | calculate vector between vertexposition and wandposition
 		vPoint[0] = vertexArray[i].x;
 		vPoint[1] = vertexArray[i].y;
@@ -1158,10 +1159,10 @@ void Mesh::updateOGLData()
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 
-	vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*nrofVerts,
+	vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex)*(vertexCap),
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i <= nrofVerts; i++) {
+	for (int i = 1; i <= vertexCap; i++) {
 		vertexP[i].x = vertexArray[i].x;
 		vertexP[i].y = vertexArray[i].y;
 		vertexP[i].z = vertexArray[i].z;
@@ -1185,11 +1186,11 @@ void Mesh::updateOGLData()
 	// Stride 8 (interleaved array with 8 floats per vertex)
 	// Array buffer offset 0, 3, 6 (offset into first vertex)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)0); // xyz coordinates
+		sizeof(vertex), (void*)0); // xyz coordinates
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+		sizeof(vertex), (void*)(3 * sizeof(GLfloat))); // normals
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
-		6 * sizeof(GLfloat) + sizeof(GLfloat), (void*)(6 * sizeof(GLfloat))); // normals
+		sizeof(vertex), (void*)(6 * sizeof(GLfloat))); // selected
 
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
@@ -1203,10 +1204,10 @@ void Mesh::updateOGLData()
 	//	sizeof(triangle)*indexArray.size(), &indexArray, GL_STREAM_DRAW);
 
 	// Present our vertex <indices to OpenGL
-	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * nrofTris,
+	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * (triangleCap),
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i <= nrofTris; i++) {
+	for (int i = 1; i <= triangleCap; i++) {
 		indexP[i].index[0] = indexArray[i].index[0];
 		indexP[i].index[1] = indexArray[i].index[1];
 		indexP[i].index[2] = indexArray[i].index[2];
@@ -1225,14 +1226,7 @@ void Mesh::updateOGLData()
 void Mesh::render() {
 	glBindVertexArray(vao);
 
-	glDrawElements(GL_TRIANGLES, nrofTris * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
-	// (mode, vertex uN, type, element array buffer offset)
-	glBindVertexArray(0);
-}
-void Mesh::render(unsigned int PrimID) {
-	glBindVertexArray(vao);
-
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (const GLvoid*)(PrimID * 3 * sizeof(GLuint)));
+	glDrawElements(GL_TRIANGLES, (triangleCap) * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex uN, type, element array buffer offset)
 	glBindVertexArray(0);
 }
@@ -1248,86 +1242,22 @@ void Mesh::updateArea(sVert* changeList, int listSize) {
 	static int vert1, vert2, vert3; 
 	static float edgeLength, edgeLength2;
 
-	int edges[100];
-	float edgeLengths[100];
-	int eNR = 0;
-
-	cout << "u" << endl;
-	//for (int i = 0; i < eListSize; i++) {
-
-	//	// Retriangulation //////////////////////////////////////////////////////////////////////////////////////////
-	//	// check if edge needs updat
-
-	//	if (e[changeEList[i]].nextEdge > 0)
-	//		tempEdge = changeEList[i];
-	//	else
-	//		continue;
-
-	//	vert1 = e[tempEdge].vertex;
-	//	vert2 = e[e[tempEdge].sibling].vertex;
-
-	//	vertexArray[vert1].selected = 0.0f;
-	//	vertexArray[vert2].selected = 0.0f;
+	//int edges[100];
+	//float edgeLengths[100];
+	//int eNR = 0;
+	vector<int> edges;
+	edges.reserve(12);
+	vector<float> edgeLengths;
+	edgeLengths.reserve(12);
 
 
-	//	vPoint1[0] = vertexArray[vert1].x; vPoint1[1] = vertexArray[vert1].y; vPoint1[2] = vertexArray[vert1].z;
-	//	vPoint2[0] = vertexArray[vert2].x; vPoint2[1] = vertexArray[vert2].y; vPoint2[2] = vertexArray[vert2].z;
-
-	//	linAlg::calculateVec(vPoint2, vPoint1, tempVec1);
-	//	edgeLength = linAlg::vecLength(tempVec1);
-
-	//	//check if edge is to long
-	//	if (edgeLength > MAX_LENGTH) {
-	//		//check if edge should be flipped
-	//		cout << "s" << endl;
-	//		vert1 = e[e[e[tempEdge].nextEdge].nextEdge].vertex;
-	//		vert2 = e[e[e[e[tempEdge].sibling].nextEdge].nextEdge].vertex;
-
-	//		tempVec2[0] = vertexArray[vert1].x;
-	//		tempVec2[1] = vertexArray[vert1].y;
-	//		tempVec2[2] = vertexArray[vert1].z;
-
-	//		tempVec3[0] = vertexArray[vert2].x;
-	//		tempVec3[1] = vertexArray[vert2].y;
-	//		tempVec3[2] = vertexArray[vert2].z;
-	//		linAlg::calculateVec(tempVec2, tempVec3, tempNorm1);
-	//		edgeLength2 = linAlg::vecLength(tempNorm1);
-	//		
-	//		if (edgeLength2 < MAX_LENGTH)
-	//		//if (false)
-	//		{
-	//			edgeFlip(tempEdge);
-	//			if (edgeLength2 < MIN_LENGTH)
-	//			{
-	//				edgeCollapse(false, tempEdge );
-	//			}
-	//		}
-	//		//---------------------
-	//		//should not be flipped, should be split
-	//		else
-	//		{
-	//			edgeSplit(vPoint1, tempVec1, tempEdge);
-	//		}
-	//		//----------------------
-	//		cout << "ss" << endl;
-	//		
-	//	}
-	//	//----------------------
-	//	// check if edge is to short
-	//	else if (edgeLength < MIN_LENGTH) {
-	//		cout << "c" << endl;
-	//		edgeCollapse(false, tempEdge);
-	//		cout << "cc" << endl;
-
-	//	}
-	//}
-
+	//cout << "u" << endl;
     for (int i = 0; i < listSize; i++)
 	{
 		vert3 = changeList[i].index;
 		vertexArray[vert3].selected = -vertexArray[vert3].selected;
 		
-		if (vertexEPtr[vert3] < 1)
+		if (vertexEPtr[vert3] < 0)
 			continue;
 
 		tempEdge = vertexEPtr[vert3];
@@ -1342,22 +1272,28 @@ void Mesh::updateArea(sVert* changeList, int listSize) {
 
 				linAlg::calculateVec(vPoint2, vPoint1, tempVec1);
 
-				edges[eNR] = tempEdge;
-				edgeLengths[eNR]= linAlg::vecLength(tempVec1);
-				eNR++;
+				edges.push_back(tempEdge);
+				edgeLengths.push_back(linAlg::vecLength(tempVec1));
+				//edgeLengths[eNR]= linAlg::vecLength(tempVec1);
+				//eNR++;
 				//edgeLength = linAlg::vecLength(tempVec1);
+				if (e[tempEdge].nextEdge < 0)
+					cout << "yo";
 			}
 
 
 			tempEdge = e[e[tempEdge].nextEdge].sibling;
 		} while (tempEdge != vertexEPtr[vert3]);
 
-		for (int i = 0; i < eNR; i++)
+        for (int i = 0; i < edges.size(); i++)
 		{
+			//this if should be removed
+			if (e[edges[i]].nextEdge < 0)
+				continue;
 		//check if edge is too long
 			if (edgeLengths[i] > MAX_LENGTH) {
 				//check if edge should be flipped
-				cout << "s" << endl;
+				//cout << "s" << endl;
 				vert1 = e[e[e[edges[i]].nextEdge].nextEdge].vertex;
 				vert2 = e[e[e[e[edges[i]].sibling].nextEdge].nextEdge].vertex;
 
@@ -1371,36 +1307,37 @@ void Mesh::updateArea(sVert* changeList, int listSize) {
 				linAlg::calculateVec(tempVec2, tempVec3, tempNorm1);
 				edgeLength2 = linAlg::vecLength(tempNorm1);
 					
-				//if (edgeLength2 < MAX_LENGTH)
-				////if (false)
-				//{
-				//	edgeFlip(edges[i]);
-				//	if (edgeLength2 < MIN_LENGTH)
-				//	{
-				//		cout << "c" << endl;
-				//		edgeCollapse(false, edges[i]);
-				//	}
-				//}
-				////---------------------
-				////should not be flipped, should be split
-				//else
-				//{
+				if (edgeLength2 < MAX_LENGTH)
+				{
+					edgeFlip(edges[i]);
+					if (edgeLength2 < MIN_LENGTH)
+					{
+						//cout << "c" << endl;
+						edgeCollapse(false, edges[i]);
+					}
+				}
+				//---------------------
+				//should not be flipped, should be split
+				else
+				{
 					edgeSplit(vPoint1, tempVec1, edges[i]);
-				//}
+				}
 				//----------------------
-				cout << "ss" << endl;
+				//cout << "ss" << endl;
 			}
 			//----------------------
 			// check if edge is to short
 			else if (edgeLengths[i] < MIN_LENGTH) {
-				cout << "c" << endl;
+				//cout << "c" << endl;
 				edgeCollapse(false, edges[i]);
-				cout << "cc" << endl;
+				//cout << "cc" << endl;
 
 			}
 		}
-		eNR = 0;
-		
+		//eNR = 0;
+		edges.clear();
+		edgeLengths.clear();
+
 		tempEdge = vertexEPtr[vert3];
 		// Update normal /////////////////////////////////////////////////////////////////////////////
 		do {
@@ -1457,19 +1394,19 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 
 	////TODO: FLIP EDGE, NOT HANDLED PROPERLY BUT SHOULD BE////////////////////////////////////
 	//
-   	vert1 = e[e[e[edge].nextEdge].nextEdge].vertex;
-	vert2 = e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex;
+ //  	vert1 = e[e[e[edge].nextEdge].nextEdge].vertex;
+	//vert2 = e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex;
 
-	temp[0] = vertexArray[vert1].x;
-	temp[1] = vertexArray[vert1].y;
-	temp[2] = vertexArray[vert1].z;
+	//temp[0] = vertexArray[vert1].x;
+	//temp[1] = vertexArray[vert1].y;
+	//temp[2] = vertexArray[vert1].z;
 
-	temp2[0] = vertexArray[vert2].x;
-	temp2[1] = vertexArray[vert2].y;
-	temp2[2] = vertexArray[vert2].z;
-	linAlg::calculateVec(temp, temp2, temp3);
-	linAlg::vecLength(temp3);
-	
+	//temp2[0] = vertexArray[vert2].x;
+	//temp2[1] = vertexArray[vert2].y;
+	//temp2[2] = vertexArray[vert2].z;
+	//linAlg::calculateVec(temp, temp2, temp3);
+	//linAlg::vecLength(temp3);
+	//
 	//if (linAlg::vecLength(temp3) < MAX_LENGTH && edge != e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].sibling].nextEdge].sibling && edge != e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].sibling].nextEdge) 
 	////if (false)
 	//{
@@ -1517,6 +1454,7 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	
 
 	tempV = -vertexEPtr[0];
+	vertexCap = max(vertexCap, tempV);
 
 	vertexEPtr[0] = vertexEPtr[tempV];
 	vertexArray[tempV].x = (vertexArray[vert1].x + vertexArray[vert2].x) / 2.0f;
@@ -1540,6 +1478,7 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	//tempT.index[2] = indexArray[edge->triangle].index[2];
 	//indexArray.push_back(tempT);
 	tempT2 = -triEPtr[0];
+	triangleCap = max(triangleCap, tempT2);
 	triEPtr[0] = triEPtr[tempT2];
 	indexArray[tempT2].index[0] = indexArray[e[e[edge].sibling].triangle].index[0];
 	indexArray[tempT2].index[1] = indexArray[e[e[edge].sibling].triangle].index[1];
@@ -1645,6 +1584,7 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	//rebind sibling of old triangle
 	e[e[e[edge].sibling].nextEdge].sibling = tempE;
 	e[tempE].nextEdge = tempE2;
+	edgeCap = max(edgeCap, tempE);
 	/*
 	triEPtr.push_back(new halfEdge);
 	vert1 = triEPtr.size() - 1;
@@ -1723,10 +1663,12 @@ void Mesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	vertexArray[tempV].nx = tempNorm2[0];
 	vertexArray[tempV].ny = tempNorm2[1];
 	vertexArray[tempV].nz = tempNorm2[2];
-	//}
-
 	nrofVerts++;
 	nrofTris = nrofTris + 2;
+	
+	//}
+
+	
 }
 
 void Mesh::edgeFlip(int &edge)
@@ -1737,12 +1679,16 @@ void Mesh::edgeFlip(int &edge)
 	int vert2 = e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex;
 
 	//check if the vertices that are about to be connected are not already connected
+
+	//if (edge != e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].sibling].nextEdge].sibling && edge != e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].sibling].nextEdge)
+	//	return;
+
 	tempE2 = e[edge].nextEdge;
 	tempE = e[e[tempE2].nextEdge].sibling;
 	while (tempE != tempE2)
 	{
 		if (e[tempE].vertex == vert2){
-			return;
+              			return;
 		}
 		tempE = e[e[tempE].nextEdge].sibling;
 	}
@@ -1789,6 +1735,7 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	static int currVert; 
 	static int nVert;
 	static int ndVert;
+	int ctr = 0;
 
 
 	//FÖRSTA FÖRSÖKET
@@ -1796,25 +1743,25 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	//if (tempE == tempE->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
 	//if (edge = edge->nextEdge->nextEdge->sibling->nextEdge->sibling->nextEdge->sibling->nextEdge->nextEdge)
 	
-	if (edge == e[e[e[e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
-	{
-		std::cout << "1" << endl;
-        tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
-		edgeCollapse(true, e[e[edge].nextEdge].sibling);
-		edge = tempE;
-		std::cout << "11" << endl;
-	}
-	//if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
-	if (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
-	{
-		std::cout << "2" << endl;
-        edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
-		std::cout << "22" << endl;
-	}
+	//if (edge == e[e[e[e[e[e[e[e[e[edge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
+	//{
+	//	std::cout << "1" << endl;
+ //       tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
+	//	edgeCollapse(true, e[e[edge].nextEdge].sibling);
+	//	edge = tempE;
+	//	std::cout << "11" << endl;
+	//}
+	////if (tempE2 == tempE2->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling->nextEdge->nextEdge->sibling)
+	//if (e[edge].sibling == e[e[e[e[e[e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge].sibling].nextEdge)
+	//{
+	//	std::cout << "2" << endl;
+ //       edgeCollapse(true, e[e[e[edge].sibling].nextEdge].sibling);
+	//	std::cout << "22" << endl;
+	//}
 	
 	////ANDRA FÖRSÖKET
 	currVert = e[e[edge].sibling].vertex;
-	nVert = e[edge].vertex;
+   	nVert = e[edge].vertex;
 	//ndVert = e[e[e[edge].nextEdge].nextEdge].vertex; bool ndSuccess = false;
 	//
 	//tempE = e[e[edge].sibling].nextEdge;
@@ -1845,24 +1792,22 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	//	return;
 
 	//TREDJE FÖRSÖKET
-	/*tempE = e[e[e[e[e[e[edge].sibling].nextEdge].nextEdge].sibling].nextEdge].nextEdge;
-	tempEnd = e[e[edge].nextEdge].sibling;
-	tempE2 = e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].sibling;
-	tempEnd2 = e[e[edge].nextEdge].nextEdge;
-
-	while (tempE != tempEnd)
-	{
-		while (tempE2 != tempEnd2)
-		{
+	tempE = e[e[edge].nextEdge].sibling;
+	tempE2 = e[e[e[edge].sibling].nextEdge].sibling;
+	do{
+		do{
 			if (e[tempE2].vertex == e[tempE].vertex)
-			{
-				return;
-			}
+				ctr++;
+
 			tempE2 = e[e[tempE2].nextEdge].sibling;
-		}
-		tempE = e[e[e[tempE].sibling].nextEdge].nextEdge;
-		tempE2 = e[e[e[e[e[edge].sibling].nextEdge].sibling].nextEdge].sibling;
-	}*/
+		} while (tempE2 != e[edge].sibling);
+
+		tempE2 = e[e[e[edge].sibling].nextEdge].sibling;
+		tempE = e[e[tempE].nextEdge].sibling;
+	} while (tempE != edge);
+
+	if (ctr != 2)
+		return;
 
 	// rebind edges that point to nVert
 	tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
@@ -1909,9 +1854,9 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	nrofTris = nrofTris - 2;
 	                                                                                                                
 	// reset the removed vertex
-	vertexArray[nVert].x = -100;
-	vertexArray[nVert].y = -100;
-	vertexArray[nVert].z = -100;
+	vertexArray[nVert].x = 0.2f;
+	vertexArray[nVert].y = 0.2f;
+	vertexArray[nVert].z = 0.2f;
 	vertexArray[nVert].nx = 0;
 	vertexArray[nVert].ny = 0;
 	vertexArray[nVert].nz = 0;

@@ -48,13 +48,9 @@ class Mesh {
 	void push(Wand* wand, float rad);
 	void drag(Wand* wand, float rad);
 	void markUp(Wand* wand, float rad);
-	void test(float bRad, int vNR, bool plus);
 
 	void render();
 	void render(unsigned int PrimID);
-
-	vertex* getVertexList();
-	triangle* getIndexList();
 
 	float* getPosition(){ return position; };
 	float* getOrientation(){ return orientation; };
@@ -69,6 +65,41 @@ class Mesh {
 
   private:
 
+	//Array that stores all halfEdges of the mesh
+	halfEdge e[3000000];
+	int nrofEdges;
+	//largest index in the edgeArray where values exist 
+	int edgeCap;
+
+	//Array that stores all triangles of the mesh
+	triangle indexArray[2000000];
+	//Array that exists parallell to the indexArray and contains indices to an edge that is part of the corresponding triangle 
+	int triEPtr[2000000];
+	int nrofTris;
+	//largest index in the indexArray where values exist 
+	int triangleCap;
+
+	//array that stres all vertices of the mesh
+	vertex vertexArray[1000000];
+	//Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle 
+	int vertexEPtr[1000000];
+	int nrofVerts;
+	//largest index in the vertexArray where values exist 
+	int vertexCap;
+	
+	sVert sVerts[10000];
+	int sVertsNR = 0;
+
+	float position[3];
+	float orientation[16];
+
+	const float MAX_LENGTH = 0.025f;// *0.6f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f;// *0.6f;
+
+	GLuint vao;          // Vertex array object, the main handle for geometry
+	GLuint vertexbuffer; // Buffer ID to bind to GL_ARRAY_BUFFER
+	GLuint indexbuffer;  // Buffer ID to bind to GL_ELEMENT_ARRAY_BUFFER
+
 	//! adds a vertex in the middle between the vertexpoints pA and pB.
 	/*! pA is the position of currVert, edge is the edge that is to long*/
 	void edgeSplit(float* vPoint, float* vec, int &edge);
@@ -81,31 +112,5 @@ class Mesh {
 
 	//! subdivides the surface into a sphere
 	void edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad);
-
-	const float MAX_LENGTH = 0.025f;// *0.6f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.0124f;// *0.6f;
-
-	GLuint vao;          // Vertex array object, the main handle for geometry
-	GLuint vertexbuffer; // Buffer ID to bind to GL_ARRAY_BUFFER
-	GLuint indexbuffer;  // Buffer ID to bind to GL_ELEMENT_ARRAY_BUFFER
-
-	//edgeArray the array that stores all edges of the mesh
-	halfEdge e[3000000];
-	triangle indexArray[2000000];
-	vertex vertexArray[1000000];
-
-	int vertexEPtr[1000000];
-	int triEPtr[2000000];
-	int nrofVerts;
-	int nrofTris;
-
-	sVert sVerts[10000];
-	int sVertsNR = 0;
-
-	//int sEdges[30000];
-	//int nrofsEdges = 0;
-
-	float position[3];
-	float orientation[16];
 
 };
