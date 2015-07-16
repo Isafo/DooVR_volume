@@ -753,7 +753,6 @@ void Mesh::updateArea(sVert* changeList, int listSize) {
 	vector<float> edgeLengths;
 	edgeLengths.reserve(12);
 
-	//cout << "u" << endl;
     for (int i = 0; i < listSize; i++)
 	{
 		vert3 = changeList[i].index;
@@ -762,83 +761,106 @@ void Mesh::updateArea(sVert* changeList, int listSize) {
 		if (vertexEPtr[vert3] < 0)
 			continue;
 
-		tempEdge = vertexEPtr[vert3];
+		tempEdge = e[e[vertexEPtr[vert3]].nextEdge].sibling;
 		vPoint1[0] = vertexArray[vert3].x; vPoint1[1] = vertexArray[vert3].y; vPoint1[2] = vertexArray[vert3].z;
 
 		do {
 			if (vertexArray[e[tempEdge].vertex].selected >= 0.0f)
 			{
-				vert2 = e[tempEdge].vertex;
-				//if (vertexArray[vert1].)
+				tempE = tempEdge;
+				tempEdge = e[e[tempEdge].nextEdge].sibling;
+
+				vert2 = e[tempE].vertex;
 				vPoint2[0] = vertexArray[vert2].x; vPoint2[1] = vertexArray[vert2].y; vPoint2[2] = vertexArray[vert2].z;
 
 				linAlg::calculateVec(vPoint2, vPoint1, tempVec1);
 
-				edges.push_back(tempEdge);
-				edgeLengths.push_back(linAlg::vecLength(tempVec1));
-				//edgeLengths[eNR]= linAlg::vecLength(tempVec1);
-				//eNR++;
-				//edgeLength = linAlg::vecLength(tempVec1);
-				if (e[tempEdge].nextEdge < 0)
-					cout << "yo";
-			}
+				edgeLength = linAlg::vecLength(tempVec1);
 
-			tempEdge = e[e[tempEdge].nextEdge].sibling;
-		} while (tempEdge != vertexEPtr[vert3]);
+				//check if edge is too long
+				if (edgeLength > MAX_LENGTH) {
+					//check if edge should be flipped
+					vert1 = e[e[e[tempE].nextEdge].nextEdge].vertex;
+					vert2 = e[e[e[e[tempE].sibling].nextEdge].nextEdge].vertex;
 
-        for (int i = 0; i < edges.size(); i++)
-		{
-			//this if should be removed
-			if (e[edges[i]].nextEdge < 0)
-				continue;
-		//check if edge is too long
-			if (edgeLengths[i] > MAX_LENGTH) {
-				//check if edge should be flipped
-				//cout << "s" << endl;
-				vert1 = e[e[e[edges[i]].nextEdge].nextEdge].vertex;
-				vert2 = e[e[e[e[edges[i]].sibling].nextEdge].nextEdge].vertex;
+					tempVec2[0] = vertexArray[vert1].x; tempVec2[1] = vertexArray[vert1].y; tempVec2[2] = vertexArray[vert1].z;
 
-				tempVec2[0] = vertexArray[vert1].x;
-				tempVec2[1] = vertexArray[vert1].y;
-				tempVec2[2] = vertexArray[vert1].z;
+					tempVec3[0] = vertexArray[vert2].x; tempVec3[1] = vertexArray[vert2].y; tempVec3[2] = vertexArray[vert2].z;
+					linAlg::calculateVec(tempVec2, tempVec3, tempNorm1);
+					edgeLength2 = linAlg::vecLength(tempNorm1);
 
-				tempVec3[0] = vertexArray[vert2].x;
-				tempVec3[1] = vertexArray[vert2].y;
-				tempVec3[2] = vertexArray[vert2].z;
-				linAlg::calculateVec(tempVec2, tempVec3, tempNorm1);
-				edgeLength2 = linAlg::vecLength(tempNorm1);
-					
-				if (edgeLength2 < MAX_LENGTH)
-				{
-					edgeFlip(edges[i]);
-					if (edgeLength2 < MIN_LENGTH)
+					if (edgeLength2 < MAX_LENGTH)
 					{
-						//cout << "c" << endl;
-						edgeCollapse(false, edges[i]);
+						edgeFlip(tempE);
+						if (edgeLength2 < MIN_LENGTH)
+						{
+							edgeCollapse(false, tempE);
+						}
 					}
-				}
-				//---------------------
-				//should not be flipped, should be split
-				else
-				{
-					edgeSplit(vPoint1, tempVec1, edges[i]);
+					//---------------------
+					//should not be flipped, should be split
+					else
+					{
+						edgeSplit(vPoint1, tempVec1, tempE);
+					}
+					//----------------------
 				}
 				//----------------------
-				//cout << "ss" << endl;
+				// check if edge is to short
+				else if (edgeLength < MIN_LENGTH) {
+					edgeCollapse(false, tempE);
+				}
+			}
+			else
+				tempEdge = e[e[tempEdge].nextEdge].sibling;
+
+		} while (tempEdge != vertexEPtr[vert3]);
+
+		//now do it for vertexEPtr aswell---------------------------
+		tempE = tempEdge;
+
+		vert2 = e[tempE].vertex;
+		vPoint2[0] = vertexArray[vert2].x; vPoint2[1] = vertexArray[vert2].y; vPoint2[2] = vertexArray[vert2].z;
+
+		linAlg::calculateVec(vPoint2, vPoint1, tempVec1);
+
+		edgeLength = linAlg::vecLength(tempVec1);
+
+		//check if edge is too long
+		if (edgeLength > MAX_LENGTH) {
+			//check if edge should be flipped
+			vert1 = e[e[e[tempE].nextEdge].nextEdge].vertex;
+			vert2 = e[e[e[e[tempE].sibling].nextEdge].nextEdge].vertex;
+
+			tempVec2[0] = vertexArray[vert1].x; tempVec2[1] = vertexArray[vert1].y; tempVec2[2] = vertexArray[vert1].z;
+
+			tempVec3[0] = vertexArray[vert2].x; tempVec3[1] = vertexArray[vert2].y; tempVec3[2] = vertexArray[vert2].z;
+			linAlg::calculateVec(tempVec2, tempVec3, tempNorm1);
+			edgeLength2 = linAlg::vecLength(tempNorm1);
+
+			if (edgeLength2 < MAX_LENGTH)
+			{
+				edgeFlip(tempE);
+				if (edgeLength2 < MIN_LENGTH)
+				{
+					edgeCollapse(false, tempE);
+				}
+			}
+			//---------------------
+			//should not be flipped, should be split
+			else
+			{
+				edgeSplit(vPoint1, tempVec1, tempE);
 			}
 			//----------------------
-			// check if edge is to short
-			else if (edgeLengths[i] < MIN_LENGTH) {
-				//cout << "c" << endl;
-				edgeCollapse(false, edges[i]);
-				//cout << "cc" << endl;
-
-			}
 		}
-		//eNR = 0;
-		edges.clear();
-		edgeLengths.clear();
-
+		//----------------------
+		// check if edge is to short
+		else if (edgeLength < MIN_LENGTH) {
+			edgeCollapse(false, tempE);
+		}
+	//>-----------------------
+       
 		tempEdge = vertexEPtr[vert3];
 		// Update normal /////////////////////////////////////////////////////////////////////////////
 		do {
@@ -1060,7 +1082,15 @@ void Mesh::edgeFlip(int &edge)
 	while (tempE != tempE2)
 	{
 		if (e[tempE].vertex == vert2){
-              			return;
+			//test----------------
+			vert1 = e[edge].vertex;
+			vert2 = e[e[edge].sibling].vertex;
+			float tempVec[3] = { vertexArray[vert1].x - vertexArray[vert2].x, vertexArray[vert1].y - vertexArray[vert2].y, vertexArray[vert1].z - vertexArray[vert2].z };
+			linAlg::normVec(tempVec);
+			vertexArray[vert1].x -= tempVec[0] * (MIN_LENGTH / 2.0f); vertexArray[vert1].y -= tempVec[1] * (MIN_LENGTH / 2.0f); vertexArray[vert1].z -= tempVec[2] * (MIN_LENGTH / 2.0f);
+			vertexArray[vert2].x += tempVec[0] * (MIN_LENGTH / 2.0f); vertexArray[vert2].y += tempVec[1] * (MIN_LENGTH / 2.0f); vertexArray[vert2].z += tempVec[2] * (MIN_LENGTH / 2.0f);
+			//------------------
+			return;
 		}
 		tempE = e[e[tempE].nextEdge].sibling;
 	}
@@ -1128,8 +1158,16 @@ void Mesh::edgeCollapse(bool recursive, int &edge) {
 	} while (tempE != edge);
 
 	if (ctr != 2)
+	{
+		//test-----------------
+		//float tempVec[3] = { vertexArray[nVert].x - vertexArray[currVert].x, vertexArray[nVert].y - vertexArray[currVert].y, vertexArray[nVert].z - vertexArray[currVert].z };
+		//linAlg::normVec(tempVec);
+		//vertexArray[nVert].x += tempVec[0] * (MIN_LENGTH / 2.0f); vertexArray[nVert].y += tempVec[0] * (MIN_LENGTH / 2.0f); vertexArray[nVert].z += tempVec[0] * (MIN_LENGTH / 2.0f);
+		//vertexArray[currVert].x -= tempVec[0] * (MIN_LENGTH / 2.0f); vertexArray[currVert].y -= tempVec[0] * (MIN_LENGTH / 2.0f); vertexArray[currVert].z -= tempVec[0] * (MIN_LENGTH / 2.0f);
+		//---------------------
 		return;
-
+	}
+		
 	// rebind edges that point to nVert
 	tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
 	while (tempE != e[e[edge].sibling].nextEdge)
