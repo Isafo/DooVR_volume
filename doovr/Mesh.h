@@ -58,18 +58,21 @@ class Mesh {
 	void setPosition(float* p) { position[0] = p[0]; position[1] = p[1]; position[2] = p[2]; }
 	void setOrientation(float* o) { std::copy(o, o + 16, orientation); }
 
-	//! updates the changed vertecies normal and checks if retriangulation is needed.
-	void updateArea(sVert* changeList, int listSize);
-
 	void updateOGLData();
 
   private:
 
-	//Array that stores all halfEdges of the mesh
-	halfEdge e[3000000];
-	int nrofEdges;
-	//largest index in the edgeArray where values exist 
-	int edgeCap;
+	const int MAX_NR_OF_VERTICES = 1000000;
+	const int MAX_NR_OF_TRIANGLES = 2 * MAX_NR_OF_VERTICES;
+	const int MAX_NR_OF_EDGES = 3 * MAX_NR_OF_VERTICES;
+
+	//array that stres all vertices of the mesh
+	vertex vertexArray[1000000];
+	//Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle 
+	int vertexEPtr[1000000];
+	int nrofVerts;
+	//largest index in the vertexArray where values exist 
+	int vertexCap;
 
 	//Array that stores all triangles of the mesh
 	triangle indexArray[2000000];
@@ -79,13 +82,11 @@ class Mesh {
 	//largest index in the indexArray where values exist 
 	int triangleCap;
 
-	//array that stres all vertices of the mesh
-	vertex vertexArray[1000000];
-	//Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle 
-	int vertexEPtr[1000000];
-	int nrofVerts;
-	//largest index in the vertexArray where values exist 
-	int vertexCap;
+	//Array that stores all halfEdges of the mesh
+	halfEdge e[3000000];
+	int nrofEdges;
+	//largest index in the edgeArray where values exist 
+	int edgeCap;
 	
 	sVert sVerts[10000];
 	int sVertsNR = 0;
@@ -112,5 +113,8 @@ class Mesh {
 
 	//! subdivides the surface into a sphere
 	void edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad);
+
+	//! updates the changed vertecies normal and checks if retriangulation is needed.
+	void updateArea(sVert* changeList, int listSize);
 
 };

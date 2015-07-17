@@ -29,23 +29,26 @@ Mesh::Mesh(float rad) {
 	nrofTris = 8; triangleCap = 8;
 	nrofEdges = 24; edgeCap = 24;
 
-	for (int i = 0; i < 1000000; i++)
+	//create queue for vertices
+	for (int i = 0; i < MAX_NR_OF_VERTICES; i++)
 	{
 		vertexEPtr[i] = -(i + 1);
 	}
-	vertexEPtr[1000000 - 1] = 0;
+	vertexEPtr[MAX_NR_OF_VERTICES - 1] = 0;
 	vertexEPtr[0] = -7;
-	for (int i = 0; i < 2000000; i++)
+	//create queue for Triangles
+	for (int i = 0; i < MAX_NR_OF_TRIANGLES; i++)
 	{
 		triEPtr[i] = -(i + 1);
 	}
-	triEPtr[2000000 - 1] = -1;
+	triEPtr[MAX_NR_OF_TRIANGLES - 1] = -1;
 	triEPtr[0] = -9;
-	for (int i = 0; i < 3000000; i++)
+	//create queue for Edges
+	for (int i = 0; i < MAX_NR_OF_EDGES; i++)
 	{
 		e[i].nextEdge = -(i + 1);
 	}
-	e[3000000 - 1].nextEdge = -1;
+	e[MAX_NR_OF_EDGES - 1].nextEdge = -1;
 	e[0].nextEdge = -25;
 
 	// place vertecies
@@ -260,12 +263,12 @@ Mesh::Mesh(float rad) {
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	// Present our vertex coordinates to OpenGL
 	glBufferData(GL_ARRAY_BUFFER,
-		(1000000)*sizeof(vertex), NULL, GL_STREAM_DRAW);
+		(MAX_NR_OF_VERTICES)*sizeof(vertex), NULL, GL_STREAM_DRAW);
 
-	vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex) *1000000,
+	vertexP = (vertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(vertex) *MAX_NR_OF_VERTICES,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i < 1000000; i++) {
+	for (int i = 1; i < MAX_NR_OF_VERTICES; i++) {
 		vertexP[i].x = vertexArray[i].x;
 		vertexP[i].y = vertexArray[i].y;
 		vertexP[i].z = vertexArray[i].z;
@@ -298,12 +301,12 @@ Mesh::Mesh(float rad) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 	// Present our vertex indices to OpenGL
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		(2000000)*sizeof(triangle), NULL, GL_STREAM_DRAW);
+		(MAX_NR_OF_TRIANGLES)*sizeof(triangle), NULL, GL_STREAM_DRAW);
 
-	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * 2000000,
+	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * MAX_NR_OF_TRIANGLES,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i < 2000000; i++) {
+	for (int i = 1; i < MAX_NR_OF_TRIANGLES; i++) {
 		indexP[i].index[0] = indexArray[i].index[0];
 		indexP[i].index[1] = indexArray[i].index[1];
 		indexP[i].index[2] = indexArray[i].index[2];
