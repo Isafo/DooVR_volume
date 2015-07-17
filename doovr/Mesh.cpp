@@ -4,26 +4,16 @@
 #include <algorithm>
 #include <iterator>
 
-using namespace std;
 #define M_PI 3.14159265358979323846
 
-
 Mesh::Mesh(float rad) {
-	triangle tempT;
-	vertex tempV;
-	int tempE1;
-	int tempIn1;
-	int tempIn2;
-	bool success = true;
+	sVert tempSV;
 
 	float tempP1[3]; float tempP2[3] = {0.0f, 0.0f, 0.0f};
-	int tempSize = 0;
-	float testLength = 0.0f;
+	float stepRad = MIN_LENGTH;
 
-	vector<int> changedVertices;
+	std::vector<sVert> changedVertices;
 	changedVertices.reserve(10000);
-	vector<int> changedEdges;
-	changedEdges.reserve(30000);
 
 	position[0] = 0.0f; position[1] = -0.22f; position[2] = -0.25f;
 
@@ -58,7 +48,6 @@ Mesh::Mesh(float rad) {
 	e[3000000 - 1].nextEdge = -1;
 	e[0].nextEdge = -25;
 
-	
 	// place vertecies
 	// Y 0
 	vertexArray[1].x = 0.0f;	vertexArray[1].y = MAX_LENGTH / 2.0f;	vertexArray[1].z = 0.0f; /*normal*/	vertexArray[1].nx = 0.0f;	vertexArray[1].ny = 1;	vertexArray[1].nz = 0.0f;
@@ -203,51 +192,58 @@ Mesh::Mesh(float rad) {
 	// create sphere by subdivision
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	//while (success)
-	//{
-	//	success = false;
+	while (stepRad < rad)
+	{
+		for (int j = 1; j < vertexCap; j++)
+		{
+			tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
+			if (vertexEPtr[j] > 0)
+			{
+				linAlg::normVec(tempP1);
 
-	//	tempSize = nrofVerts;
-	//	for (int j = 0; j < nrofVerts; j++)
-	//	{
-	//		tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
-	//		testLength = linAlg::vecLength(tempP1);
-	//		if (vertexEPtr[j] > 0 && testLength < rad)
-	//		{
-	//			success = true;
-	//			linAlg::normVec(tempP1);
+				vertexArray[j].x = tempP1[0] * stepRad;
+				vertexArray[j].y = tempP1[1] * stepRad;
+				vertexArray[j].z = tempP1[2] * stepRad;
 
-	//			vertexArray[j].x += tempP1[0] * MIN_LENGTH;
-	//			vertexArray[j].y += tempP1[1] * MIN_LENGTH;
-	//			vertexArray[j].z += tempP1[2] * MIN_LENGTH;
+				tempSV.index = j;
+				changedVertices.push_back(tempSV);
+				vertexArray[j].selected = 1.0f;
+			}
+		}
+		updateArea(&changedVertices[0], changedVertices.size());
+		changedVertices.clear();
+		
+		stepRad += MIN_LENGTH;
+	}
+	stepRad = rad;
+	for (int i = 1; i < 60; i++)
+	{
+		for (int j = 0; j < vertexCap; j++)
+		{
+			tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
+			if (vertexEPtr[j] > 0)
+			{
+				linAlg::normVec(tempP1);
 
-	//			//vertexEPtr[j]->needsUpdate = true;
-	//			//tempE1 = e[e[vertexEPtr[j]].nextEdge].sibling;
-	//			/*tempE1 = vertexEPtr[j];
-	//			do {
-	//				if (vertexArray[e[tempE1].vertex].selected != 1.0f){
-	//					changedEdges.push_back(tempE1);
-	//				}
-	//				tempE1 = e[e[tempE1].nextEdge].sibling;
-	//				
-	//			} while (tempE1 != vertexEPtr[j]);*/
+				vertexArray[j].x = tempP1[0] * stepRad;
+				vertexArray[j].y = tempP1[1] * stepRad;
+				vertexArray[j].z = tempP1[2] * stepRad;
 
-	//			changedVertices.push_back(j);
-	//			vertexArray[j].selected = 1.0f;
-	//		}
-	//	}
-	//	
-	//	updateArea(&changedVertices[0], changedVertices.size());
-	//	if (tempSize != nrofVerts)
-	//		success = true;
-	//}
+				tempSV.index = j;
+				changedVertices.push_back(tempSV);
+				vertexArray[j].selected = 1.0f;
+			}
+		}
+		updateArea(&changedVertices[0], changedVertices.size());
+		changedVertices.clear();
+	}
+	
 	
 	for (int i = 0; i < vertexCap; i++)
 	{
 		vertexArray[i].selected = 0.0f;
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 	vertexP = &vertexArray[0];
 	indexP = &indexArray[0];
@@ -451,7 +447,6 @@ void Mesh::select(Wand* wand, float rad) {
 		}
 	}
 	// 2.0 >----------------------
-
 
 	if (success == true) {
 
@@ -748,9 +743,9 @@ void Mesh::updateArea(sVert* changeList, int listSize) {
 	//int edges[100];
 	//float edgeLengths[100];
 	//int eNR = 0;
-	vector<int> edges;
+	std::vector<int> edges;
 	edges.reserve(12);
-	vector<float> edgeLengths;
+	std::vector<float> edgeLengths;
 	edgeLengths.reserve(12);
 
     for (int i = 0; i < listSize; i++)
@@ -1125,7 +1120,7 @@ void Mesh::edgeFlip(int &edge)
 
 	vertexEPtr[e[e[e[edge].nextEdge].nextEdge].vertex] = e[edge].nextEdge;
 	vertexEPtr[e[e[e[e[edge].sibling].nextEdge].nextEdge].vertex] = e[e[edge].sibling].nextEdge;
-	cout << "flip" << endl;
+	//std::cout << "flip" << std::endl;
 	//pass on
 	//edge = e[edge].nextEdge;
 }

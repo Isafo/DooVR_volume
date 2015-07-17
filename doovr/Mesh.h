@@ -93,8 +93,8 @@ class Mesh {
 	float position[3];
 	float orientation[16];
 
-	const float MAX_LENGTH = 0.025f;// *0.6f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.0124f;// *0.6f;
+	const float MAX_LENGTH = 0.025f *0.5f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f*0.5f;
 
 	GLuint vao;          // Vertex array object, the main handle for geometry
 	GLuint vertexbuffer; // Buffer ID to bind to GL_ARRAY_BUFFER
