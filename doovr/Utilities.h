@@ -1,4 +1,5 @@
 //! Namespace that handles necassary includes and various functions
+#pragma once
 
 #include "GL/glew.h"
 
