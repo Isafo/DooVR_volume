@@ -13,6 +13,7 @@
 #include "Wand.h"
 #include "Passive3D.h"
 #include "TrackingRange.h"
+#include "DynamicMesh.h"
 
 
 #include <thread>
@@ -450,7 +451,7 @@ int Oculus::runOvr() {
 	float lastRadius;
 
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
-	Mesh* mTest = new Mesh(0.05f);
+	DynamicMesh* mTest = new DynamicMesh(0.05f);
 	//DynamicMesh* mTest = new DynamicMesh("2015-07-21_16-38-01.bin");
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
@@ -568,7 +569,7 @@ int Oculus::runOvr() {
 					if (modellingButtonState[activeButton] == 1) {
 						// reset mesh
 						delete mTest; // Reset mesh
-						mTest = new Mesh(0.3f);
+						mTest = new DynamicMesh(0.3f);
 
 						modellingButton[activeButton]->setState(true);
 
@@ -718,7 +719,7 @@ int Oculus::runOvr() {
 				for (int i = 0; i < 16; i++)
 					mat4[i] = pmat4[i];
 
-				linAlg::transpose(mat4);
+				//linAlg::transpose(mat4);
 				linAlg::vectorMatrixMult(mat4, lPos, LP);
 				linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix()); //TODO: check if this uniform is needed
@@ -733,6 +734,7 @@ int Oculus::runOvr() {
 				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
 				board.render();
 				MVstack.pop();
+
 
 				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
 
