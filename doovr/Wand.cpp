@@ -18,9 +18,9 @@ float* Wand::getVelocity() {
 	return Velocity;
 }
 float* Wand::getVelocity(float dTime) {
-	Velocity[0] = Position[0] - lastPosition[0] / dTime;
-	Velocity[1] = Position[1] - lastPosition[1] / dTime;
-	Velocity[2] = Position[2] - lastPosition[2] / dTime;
+	Velocity[0] = (Position[0] - lastPosition[0]) / dTime;
+	Velocity[1] = (Position[1] - lastPosition[1]) / dTime;
+	Velocity[2] = (Position[2] - lastPosition[2]) / dTime;
 	return Velocity;
 }
 float* Wand::getDirection() {

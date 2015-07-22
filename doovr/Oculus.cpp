@@ -450,8 +450,8 @@ int Oculus::runOvr() {
 	float lastRadius;
 
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
-	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_11-16-27.bin");
-	DynamicMesh* modellingMesh = new DynamicMesh(0.05f);
+	DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
+	//DynamicMesh* modellingMesh = new DynamicMesh(0.05f);
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
 	//Mesh* tempStaticMesh = new Mesh();
@@ -625,7 +625,6 @@ int Oculus::runOvr() {
 							// saved files found
 							// set staticMesh as main mesh as a temporary loading mesh indicator
 							placeHolder = new StaticMesh(); placeHolder->load("../Assets/Models/placeHolder.bin"); placeHolder->createBuffers();
-							placeHolder->createBuffers();
 							loaderMesh = new StaticMesh();
 
 							previewMesh = placeHolder;
@@ -917,31 +916,32 @@ int Oculus::runOvr() {
 				}
 				else if (loadButtonState[activeButton] == 2) {
 
-					listStartPos = scrollList[leftListIndex]->getPosition();
 					wandVelocity = wand->getVelocity(deltaTime);
 					listVelocity = wandVelocity[0];
 
-					for (int i = 0; i < 5; i++)
+					/*for (int i = 0; i < 5; i++)
 					{
-					listLeft = -0.11f - (listStartPos[0] + listVelocity*deltaTime + i*0.05f);
-					listRight = listStartPos[0] + listVelocity*deltaTime + i*0.05f - 0.11f;
+						listStartPos = scrollList[i]->getPosition();
 
-					if (listLeft > 0.0f)
-					{
-					tempVec[0] = 0.11 - listLeft; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-					scrollList[(leftListIndex + i) % 5]->setPosition(tempVec);
-					}
-					else if (listRight > 0.0f)
-					{
-					tempVec[0] = -0.11 + listRight; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-					scrollList[(leftListIndex + i) % 5]->setPosition(tempVec);
-					}
-					else
-					{
-					tempVec[0] = listStartPos[0] + listVelocity*deltaTime + i*0.05f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-					scrollList[(leftListIndex + i) % 5]->setPosition(tempVec);
-					}
-					}
+						listLeft = -0.11f - (listStartPos[0] + listVelocity*deltaTime );
+						listRight = listStartPos[0] + listVelocity*deltaTime - 0.11f;
+
+						if (listLeft > 0.0f)
+						{
+							tempVec[0] = 0.11 - listLeft; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+							scrollList[i]->setPosition(tempVec);
+						}
+						else if (listRight > 0.0f)
+						{
+							tempVec[0] = -0.11 + listRight; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+							scrollList[i]->setPosition(tempVec);
+						}
+						else
+						{
+							tempVec[0] = listStartPos[0] + listVelocity*deltaTime + i*0.05f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+							scrollList[i]->setPosition(tempVec);
+						}
+					}*/
 
 				}
 				else if (loadButtonState[activeButton] == 3)
@@ -971,7 +971,7 @@ int Oculus::runOvr() {
 
 
 			if (listVelocity == 0) {
-				if (loaderMeshLock.try_lock()) {
+				if (previewMesh != loaderMesh && loaderMeshLock.try_lock()) {
 					if (th1.joinable()) {
 						th1.join();
 					}
@@ -982,19 +982,22 @@ int Oculus::runOvr() {
 				}
 			}
 			else {
-				if (listVelocity > 0.04f && listVelocity < -0.04f) {
-
-					listVelocity = listVelocity + listAcelleration*deltaTime;
-					listAcelleration = -0.5*listVelocity;
-				}
-				else {
-
-				}
+				
 
 				for (int i = 0; i < 5; i++) {
 					listStartPos = scrollList[i]->getPosition();
+
 					if (listStartPos[0] < 0.01f && listStartPos[0] > -0.01f) {
 						scrollList[i]->setState(true);
+						if (listVelocity > 0.04f && listVelocity < -0.04f) {
+
+							listVelocity = listVelocity + listAcelleration*deltaTime;
+							listAcelleration = -0.5*listVelocity;
+						}
+						else {
+							listVelocity = listVelocity + listAcelleration*deltaTime;
+							listAcelleration = -1.0*listVelocity;
+						}
 					}
 					else {
 						scrollList[i]->setState(false);
@@ -1004,12 +1007,12 @@ int Oculus::runOvr() {
 					listLeft = -0.125f - (listStartPos[0] + listVelocity*deltaTime);
 					listRight = listStartPos[0] + listVelocity*deltaTime - 0.125f;
 					if (listLeft > 0.0f) {
-						tempVec[0] = 0.125f - listLeft; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+						tempVec[0] = 0.125f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
 						scrollList[i]->setPosition(tempVec);
 						fileIndex++;
 					}
 					else if (listRight > 0.0f) {
-						tempVec[0] = -0.125f + listRight; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+						tempVec[0] = -0.125f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
 						scrollList[i]->setPosition(tempVec);
 						fileIndex--;
 					}
@@ -1163,8 +1166,8 @@ int Oculus::runOvr() {
 				}
 
 				MVstack.push();
-					MVstack.translate(modellingMesh->getPosition());
-					MVstack.multiply(modellingMesh->getOrientation());
+					MVstack.translate(previewMesh->getPosition());
+					MVstack.multiply(previewMesh->getOrientation());
 					glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					glUniform4fv(locationMeshLP, 1, LP);
 					glUniform4fv(locationMeshLP2, 1, lPosTemp);

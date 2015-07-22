@@ -148,9 +148,6 @@ void StaticMesh::load(std::string fileName) {
 		//file.read((char*)&nrofVerts, sizeof(int));
 		bitCount += sizeof(int); // skip nrofVerts
 
-		//compensate for the first index that is used for pointers in Dynamic mesh file-format
-		bitCount += sizeof(vertex);
-
 		file.seekg(bitCount);
 		file.read((char*)&vertexArray[0], sizeof(vertex) * (nrofVerts));
 		bitCount += sizeof(vertex) * (nrofVerts);
@@ -159,9 +156,6 @@ void StaticMesh::load(std::string fileName) {
 		//file.seekg(bitCount);
 		//file.read((char*)&nrofTris, sizeof(int));
 		bitCount += sizeof(int); // skip nrofTris
-
-		//compensate for the first index that is used for pointers in Dynamic mesh file-format
-		bitCount += sizeof(triangle);
 
 		file.seekg(bitCount);
 		file.read((char*)&triangleArray[0], sizeof(triangle) * (nrofTris));
