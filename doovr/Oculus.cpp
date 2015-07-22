@@ -5,7 +5,6 @@
 #include "Shader.h"
 #include "MatrixStack.h"
 #include "Sphere.h"
-#include "Plane.h"
 #include "MenuItem.h"
 #include "Box.h"
 #include "hexBox.h"
@@ -14,7 +13,7 @@
 #include "Passive3D.h"
 #include "TrackingRange.h"
 #include "DynamicMesh.h"
-
+#include "StaticMesh.h"
 
 #include <thread>
 #include <mutex>
@@ -26,10 +25,10 @@ static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
 int handleMenu(float* wandPosition, MenuItem** menuItem, const int nrOfModellingUIButtons, int* state);
 void GLRenderCallsOculus();
 //! reads all filenames in savedFiles folder
-//std::vector<std::string> getSavedFileNames();
+std::vector<std::string> getSavedFileNames();
 
 //! loads a uneditable mesh
-//void loadStaticMesh(StaticMesh* item, std::string fileName);
+void loadStaticMesh(StaticMesh* item, std::string fileName);
 //! loads a mesh that can be edited
 void loadMesh(DynamicMesh* item, std::string fileName);
 //! saves the main mesh to a file
@@ -451,14 +450,18 @@ int Oculus::runOvr() {
 	float lastRadius;
 
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
-	DynamicMesh* mTest = new DynamicMesh("2015-07-22_11-16-27.bin");
-	//DynamicMesh* mTest = new DynamicMesh("2015-07-21_16-38-01.bin");
+	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_11-16-27.bin");
+	DynamicMesh* modellingMesh = new DynamicMesh(0.05f);
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
 	//Mesh* tempStaticMesh = new Mesh();
 	std::vector<std::string> meshFile;
 	//! fileIndex is the index in fileName of the staticMesh that is shown
 	int fileIndex = 0;
+
+	StaticMesh* placeHolder;
+	StaticMesh* previewMesh;
+	StaticMesh* loaderMesh;
 
 	//=======================================================================================================================================
 	//Render loop
@@ -482,11 +485,11 @@ int Oculus::runOvr() {
 
 			// 3.1 - modellingstates \_____________________________________________________________________________________________________
 			//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
-			mTest->markUp(wand, wandRadius);
+			modellingMesh->markUp(wand, wandRadius);
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 0) {
 					modellingState[0] = 1;
-					mTest->push(wand, wandRadius);
+					modellingMesh->push(wand, wandRadius);
 
 					aModellingStateIsActive++;
 				}
@@ -496,7 +499,7 @@ int Oculus::runOvr() {
 				}
 				else if (modellingState[0] == 2)
 				{
-					mTest->push(wand, wandRadius);
+					modellingMesh->push(wand, wandRadius);
 				}
 			}
 			else {
@@ -509,7 +512,7 @@ int Oculus::runOvr() {
 					aModellingStateIsActive--;
 				}
 			}
-			mTest->updateOGLData();
+			modellingMesh->updateOGLData();
 			//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
 			if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 				if (modellingState[1] == 0) {
@@ -517,9 +520,9 @@ int Oculus::runOvr() {
 					lastPos[0] = wand->getPosition()[0];
 					lastPos[1] = wand->getPosition()[1];
 					lastPos[2] = wand->getPosition()[2];
-					lastPos2[0] = mTest->getPosition()[0];
-					lastPos2[1] = mTest->getPosition()[1];
-					lastPos2[2] = mTest->getPosition()[2];
+					lastPos2[0] = modellingMesh->getPosition()[0];
+					lastPos2[1] = modellingMesh->getPosition()[1];
+					lastPos2[2] = modellingMesh->getPosition()[2];
 
 					aModellingStateIsActive++;
 				}
@@ -534,7 +537,7 @@ int Oculus::runOvr() {
 					moveVec[1] = lastPos2[1] + moveVec[1];
 					moveVec[2] = lastPos2[2] + moveVec[2];
 
-					mTest->setPosition(moveVec);
+					modellingMesh->setPosition(moveVec);
 				}
 			}
 			else {
@@ -568,8 +571,8 @@ int Oculus::runOvr() {
 				case 0: {
 					if (modellingButtonState[activeButton] == 1) {
 						// reset mesh
-						delete mTest; // Reset mesh
-						mTest = new DynamicMesh(0.3f);
+						delete modellingMesh; // Reset mesh
+						modellingMesh = new DynamicMesh(0.3f);
 
 						modellingButton[activeButton]->setState(true);
 
@@ -584,7 +587,7 @@ int Oculus::runOvr() {
 					// save mesh
 					if (modellingButtonState[activeButton] == 1) {
 						modellingButton[activeButton]->setState(true);
-						th1 = std::thread(saveFile, mTest);
+						th1 = std::thread(saveFile, modellingMesh);
 					}
 
 					//TODO: MOVE THIS JOIN AND REMOVE this if
@@ -605,7 +608,7 @@ int Oculus::runOvr() {
 					if (modellingButtonState[activeButton] == 1) { // just activated
 
 						// get all filenames in the savedFiles folder
-						//meshFile = getSavedFileNames();
+						meshFile = getSavedFileNames();
 
 						// check if any files were found
 						if (meshFile.empty()) {
@@ -617,8 +620,10 @@ int Oculus::runOvr() {
 						else {
 							// saved files found
 							// set staticMesh as main mesh as a temporary loading mesh indicator
-							//staticMesh = mTest;
-							//th1 = std::thread(loadStaticMesh, tempStaticMesh, meshFile[fileIndex % meshFile.size()]);
+							placeHolder = new StaticMesh(); placeHolder->load("placeHolder.bin"); placeHolder->createBuffers();
+
+							previewMesh = placeHolder;
+							//th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 
 							// create the scrollList and the scrollListCover
 							for (int i = -2; i < 3; i++) {
@@ -789,19 +794,19 @@ int Oculus::runOvr() {
 
 
 				MVstack.push();
-				MVstack.translate(mTest->getPosition());
-				MVstack.multiply(mTest->getOrientation());
+				MVstack.translate(modellingMesh->getPosition());
+				MVstack.multiply(modellingMesh->getOrientation());
 				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 				glUniform4fv(locationMeshLP, 1, LP);
 				glUniform4fv(locationMeshLP2, 1, lPosTemp);
 
 				if (lines) {
 					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-					mTest->render();
+					modellingMesh->render();
 					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				}
 				else {
-					mTest->render();
+					modellingMesh->render();
 				}
 				MVstack.pop();
 
@@ -848,9 +853,9 @@ int Oculus::runOvr() {
 					lastPos[0] = wand->getPosition()[0];
 					lastPos[1] = wand->getPosition()[1];
 					lastPos[2] = wand->getPosition()[2];
-					lastPos2[0] = mTest->getPosition()[0];
-					lastPos2[1] = mTest->getPosition()[1];
-					lastPos2[2] = mTest->getPosition()[2];
+					lastPos2[0] = modellingMesh->getPosition()[0];
+					lastPos2[1] = modellingMesh->getPosition()[1];
+					lastPos2[2] = modellingMesh->getPosition()[2];
 
 					aModellingStateIsActive++;
 				}
@@ -863,7 +868,7 @@ int Oculus::runOvr() {
 					moveVec[1] = lastPos2[1] + moveVec[1];
 					moveVec[2] = lastPos2[2] + moveVec[2];
 
-					mTest->setPosition(moveVec);
+					modellingMesh->setPosition(moveVec);
 				}
 			}
 			else {
@@ -899,10 +904,11 @@ int Oculus::runOvr() {
 				}
 				else if (loadButtonState[activeButton] == 2) {
 
-					//wandVelocity = wand->getVelocity(deltaTime);
-					//listVelocity = wandVelocity[0];
+					listStartPos = scrollList[leftListIndex]->getPosition();
+					wandVelocity = wand->getVelocity(deltaTime);
+					listVelocity = wandVelocity[0];
 
-					/*for (int i = 0; i < 5; i++)
+					for (int i = 0; i < 5; i++)
 					{
 					listLeft = -0.11f - (listStartPos[0] + listVelocity*deltaTime + i*0.05f);
 					listRight = listStartPos[0] + listVelocity*deltaTime + i*0.05f - 0.11f;
@@ -922,14 +928,14 @@ int Oculus::runOvr() {
 					tempVec[0] = listStartPos[0] + listVelocity*deltaTime + i*0.05f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
 					scrollList[(leftListIndex + i) % 5]->setPosition(tempVec);
 					}
-					}*/
+					}
 
 				}
 				else if (loadButtonState[activeButton] == 3)
 				{
-					//wandVelocity = wand->getVelocity(deltaTime);
-					//listVelocity = wandVelocity[0];
-					//listAcelleration = -0.5*wandVelocity[0];
+					wandVelocity = wand->getVelocity(deltaTime);
+					listVelocity = wandVelocity[0];
+					listAcelleration = -0.5*wandVelocity[0];
 
 					scrollList[5]->setState(false);
 					scrollList[6]->setState(false);
@@ -1042,7 +1048,7 @@ int Oculus::runOvr() {
 				for (int i = 0; i < 16; i++)
 					mat4[i] = pmat4[i];
 
-				linAlg::transpose(mat4);
+				//linAlg::transpose(mat4);
 				linAlg::vectorMatrixMult(mat4, lPos, LP);
 				linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -1135,19 +1141,19 @@ int Oculus::runOvr() {
 				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 				MVstack.push();
-				MVstack.translate(mTest->getPosition());
-				MVstack.multiply(mTest->getOrientation());
+				MVstack.translate(modellingMesh->getPosition());
+				MVstack.multiply(modellingMesh->getOrientation());
 				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 				glUniform4fv(locationMeshLP, 1, LP);
 				glUniform4fv(locationMeshLP2, 1, lPosTemp);
 
 				if (lines) {
 					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-					mTest->render();
+					previewMesh->render();
 					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				}
 				else {
-					mTest->render();
+					previewMesh->render();
 				}
 				MVstack.pop();
 
@@ -1307,12 +1313,12 @@ std::vector<std::string> getSavedFileNames() {
 	return names;
 }
 
-//void loadStaticMesh(StaticMesh* item, std::string fileName) {
-//	staticMeshLock.lock();
-//	item->loadStaticMesh(fileName);
-//	staticMeshLock.unlock();
-//}
-//
+void loadStaticMesh(StaticMesh* item, std::string fileName) {
+	staticMeshLock.lock();
+	item->load(fileName);
+	staticMeshLock.unlock();
+}
+
 void loadMesh(DynamicMesh* item, std::string fileName) {
 	meshLock.lock();
 	item->load(fileName);

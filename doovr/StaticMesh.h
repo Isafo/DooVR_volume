@@ -7,16 +7,29 @@ struct texCoords {
 	GLfloat v;
 };
 
+struct sBufferData {
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
+	GLfloat nx;
+	GLfloat ny;
+	GLfloat nz;
+	GLfloat u;
+	GLfloat v;
+};
+
 class StaticMesh : public Mesh
 {
 public:
 	StaticMesh();
 	~StaticMesh();
 
-	void render() = 0;
-	void createBuffers() = 0;
+	void render();
+	void createBuffers();
 
-protected:
+	void load(std::string fileName);
+
+private:
 	texCoords* texArray;
 };
 

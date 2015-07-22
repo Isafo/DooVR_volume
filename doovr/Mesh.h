@@ -36,14 +36,11 @@ protected:
 	//array that stres all vertices of the mesh
 	vertex* vertexArray;
 	int nrofVerts;
-	//largest index in the vertexArray where values exist 
-	int vertexCap;
+
 
 	//Array that stores all triangles of the mesh
 	triangle* triangleArray;
 	int nrofTris;
-	//largest index in the indexArray where values exist 
-	int triangleCap;
 
 	float position[3];
 	float orientation[16];

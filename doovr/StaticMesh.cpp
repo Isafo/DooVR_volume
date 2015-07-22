@@ -1,5 +1,8 @@
 #include "StaticMesh.h"
-
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <iostream>
 
 StaticMesh::StaticMesh()
 {
@@ -14,7 +17,7 @@ StaticMesh::~StaticMesh()
 void StaticMesh::render()
 {
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, (triangleCap)* sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_TRIANGLES, (nrofTris)* sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex uN, type, element array buffer offset)
 	glBindVertexArray(0);
 }
@@ -22,7 +25,7 @@ void StaticMesh::render()
 void StaticMesh::createBuffers()
 {
 	triangle* indexP;
-	bufferData * vertexP;
+	sBufferData * vertexP;
 	texCoords tempTex;
 	tempTex.u = 0.0f;
 	tempTex.v = 0.0f;
@@ -43,12 +46,12 @@ void StaticMesh::createBuffers()
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	// Present our vertex coordinates to OpenGL
 	glBufferData(GL_ARRAY_BUFFER,
-		(nrofVerts)*sizeof(bufferData), NULL, GL_STREAM_DRAW);
+		(nrofVerts)*sizeof(sBufferData), NULL, GL_STREAM_DRAW);
 
-	vertexP = (bufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(bufferData) *nrofVerts,
+	vertexP = (sBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(sBufferData) *nrofVerts,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i < nrofVerts; i++) {
+	for (int i = 0; i < nrofVerts; i++) {
 		vertexP[i].x = vertexArray[i].x;
 		vertexP[i].y = vertexArray[i].y;
 		vertexP[i].z = vertexArray[i].z;
@@ -72,11 +75,11 @@ void StaticMesh::createBuffers()
 	// Stride 8 (interleaved array with 8 floats per vertex)
 	// Array buffer offset 0, 3, 6 (offset into first vertex)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-		sizeof(bufferData), (void*)0); // xyz coordinates
+		sizeof(sBufferData), (void*)0); // xyz coordinates
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-		sizeof(bufferData), (void*)(3 * sizeof(GLfloat))); // normals
+		sizeof(sBufferData), (void*)(3 * sizeof(GLfloat))); // normals
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
-		sizeof(bufferData), (void*)(6 * sizeof(GLfloat))); // texCoords
+		sizeof(sBufferData), (void*)(6 * sizeof(GLfloat))); // texCoords
 
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
@@ -87,7 +90,7 @@ void StaticMesh::createBuffers()
 	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * nrofTris,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i < nrofTris; i++) {
+	for (int i = 0; i < nrofTris; i++) {
 		indexP[i].index[0] = triangleArray[i].index[0];
 		indexP[i].index[1] = triangleArray[i].index[1];
 		indexP[i].index[2] = triangleArray[i].index[2];
@@ -101,4 +104,75 @@ void StaticMesh::createBuffers()
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void StaticMesh::load(std::string fileName) {
+	// read mesh from file
+	std::cout << "loading mesh..." << std::endl;
+
+	std::ifstream file("../savedFiles/" + fileName, std::ios::in | std::ios::binary);
+
+	if (file.is_open()) {
+
+		int bitCount = 0;
+
+		// read the size of the arrays
+		file.seekg(0);
+		file.read((char*)&nrofVerts, sizeof(int));
+		bitCount += sizeof(int);
+		
+
+		file.seekg(bitCount);
+		file.read((char*)&nrofTris, sizeof(int));
+		bitCount += sizeof(int);
+
+		vertexArray = new vertex[nrofVerts];
+		triangleArray = new triangle[nrofTris];
+
+		/*file.seekg(bitCount);
+		file.read((char*)&edgeCap, sizeof(int));*/
+		bitCount += sizeof(int); // Skip edgeCap
+
+		// read mesh position
+		file.seekg(bitCount);
+		file.read((char*)&position[0], sizeof(float) * 3);
+		bitCount += sizeof(float) * 3;
+
+		// read mesh orientation
+		file.seekg(bitCount);
+		file.read((char*)&orientation[0], sizeof(float) * 16);
+		bitCount += sizeof(float) * 16;
+
+		// read vertecies
+		//file.seekg(bitCount);
+		//file.read((char*)&nrofVerts, sizeof(int));
+		bitCount += sizeof(int); // skip nrofVerts
+
+		//compensate for the first index that is used for pointers in Dynamic mesh file-format
+		bitCount += sizeof(vertex);
+
+		file.seekg(bitCount);
+		file.read((char*)&vertexArray[0], sizeof(vertex) * (nrofVerts));
+		bitCount += sizeof(vertex) * (nrofVerts);
+
+		// read triangles
+		//file.seekg(bitCount);
+		//file.read((char*)&nrofTris, sizeof(int));
+		bitCount += sizeof(int); // skip nrofTris
+
+		//compensate for the first index that is used for pointers in Dynamic mesh file-format
+		bitCount += sizeof(triangle);
+
+		file.seekg(bitCount);
+		file.read((char*)&triangleArray[0], sizeof(triangle) * (nrofTris));
+
+		file.close();
+
+		std::cout << "load complete" << std::endl;
+	}
+	else {
+		std::cout << "could not open file" << std::endl;
+	}
+	
+	createBuffers();
 }

@@ -4,7 +4,7 @@
 #include "Wand.h"
 #include <vector>
 
-struct bufferData {
+struct dBufferData {
 	GLfloat x;
 	GLfloat y;
 	GLfloat z;
@@ -65,6 +65,11 @@ class DynamicMesh : public Mesh{
 	const int MAX_NR_OF_TRIANGLES = 2 * MAX_NR_OF_VERTICES;
 	const int MAX_NR_OF_EDGES = 3 * MAX_NR_OF_VERTICES;
 
+	//largest index in the vertexArray where values exist 
+	int vertexCap;
+	//largest index in the indexArray where values exist 
+	int triangleCap;
+
 	//Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle 
 	vInfo* vInfoArray;
 
@@ -80,8 +85,8 @@ class DynamicMesh : public Mesh{
 	sVert sVerts[10000];
 	int sVertsNR = 0;
 
-	const float MAX_LENGTH = 0.025f *0.5f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.0124f*0.5f;
+	const float MAX_LENGTH = 0.025f * 2.0f;// *0.5f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f * 2.0f;// *0.5f;
 
 	std::string fileName;
 

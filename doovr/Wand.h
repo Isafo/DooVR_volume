@@ -10,6 +10,7 @@ public:
 
 	float* getPosition();
 	float* getVelocity();
+	float* getVelocity(float dTime);
 	float* getDirection();
 	float* getOrientation() { return OrientationM; }
 	float* getTransformMatrix() { return Transform; }
