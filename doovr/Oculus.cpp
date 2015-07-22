@@ -14,35 +14,48 @@
 #include "Passive3D.h"
 #include "TrackingRange.h"
 
-using namespace std;
+
+#include <thread>
+#include <mutex>
 
 // ------- Function declerations --------
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
 static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
 //! checks if the wand is colliding with a menuItem and sets the menuItems state accordingly, returns true if a menuItem choise has occured
-void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state);
+int handleMenu(float* wandPosition, MenuItem** menuItem, const int nrOfModellingUIButtons, int* state);
 void GLRenderCallsOculus();
+//! reads all filenames in savedFiles folder
+//std::vector<std::string> getSavedFileNames();
+
+//! loads a uneditable mesh
+//void loadStaticMesh(StaticMesh* item, std::string fileName);
+//! loads a mesh that can be edited
+//void loadMesh(DynamicMesh* item, std::string fileName);
+//! saves the main mesh to a file
+//void saveFile(DynamicMesh* item);
 // --------------------------------------
 // --- Variable Declerations ------------
 const bool L_MULTISAMPLING = false;
 const int G_DISTORTIONCAPS = 0
-                             | ovrDistortionCap_Vignette
-                             | ovrDistortionCap_Chromatic
-                             | ovrDistortionCap_Overdrive
-//| ovrDistortionCap_TimeWarp // Turning this on gives ghosting???
+| ovrDistortionCap_Vignette
+| ovrDistortionCap_Chromatic
+| ovrDistortionCap_Overdrive
+| ovrDistortionCap_TimeWarp // Turning this on gives ghosting???
 ;
 
 ovrHmd hmd;
 ovrGLConfig g_Cfg;
 ovrEyeRenderDesc g_EyeRenderDesc[2];
-// --------------------------------------
 
-// Global Constant variables
-const int nFunctions = 7;
-const int nLightsources = 3;
+std::mutex staticMeshLock, meshLock;
 
 int Oculus::runOvr() {
 
+	//=========================================================================================================================================
+	// 1 - Initialize OVR, GLFW and openGL variables
+	//=========================================================================================================================================
+
+	// 1.1 - oculus variables \________________________________________________________________________________________________________________
 	ovrVector3f g_EyeOffsets[2];
 	ovrPosef g_EyePoses[2];
 	ovrTexture g_EyeTextures[2];
@@ -50,115 +63,6 @@ int Oculus::runOvr() {
 	OVR::Sizei g_RenderTargetSize;
 	//ovrVector3f g_CameraPosition;
 
-	GLfloat I[16] = { 1.0f, 0.0f, 0.0f, 0.0f,
-					  0.0f, 1.0f, 0.0f, 0.0f,
-					  0.0f, 0.0f, 1.0f, 0.0f,
-					  0.0f, 0.0f, 0.0f, 1.0f };
-
-	GLfloat P[16] = { 2.42f, 0.0f, 0.0f, 0.0f,
-					  0.0f, 2.42f, 0.0f, 0.0f,
-					  0.0f, 0.0f, -1.0f, -1.0f,
-					  0.0f, 0.0f, -0.2f, 0.0f };
-	
-
-	// states
-	//! contains the number of any active state
-	vector<int> activeStates;
-
-	/*! 0 indicates that the state is not active, 
-		1 indicates that the state has just been activated
-		2 indicates that the state is active
-		3 indicates that the state has just been deactivated
-	 
-		state[0] is the modelling state
-		state[1] is the moveMesh state
-		state[2] is the changeWandSize state
- 	 */
-	const int nrOfStates = 3;
-	int state[nrOfStates] = { 0 };
-
-	// Lightposition 
-	float lPos[4] = { 2.0f, 2.0f, 2.0f, 1.0f};
-	float lPos2[4] = { -2.0f, 2.0f, 2.0f, 1.0f };
-	float lPosTemp[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float LP[4];
-	float* pmat4;
-	float mat4[16];
-
-	// Save old positions and transforms
-	float changePos[3] = { 0.0f };
-	float differenceR[16] = { 0.0f };
-	float currPos[3] = { 0.0f, 0.0f, 0.0f };
-	float translateHandle[3] = { 0.0f, 0.0f, -0.1f };
-	float translatePointer[3] = { 0.0f, 0.0f, 0.025 };
-	float moveVec[3];
-	float lastPos[3];
-	float lastPos2[3];
-
-	// Configuration variables
-	int regCounter = 0;
-	int n = 0;
-	int resetCounter = 0;
-
-	float pos[16] = { 0.0f };
-	float invPos[16] = { 0.0f };
-
-	// FPS
-	double fps = 0;
-
-	// Size of the wand tool
-	float wandRadius = 0.01f;
-	float lastRadius;
-
-	// States
-	bool buttonPressed = false;
-	bool buttonHeld = false;
-	bool buttonReleased = false;
-	bool lines = false;
-
-	const int nrOfMenuItems = 5;
-	/*!
-		[0] resetMesh
-		[1] save
-		[2] load
-		[3] Wireframe
-		[4] increase wand size
-	*/
-	MenuItem menuItem[nrOfMenuItems];
-	
-	/*!
-		0 indicates that the state is not active,
-		1 indicates that the state has just been activated
-		2 indicates that the state is active
-		3 indicates that the state has just been deactivated
-		4 indicates that the state is active (on/off)
-		5 indicates that the state has been activated and then the button was released
-
-		[0] reset
-		[1] save
-		[2] load
-		[3] Wireframe
-		[4] change wand size
-	*/
-	static int menuState[nrOfMenuItems];
-
-
-	// Location used for UNIFORMS in shader
-	GLint locationLP;
-	GLint locationP;
-	GLint locationMV;
-	GLint locationTex;
-
-	GLint locationMeshMV;
-	//GLint locationMeshLP[nLightsources + 1];
-	GLint locationMeshP;
-	GLint locationMeshLP;
-	GLint locationMeshLP2;
-
-	GLint locationWandMV;
-	GLint locationWandP;
-
-	//INITIALIZE OVR /////////////////////////////////////////////////////
 	ovr_Initialize();
 	int det;
 	// Check for attached head mounted display...
@@ -168,7 +72,7 @@ int Oculus::runOvr() {
 		hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
 
 		det = ovrHmd_Detect();
-		cout << det << endl;
+		std::cout << det << std::endl;
 	}
 
 	// Check to see if we are running in "Direct" or "Extended Desktop" mode...
@@ -180,7 +84,7 @@ int Oculus::runOvr() {
 		return 1;
 	}
 
-	if (L_MULTISAMPLING) glfwWindowHint(GLFW_SAMPLES, 4); 
+	if (L_MULTISAMPLING) glfwWindowHint(GLFW_SAMPLES, 4);
 	else glfwWindowHint(GLFW_SAMPLES, 0);
 
 
@@ -196,27 +100,28 @@ int Oculus::runOvr() {
 
 		l_ClientSize.w = hmd->Resolution.w; // Something reasonable, smaller, but maintain aspect ratio...
 		l_ClientSize.h = hmd->Resolution.h; // Something reasonable, smaller, but maintain aspect ratio...
-	} else {// Extended Desktop mode...
+	}
+	else {// Extended Desktop mode...
 		printf("Running in \"Extended Desktop\" mode...\n");
 		int l_Count;
 		GLFWmonitor** l_Monitors = glfwGetMonitors(&l_Count);
 		switch (l_Count) {
-		  case 0: {
-		    printf("No monitors found, exiting...\n");
+		case 0: {
+			printf("No monitors found, exiting...\n");
 			exit(EXIT_FAILURE);
 			break;
-		  } case 1: {
+		} case 1: {
 			printf("Two monitors expected, found only one, using primary...\n");
 			l_Monitor = glfwGetPrimaryMonitor();
 			break;
-		  } case 2: {
+		} case 2: {
 			printf("Two monitors found, using second monitor...\n");
 			l_Monitor = l_Monitors[1];
 			break;
-		  } default: {
+		} default: {
 			printf("More than two monitors found, using second monitor...\n");
 			l_Monitor = l_Monitors[1];
-		  }
+		}
 		}
 
 		l_ClientSize.w = hmd->Resolution.w; // 1920 for DK2...
@@ -368,280 +273,433 @@ int Oculus::runOvr() {
 	//glfwSetKeyCallback(l_Window, KeyCallback);
 	glfwSetWindowSizeCallback(l_Window, WindowSizeCallback);
 
+	//=====================================================================================================================================
+	// 2 - Variable Declarations
+	//=====================================================================================================================================
 
+	// 2.2 - Various vectors and matrices \________________________________________________________________________________________________
+	// Lightposition 
+	float lPos[4] = { 2.0f, 2.0f, 2.0f, 1.0f };
+	float lPos2[4] = { -2.0f, 2.0f, 2.0f, 1.0f };
+	float lPosTemp[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float LP[4];
+	float* pmat4;
+	float mat4[16];
 
-	//DECLARE AND CREATE SHADERS ///////////////////////////////////////////////////////////////////////////////////
-	Shader phongShader;
-	phongShader.createShader("vertexshader.glsl", "fragmentshader.glsl");
+	// Save old positions and transforms
+	float changePos[3] = { 0.0f };
+	float differenceR[16] = { 0.0f };
+	float currPos[3] = { 0.0f, 0.0f, 0.0f };
+	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
+	float moveVec[3];
+	float tempVec[3];
+	float lastPos[3];
+	float lastPos2[3];
+
+	float* wandStartPos;
+	float* wandCurrPos;
+	float* wandNewPos;
+	float* wandVelocity;
+	float* listStartPos;
+
+	float currTime = 0;
+	float lastTime;
+	float deltaTime;
+
+	float listVelocity = 0.0f;
+	float prevListVelocity = 0.0f;
+	float listAcelleration = 0.0f;
+	float listLeft = 0.0f;
+	float listRight = 0.0f;
+
+	// 2.3 - Threads used for loading and saving meshes \__________________________________________________________________________________
+	std::thread th1; // not used
+	std::thread th2; //
+	// indicates if something has been loaded by a thread and gl data has not yet been updated
+	bool loadingMesh = false;
+
+	// 2.4 - textures \____________________________________________________________________________________________________________________
+	glEnable(GL_TEXTURE_2D);
+	// Scene textures
+
+	Texture whiteTex("../Textures/light.DDS");
+	Texture groundTex("../Textures/stone.DDS");
+	Texture titleTex("../Textures/Title.DDS");
+	Texture resetTex("../Textures/reset.DDS");
+	Texture saveTex("../Textures/save.DDS");
+	Texture loadTex("../Textures/load.DDS");
+	Texture wireFrameTex("../Textures/wireframe.DDS");
+	Texture plusTex("../Textures/plus.DDS");
+	Texture minusTex("../Textures/minus.DDS");
+
+	// 2.5 - Modes \______________________________________________________________________________________________________________________
+	//! contains the number of any active states
+	int mode = 0;
+	int activeButton = -1;
+	// 2.5.1 - modelling states and variables used in modelling mode >--------------------------------------------------------------------
+	/*! 0 indicates that the state is not active,
+	1 indicates that the state has just been activated
+	2 indicates that the state is active
+	3 indicates that the state has just been deactivated
+
+	state[0] is the use tool state
+	state[1] is the moveMesh state
+	state[2] is the changeWandSize state
+	*/
+	const int NR_OF_MODELLING_STATES = 3;
+	int modellingState[NR_OF_MODELLING_STATES] = { 0 };
+	int aModellingStateIsActive = 0;
+
+	const int NR_OF_MODELLING_BUTTONS = 5;
+	/*!	[0] resetMesh
+	[1] save
+	[2] load
+	[3] Wireframe
+	[4] increase wand size */
+	MenuItem* modellingButton[NR_OF_MODELLING_BUTTONS];
+
+	Texture* modellingButtonTex[NR_OF_MODELLING_BUTTONS];
+	modellingButtonTex[0] = &resetTex;
+	modellingButtonTex[1] = &saveTex;
+	modellingButtonTex[2] = &loadTex;
+	modellingButtonTex[3] = &wireFrameTex;
+	modellingButtonTex[4] = &plusTex;
+
+	/*!	0 indicates that the state is not active,
+	1 indicates that the state has just been activated
+	2 indicates that the state is active
+	3 indicates that the state has just been deactivated
+	4 indicates that the state is active (on/off)
+	5 indicates that the state has been activated and then the button was released
+
+	[0] reset
+	[1] save
+	[2] load
+	[3] Wireframe
+	[4] change wand size*/
+	static int modellingButtonState[NR_OF_MODELLING_BUTTONS];
+
+	modellingButton[0] = new MenuItem(-0.2f, -0.26f, -0.2f, 0.08f, 0.08); // place reset menuItem on the other side
+
+	for (int i = -(NR_OF_MODELLING_BUTTONS - 1) / 2 + 1; i <= (NR_OF_MODELLING_BUTTONS - 1) / 2; i++) {
+		modellingButton[i + (NR_OF_MODELLING_BUTTONS - 1) / 2] = new MenuItem(0.2f, -0.26f, -0.25f + i * 0.0801f, 0.08f, 0.08);
+	}
+	//variable used with the button that switches wireframe, TODO: should be replaced by something
+	bool lines = false;
+
+	// 2.5.2 - variables used in Load Mode >------------------------------------------------------------------------------------------------
+	//first two items are used as covers at both ends of the list
+	MenuItem* scrollList[7];
+	int leftListIndex = 2;
+	Texture* scrollListTex[7];
+	scrollListTex[0] = &loadTex;
+	scrollListTex[1] = &loadTex;
+	scrollListTex[2] = &loadTex;
+	scrollListTex[3] = &loadTex;
+	scrollListTex[4] = &loadTex;
+	scrollListTex[5] = &loadTex;
+	scrollListTex[6] = &loadTex;
+
+	const int NR_OF_LOAD_BUTTONS = 3;
+	/*! 0 = scrollArea
+	1 = loadFile button
+	2 = exitLoad button*/
+	MenuItem* loadButton[NR_OF_LOAD_BUTTONS];
+	int loadButtonState[NR_OF_LOAD_BUTTONS] = { 0 };
+
+	Texture* loadButtonTex[NR_OF_LOAD_BUTTONS];
+	//loadButtonTex[0] = scrollcover
+	loadButtonTex[1] = &loadTex;
+	loadButtonTex[2] = &minusTex;
+
+	// 2.6 - Shader variables \_____________________________________________________________________________________________________________
+	Shader sceneShader;
+	sceneShader.createShader("sceneV.glsl", "sceneF.glsl");
 	Shader meshShader;
-	meshShader.createShader("vshader.glsl", "fshader.glsl");
-	Shader sphereShader;
-	sphereShader.createShader("vShaderWand.glsl", "fShaderWand.glsl");
+	meshShader.createShader("meshV.glsl", "meshF.glsl");
 	Shader bloomShader;
-	bloomShader.createShader("vShaderBloom.glsl", "fShaderBloom.glsl");
+	bloomShader.createShader("bloomV.glsl", "bloomF.glsl");
 	Shader menuShader;
-	menuShader.createShader("vShaderMenuItem.glsl", "fShaderMenuItem.glsl");
+	menuShader.createShader("menuV.glsl", "menuF.glsl");
 
-	// CREATE MATRIX STACK
-	MatrixStack MVstack;
-	MVstack.init();
-	
-	// DECLARE SCENE OBJECTS ///////////////////////////////////////////////////////////////////////////////////
-	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70);
-	TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
-	
+	// 2.6.1 - Uniform variables >-----------------------------------------------------------------------------------------------------------
+	GLint locationLP = glGetUniformLocation(sceneShader.programID, "lightPos");
+	GLint locationP = glGetUniformLocation(sceneShader.programID, "P"); //perspective matrix
+	GLint locationMV = glGetUniformLocation(sceneShader.programID, "MV"); //modelview matrix
+	GLint locationTex = glGetUniformLocation(sceneShader.programID, "tex"); //texcoords
+
+	GLint locationMeshMV = glGetUniformLocation(meshShader.programID, "MV"); //modelview matrix
+	GLint locationMeshP = glGetUniformLocation(meshShader.programID, "P"); //perspective matrix
+	GLint locationMeshLP = glGetUniformLocation(meshShader.programID, "lightPos");
+	GLint locationMeshLP2 = glGetUniformLocation(meshShader.programID, "lightPos2");
+
+	// 2.7 - Scene objects and variables \___________________________________________________________________________________________________
+
+	// 2.7.1 - Matrix stack and static scene objects >---------------------------------------------------------------------------------------
+	MatrixStack MVstack; MVstack.init();
+	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70); TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
 	MenuItem wandSizePanel(0.2f, -0.25f, -0.12f, 0.10f, 0.03f);
 
-	menuItem[0] = MenuItem(-0.2f, -0.26f, -0.2f, 0.08f, 0.08); // place reset menuItem on the other side
-
-	for (int i = -(nrOfMenuItems - 1) / 2 + 1; i <= (nrOfMenuItems - 1) / 2; i++) {
-		menuItem[i + (nrOfMenuItems - 1) / 2] = MenuItem(0.2f, -0.26f, -0.25f + i * 0.0801f, 0.08f, 0.08);
-	}
-
-	// Wand = Box + sphere
+	// 2.7.2 - Wand variables >--------------------------------------------------------------------------------------------------------------
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
-	Box boxPointer(0.0f, 0.0f, 0.0f, 0.001f, 0.001f, 0.05f);
-	Sphere sphereWand(0.0f, 0.0f, 0.0f, 1.0f);
-
 	// Initilise passive wand
 	Passive3D* wand = new Passive3D();
-	
-	// TEXTURES ///////////////////////////////////////////////////////////////////////////////////////////////
-	glEnable(GL_TEXTURE_2D);
-	// Wand function textures
-	Texture move("../Textures/move.DDS");
-	Texture dilate("../Textures/up.DDS");
-	Texture erode("../Textures/down.DDS");
-	Texture dnp("../Textures/push.DDS");
-	
-	// Scene textures
-	Texture whiteTex("../Textures/light.DDS");
-	Texture groundTex("../Textures/stone.DDS");
-	Texture coregister("../Textures/coregister3.DDS");
-	Texture hexTex("../Textures/panel3.DDS");
-	Texture menuInfoTex("../Textures/info.DDS");
-	Texture menuLoadTex("../Textures/load.DDS");
-	Texture menuMinusTex("../Textures/minus.DDS");
-	Texture menuPlusTex("../Textures/plus.DDS");
-	Texture menuResetTex("../Textures/reset.DDS");
-	Texture menuSaveTex("../Textures/save.DDS");
-	Texture menuWireTex("../Textures/wireframe.DDS");
-	Texture titleTex("../Textures/Title.DDS");
+	// Size of the wand tool
+	float wandRadius = 0.01f;
+	float lastRadius;
 
-	GLuint currentTexID = move.getTextureID();
+	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
+	Mesh* mTest = new Mesh(0.05f);
+	//DynamicMesh* mTest = new DynamicMesh("2015-07-21_16-38-01.bin");
+	// variables for browsing saved meshes
+	//Mesh* staticMesh;
+	//Mesh* tempStaticMesh = new Mesh();
+	std::vector<std::string> meshFile;
+	//! fileIndex is the index in fileName of the staticMesh that is shown
+	int fileIndex = 0;
 
-	//UNIFORM VARIABLES WITH SHADER ///////////////////////////////////////////////////////////////////////////
-	locationMV = glGetUniformLocation(phongShader.programID, "MV");						// ModelView Matrix
-	locationP = glGetUniformLocation(phongShader.programID, "P");						// Perspective Matrix
-	locationLP = glGetUniformLocation(phongShader.programID, "lightPos");				// Light position
-	locationTex = glGetUniformLocation(phongShader.programID, "tex");					// Texture Matrix
-
-	locationMeshMV = glGetUniformLocation(meshShader.programID, "MV");					// ModelView Matrix
-	locationMeshP = glGetUniformLocation(meshShader.programID, "P");					// Perspective Matrix
-	locationMeshLP = glGetUniformLocation(meshShader.programID, "lightPos");
-	locationMeshLP2 = glGetUniformLocation(meshShader.programID, "lightPos2");
-
-	locationWandMV = glGetUniformLocation(sphereShader.programID, "MV");					// ModelView Matrix
-	locationWandP = glGetUniformLocation(sphereShader.programID, "P");						// Perspective Matrix
+	//=======================================================================================================================================
+	//Render loop
+	//=======================================================================================================================================
 
 	//ovrHmd_RecenterPose(hmd);
 	ovrHmd_DismissHSWDisplay(hmd); // dismiss health safety warning
-
-	Mesh* mTest = new Mesh(0.05f);
-
-	// Main loop...
 	unsigned int l_FrameIndex = 0;
-	// RENDER LOOP ////////////////////////////////////////////////////////////////////////////////////////
+
 	while (!glfwWindowShouldClose(l_Window)) {
-		
-		// STATES
-		// modelingstate
-		if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
-			if (state[0] == 0) {
-				state[0] = 1;
-				activeStates.push_back(0);
-			} else if (state[0] == 1) {
-				state[0] = 2;
-			}
-		} else {
-			if (state[0] == 3) {
-				state[0] = 0;
-			} else if (state[0] != 0) {
-				state[0] = 3;
-				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 0), activeStates.end());
-			}
-		}
 
-		// moveMesh state
-		if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
-			if (state[1] == 0) {
-				state[1] = 1;
-				lastPos[0] = wand->getPosition()[0];
-				lastPos[1] = wand->getPosition()[1];
-				lastPos[2] = wand->getPosition()[2];
-				lastPos2[0] = mTest->getPosition()[0];
-				lastPos2[1] = mTest->getPosition()[1];
-				lastPos2[2] = mTest->getPosition()[2];
-				activeStates.push_back(1);
-			} else if (state[1] == 1) {
-				state[1] = 2;
-			}
-		} else {
-			if (state[1] == 3) {
-				state[1] = 0;
-			} else if (state[1] != 0) {
-				state[1] = 3;
-				activeStates.erase(remove(activeStates.begin(), activeStates.end(), 1), activeStates.end());
-			}
-		}
-		mTest->markUp(wand, wandRadius);
-		// Switch to execute active states, checks menu choices if none are active
-		if (activeStates.empty()) {
-			
-			handleMenu(wand->getPosition(), menuItem, nrOfMenuItems, menuState);
-			for (int i = 0; i < nrOfMenuItems; i++) {
-				switch (i) {
-					case 0: {
-						if (menuState[i] == 1) {
-							// reset mesh
-							delete mTest; // Reset mesh
-							mTest = new Mesh(0.3f);
+		lastTime = currTime;
+		currTime = glfwGetTime();
+		deltaTime = currTime - lastTime;
 
-							menuItem[i].setState(true);
+		switch (mode) {
+			//===============================================================================================================================
+			// 3 - Modelling Mode
+			//===============================================================================================================================
+		case 0: {
 
-						} else if (menuState[i] == 3) {
-							menuItem[i].setState(false);
-						}
-						break;
-					}
-					case 1: {
-						if (menuState[i] == 1) {
-							// save file
-						}
-					break;
-					}
-					case 2: {
-						if (menuState[i] == 1) {
-							// loadfile
-						}
-						break;
-					}
-					case 3: {
-						// wireframe
-						if (menuState[i] == 1) {
-							if (menuItem[i].getState() == true){
-								menuItem[i].setState(false);
-								lines = false;
-							} else {
-								menuItem[i].setState(true);
-								lines = true;
-							}
-						}
-						break;
-					}
-					case 4: {
-						if (menuState[i] == 1) {
-							menuItem[i].setState(true);
+			// 3.1 - modellingstates \_____________________________________________________________________________________________________
+			//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
+			mTest->markUp(wand, wandRadius);
+			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
+				if (modellingState[0] == 0) {
+					modellingState[0] = 1;
+					mTest->push(wand, wandRadius);
 
-							lastPos[0] = wand->getPosition()[0];
-							lastPos[1] = wand->getPosition()[1];
-							lastPos[2] = wand->getPosition()[2];
-							lastRadius = wandRadius;
+					aModellingStateIsActive++;
+				}
+				else if (modellingState[0] == 1) {
+					modellingState[0] = 2;
 
-							state[2] = 2;
-							activeStates.push_back(2);
-						}
-
-						if (menuState[i] == 3)
-							menuItem[i].setState(false);
-
-						break;
-					}
+				}
+				else if (modellingState[0] == 2)
+				{
+					mTest->push(wand, wandRadius);
 				}
 			}
-		} else {
-			for (int i = 0; i < activeStates.size(); i++) {
-				switch (activeStates[i]) {
-				  case 0: {
-					  //mTest->select(wand, wandRadius);
-					 // mTest->markUp(wand, wandRadius);
-					  mTest->push(wand, wandRadius);
-					break;
-				  }
-				  case 1: {
-					  
-					linAlg::calculateVec(moveVec, wand->getPosition(), lastPos);
+			else {
+				if (modellingState[0] == 3) {
+					modellingState[0] = 0;
+				}
+				else if (modellingState[0] != 0) {
+					modellingState[0] = 3;
+
+					aModellingStateIsActive--;
+				}
+			}
+			mTest->updateOGLData();
+			//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
+			if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
+				if (modellingState[1] == 0) {
+					modellingState[1] = 1;
+					lastPos[0] = wand->getPosition()[0];
+					lastPos[1] = wand->getPosition()[1];
+					lastPos[2] = wand->getPosition()[2];
+					lastPos2[0] = mTest->getPosition()[0];
+					lastPos2[1] = mTest->getPosition()[1];
+					lastPos2[2] = mTest->getPosition()[2];
+
+					aModellingStateIsActive++;
+				}
+				else if (modellingState[1] == 1) {
+					modellingState[1] = 2;
+				}
+				else if (modellingState[1] == 2)
+				{
+					//	move mesh
+					linAlg::calculateVec(wand->getPosition(), lastPos, moveVec);
 					moveVec[0] = lastPos2[0] + moveVec[0];
 					moveVec[1] = lastPos2[1] + moveVec[1];
 					moveVec[2] = lastPos2[2] + moveVec[2];
-					
-					mTest->setPosition(wand->getPosition());
-					
-					break;
-				  }
-				  case 2: {
-					  if (wand->getPosition()[1] < wandSizePanel.getPosition()[1] + 0.02
-						  && wand->getPosition()[1] > wandSizePanel.getPosition()[1] - 0.02){
 
-						  wandRadius = lastRadius + (wand->getPosition()[0] - lastPos[0])/3.0f;
-					  }
-					  else {
-						  // wand left the change wand size area set to inactive
-						  state[2] = 0;
-						  activeStates.erase(remove(activeStates.begin(), activeStates.end(), 2), activeStates.end());
-						  menuState[4] = 2;
-						  
-					  }
-				  }
-
-				  default: {
-					  break;
-				  }
+					mTest->setPosition(moveVec);
 				}
 			}
-			
-		}
+			else {
+				if (modellingState[1] == 3) {
+					modellingState[1] = 0;
+				}
+				else if (modellingState[1] != 0) {
+					modellingState[1] = 3;
 
-		//////////////////////////////////////////////////////////////////////////////////////////////
-		// KEYBORD EVENTS
-		if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
-			glfwSetWindowShouldClose(l_Window, GL_TRUE);
-		}
-		if (glfwGetKey(l_Window, GLFW_KEY_Q)) {
-			wandRadius += 0.001f;
-		}
-		if (glfwGetKey(l_Window, GLFW_KEY_W)) {
-			wandRadius -= 0.001f;
-		}
+					aModellingStateIsActive--;
+				}
+			}
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////
-		mTest->updateOGLData();
-		// Begin the frame...
-		ovrHmd_BeginFrame(hmd, l_FrameIndex);
+			//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
+			if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
+				glfwSetWindowShouldClose(l_Window, GL_TRUE);
+			}
+			if (glfwGetKey(l_Window, GLFW_KEY_Q)) {
+				wandRadius += 0.001f;
+			}
+			if (glfwGetKey(l_Window, GLFW_KEY_W)) {
+				wandRadius -= 0.001f;
+			}
 
-		// Get eye poses for both the left and the right eye. g_EyePoses contains all Rift information: orientation, positional tracking and
-		// the IPD in the form of the input variable g_EyeOffsets.
-		ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
-		//RENDER OVR PHASE///////////////////////////////////////////////
-		// Bind the FBO...
-		glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
+			// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
+			if (aModellingStateIsActive == 0) {
 
-		GLRenderCallsOculus();
+				activeButton = handleMenu(wand->getPosition(), modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
+				switch (activeButton) {
+					//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
+				case 0: {
+					if (modellingButtonState[activeButton] == 1) {
+						// reset mesh
+						delete mTest; // Reset mesh
+						mTest = new Mesh(0.3f);
 
-		
-		for (int l_EyeIndex = 0; l_EyeIndex<ovrEye_Count; l_EyeIndex++) {
-			
-			//OCULUS/CAMERA TRANSFORMS ------------------------------------------------------------------------------
-			MVstack.push();
+						modellingButton[activeButton]->setState(true);
+
+					}
+					else if (modellingButtonState[activeButton] == 3) {
+						modellingButton[activeButton]->setState(false);
+					}
+					break;
+				}
+						//3.2.2 - save mesh button >--------------------------------------------------------------------------------------------
+				case 1: {
+					// save mesh
+					if (modellingButtonState[activeButton] == 1) {
+						modellingButton[activeButton]->setState(true);
+					//	th1 = std::thread(saveFile, mTest);
+					}
+
+					//TODO: MOVE THIS JOIN AND REMOVE this if
+					else if (modellingButtonState[activeButton] == 2) {
+						if (th1.joinable()) {
+							th1.join();
+						}
+					}
+					else if (modellingButtonState[activeButton] == 3) {
+						modellingButton[activeButton]->setState(false);
+					}
+
+					break;
+				}
+						//3.2.3 - load mesh button >--------------------------------------------------------------------------------------------
+				case 2: {
+					// load mesh
+					if (modellingButtonState[activeButton] == 1) { // just activated
+
+						// get all filenames in the savedFiles folder
+						//meshFile = getSavedFileNames();
+
+						// check if any files were found
+						if (meshFile.empty()) {
+							// if no files were found leave loading state
+							// TODO: display feedback in Oculus that there are no saved files found
+							std::cout << "no saved files found!" << std::endl;
+							//modellingState[3] = 0;
+						}
+						else {
+							// saved files found
+							// set staticMesh as main mesh as a temporary loading mesh indicator
+							//staticMesh = mTest;
+							//th1 = std::thread(loadStaticMesh, tempStaticMesh, meshFile[fileIndex % meshFile.size()]);
+
+							// create the scrollList and the scrollListCover
+							for (int i = -2; i < 3; i++) {
+								scrollList[i + 2] = new MenuItem(0.05f * i, -0.26f, -0.1, 0.05, 0.05);
+							}
+							scrollList[5] = new MenuItem(-0.125f, -0.2599f, -0.1f, 0.07f, 0.06f);
+							scrollList[6] = new MenuItem(0.125f, -0.2599f, -0.1f, 0.07f, 0.06f);
+
+							scrollList[2]->setState(true);
+
+							loadButton[0] = new MenuItem(0.0f, -0.2599f, -0.1f, 0.4f, 0.05f);
+							loadButton[1] = new MenuItem(0.05f, -0.2599f, -0.15f, 0.1, 0.05);
+							loadButton[2] = new MenuItem(-0.05f, -0.2599f, -0.15f, 0.1, 0.05);
+
+							//modellingState[3] = 2;
+							//activeStates.push_back(3);
+							mode = 1;
+						}
+
+					}
+
+					break;
+				}
+						//3.2.4 - wireframe button >---------------------------------------------------------------------------------------------
+				case 3: {
+					// wireframe
+					if (modellingButtonState[activeButton] == 1) {
+						if (modellingButton[activeButton]->getState() == true){
+							modellingButton[activeButton]->setState(false);
+							lines = false;
+						}
+						else {
+							modellingButton[activeButton]->setState(true);
+							lines = true;
+						}
+					}
+					break;
+				}
+						//3.2.4 - wand size button >---------------------------------------------------------------------------------------------
+				case 4: {
+					// change wand size
+					if (modellingButtonState[activeButton] == 1) {
+						modellingButton[activeButton]->setState(true);
+
+						lastRadius = wandRadius;
+
+						lastPos[0] = wand->getPosition()[0];
+						lastPos[1] = wand->getPosition()[1];
+						lastPos[2] = wand->getPosition()[2];
+					}
+
+					if (modellingButtonState[activeButton] == 3)
+						modellingButton[activeButton]->setState(false);
+
+					break;
+				}
+				}
+
+			}
+
+			// Begin the frame...
+			ovrHmd_BeginFrame(hmd, l_FrameIndex);
+			// Get eye poses for both the left and the right eye. g_EyePoses contains all Rift information: orientation, positional tracking and
+			// the IPD in the form of the input variable g_EyeOffsets.
+			ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
+			// Bind the FBO...
+			glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
+			//glModes
+			GLRenderCallsOculus();
+
+			for (int l_EyeIndex = 0; l_EyeIndex<ovrEye_Count; l_EyeIndex++) {
+
+				// 3.3 OCULUS/CAMERA TRANSFORMS \______________________________________________________________________________________________
+				MVstack.push();
 				ovrEyeType l_Eye = hmd->EyeRenderOrder[l_EyeIndex];
 
 				glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
-						   g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
-						   g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
-						   g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
+					g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
+					g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
+					g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
 
-				glUseProgram(phongShader.programID);
+				glUseProgram(sceneShader.programID);
 				// Pass projection matrix on to OpenGL...
 				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 				glUniform1i(locationTex, 0);
@@ -651,156 +709,481 @@ int Oculus::runOvr() {
 				OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
 				MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
 
-
 				//!-- Translation due to positional tracking (DK2) and IPD...
 				float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
 				MVstack.translate(eyePoses);
-				
+
 				//POSSABLY DOABLE IN SHADER
 				pmat4 = MVstack.getCurrentMatrix();
 				for (int i = 0; i < 16; i++)
 					mat4[i] = pmat4[i];
 
-				//linAlg::transpose(mat4);
+				linAlg::transpose(mat4);
+				linAlg::vectorMatrixMult(mat4, lPos, LP);
+				linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix()); //TODO: check if this uniform is needed
+
+				// 3.4 - Scene Matrix stack \__________________________________________________________________________________________________
+				MVstack.push();
+				// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
+				glUniform4fv(locationLP, 1, LP);
+				MVstack.push();
+				MVstack.translate(board.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				board.render();
+				MVstack.pop();
+
+				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+
+				// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(trackingRange.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(2.0f);
+				trackingRange.render();
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				MVstack.pop();
+
+				// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
+				glUseProgram(menuShader.programID);
+				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+				MVstack.push();
+				MVstack.translate(title.getPosition());
+				MVstack.rotX(1.57079f);
+				glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				title.render();
+				MVstack.pop();
+
+				// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
+				// info
+				for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
+
+					if (modellingButton[i]->getState()) {
+						glUseProgram(bloomShader.programID);
+						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					}
+					else {
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					}
+
+					MVstack.push();
+					glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
+
+					MVstack.translate(modellingButton[i]->getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					modellingButton[i]->render();
+					MVstack.pop();
+				}
+
+				//glBindTexture(GL_TEXTURE_2D, 0);
+				// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
+				glUseProgram(meshShader.programID);
+				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+
+				MVstack.push();
+				MVstack.translate(mTest->getPosition());
+				MVstack.multiply(mTest->getOrientation());
+				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glUniform4fv(locationMeshLP, 1, LP);
+				glUniform4fv(locationMeshLP2, 1, lPosTemp);
+
+				if (lines) {
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					mTest->render();
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				}
+				else {
+					mTest->render();
+				}
+				MVstack.pop();
+
+				glUseProgram(sceneShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+				// 3.4.6 Render wand >-------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(wand->getPosition());
+				MVstack.multiply(wand->getOrientation());
+
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				MVstack.push();
+				translateVector[0] = 0.0f;
+				translateVector[1] = 0.0f;
+				translateVector[2] = -0.1f;
+				MVstack.translate(translateVector);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				boxWand.render();
+				MVstack.pop();
+				//render brush------------------------
+				MVstack.push();
+				/*	MVstack.scale(wandRadius);
+				glUseProgram(sphereShader.programID);
+				glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+				glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				sphereWand.render();*/
+				MVstack.pop();
+				MVstack.pop();
+				MVstack.pop();
+				MVstack.pop();
+			}
+			break;
+		}
+		case 1: {
+			//===============================================================================================================================
+			// 4 - LOAD Mode
+			//===============================================================================================================================
+			// 4.1 - Keyboard events \_______________________________________________________________________________________________________
+			// 4.1.1 - Move mesh >-----------------------------------------------------------------------------------------------------------
+			if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
+				if (modellingState[1] == 0) {
+					modellingState[1] = 1;
+					lastPos[0] = wand->getPosition()[0];
+					lastPos[1] = wand->getPosition()[1];
+					lastPos[2] = wand->getPosition()[2];
+					lastPos2[0] = mTest->getPosition()[0];
+					lastPos2[1] = mTest->getPosition()[1];
+					lastPos2[2] = mTest->getPosition()[2];
+
+					aModellingStateIsActive++;
+				}
+				else if (modellingState[1] == 1) {
+					modellingState[1] = 2;
+
+					//	move mesh
+					linAlg::calculateVec(wand->getPosition(), lastPos, moveVec);
+					moveVec[0] = lastPos2[0] + moveVec[0];
+					moveVec[1] = lastPos2[1] + moveVec[1];
+					moveVec[2] = lastPos2[2] + moveVec[2];
+
+					mTest->setPosition(moveVec);
+				}
+			}
+			else {
+				if (modellingState[1] == 3) {
+					modellingState[1] = 0;
+				}
+				else if (modellingState[1] != 0) {
+					modellingState[1] = 3;
+
+					aModellingStateIsActive--;
+				}
+			}
+
+			// 4.1.1 - Close application >---------------------------------------------------------------------------------------------------
+			if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
+				glfwSetWindowShouldClose(l_Window, GL_TRUE);
+			}
+
+
+			// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
+
+			activeButton = handleMenu(wand->getPosition(), loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
+
+			switch (activeButton) {
+			case 0:{
+				if (loadButtonState[activeButton] == 1) {
+
+					listVelocity = 0.0f;
+					listAcelleration = 0.0f;
+
+					scrollList[5]->setState(true);
+					scrollList[6]->setState(true);
+				}
+				else if (loadButtonState[activeButton] == 2) {
+
+					//wandVelocity = wand->getVelocity(deltaTime);
+					//listVelocity = wandVelocity[0];
+
+					/*for (int i = 0; i < 5; i++)
+					{
+					listLeft = -0.11f - (listStartPos[0] + listVelocity*deltaTime + i*0.05f);
+					listRight = listStartPos[0] + listVelocity*deltaTime + i*0.05f - 0.11f;
+
+					if (listLeft > 0.0f)
+					{
+					tempVec[0] = 0.11 - listLeft; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+					scrollList[(leftListIndex + i) % 5]->setPosition(tempVec);
+					}
+					else if (listRight > 0.0f)
+					{
+					tempVec[0] = -0.11 + listRight; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+					scrollList[(leftListIndex + i) % 5]->setPosition(tempVec);
+					}
+					else
+					{
+					tempVec[0] = listStartPos[0] + listVelocity*deltaTime + i*0.05f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+					scrollList[(leftListIndex + i) % 5]->setPosition(tempVec);
+					}
+					}*/
+
+				}
+				else if (loadButtonState[activeButton] == 3)
+				{
+					//wandVelocity = wand->getVelocity(deltaTime);
+					//listVelocity = wandVelocity[0];
+					//listAcelleration = -0.5*wandVelocity[0];
+
+					scrollList[5]->setState(false);
+					scrollList[6]->setState(false);
+				}
+				break;
+			}
+			case 1:{
+
+				break;
+			}
+			case 2:{
+
+				break;
+			}
+			default:{
+
+				break;
+			}
+			}
+
+
+			if (listVelocity == 0) {
+				//if (staticMesh->getmeshFile() != meshFile[fileIndex]) {
+				//	delete staticMesh;
+				//}
+
+			}
+			else
+			{
+				if (listVelocity > 0.04f && listVelocity < -0.04f) {
+
+					listVelocity = listVelocity + listAcelleration*deltaTime;
+					listAcelleration = -0.5*listVelocity;
+				}
+				else
+				{
+
+				}
+
+				for (int i = 0; i < 5; i++){
+					listStartPos = scrollList[i]->getPosition();
+					if (listStartPos[0] < 0.01f && listStartPos[0] > -0.01f) {
+						scrollList[i]->setState(true);
+					}
+					else{
+						scrollList[i]->setState(false);
+					}
+
+
+					listLeft = -0.125f - (listStartPos[0] + listVelocity*deltaTime);
+					listRight = listStartPos[0] + listVelocity*deltaTime - 0.125f;
+					if (listLeft > 0.0f){
+						tempVec[0] = 0.125f - listLeft; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+						scrollList[i]->setPosition(tempVec);
+						fileIndex++;
+					}
+					else if (listRight > 0.0f){
+						tempVec[0] = -0.125f + listRight; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+						scrollList[i]->setPosition(tempVec);
+						fileIndex--;
+					}
+					else{
+						tempVec[0] = listStartPos[0] + listVelocity*deltaTime; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+						scrollList[i]->setPosition(tempVec);
+					}
+					//tempVec[0] = listStartPos[0] + moveVec[0] + i*0.05f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
+					//scrollList[(leftListIndex + i)%5]->setPosition(tempVec);
+				}
+			}
+
+
+
+			// Begin the frame...
+			ovrHmd_BeginFrame(hmd, l_FrameIndex);
+			// Get eye poses for both the left and the right eye. g_EyePoses contains all Rift information: orientation, positional tracking and
+			// the IPD in the form of the input variable g_EyeOffsets.
+			ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
+			// Bind the FBO...
+			glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
+			//glModes
+			GLRenderCallsOculus();
+
+			for (int l_EyeIndex = 0; l_EyeIndex<ovrEye_Count; l_EyeIndex++) {
+
+				// 4.3 OCULUS/CAMERA TRANSFORMS \______________________________________________________________________________________________
+				MVstack.push();
+				ovrEyeType l_Eye = hmd->EyeRenderOrder[l_EyeIndex];
+
+				glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
+					g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
+					g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
+					g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
+
+				glUseProgram(sceneShader.programID);
+				// Pass projection matrix on to OpenGL...
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+				glUniform1i(locationTex, 0);
+
+				// Multiply with orientation retrieved from sensor...
+				OVR::Quatf l_Orientation = OVR::Quatf(g_EyePoses[l_Eye].Orientation);
+				OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
+				MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
+
+				//!-- Translation due to positional tracking (DK2) and IPD...
+				float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
+				MVstack.translate(eyePoses);
+
+				//POSSABLY DOABLE IN SHADER
+				pmat4 = MVstack.getCurrentMatrix();
+				for (int i = 0; i < 16; i++)
+					mat4[i] = pmat4[i];
+
+				linAlg::transpose(mat4);
 				linAlg::vectorMatrixMult(mat4, lPos, LP);
 				linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-			
-				//SCENEOBJECT TRANSFORMS----------------------------------------------------------------
+
+				// 4.4 - Scene Matrix stack \__________________________________________________________________________________________________
 				MVstack.push();
-					glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());
-
-					//RENDER DIFFERENT HEXBOXES---------------------------------------------------------------------
-					glUniform4fv(locationLP, 1, LP);
-					MVstack.push();
-						MVstack.translate(board.getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-						board.render();
-					MVstack.pop();
-
-					glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-
-					//TRACKINGRANGE
-					MVstack.push();
-						MVstack.translate(trackingRange.getPosition());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-						glLineWidth(2.0f);
-						trackingRange.render();
-						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-					MVstack.pop();
-
-					// TITLE
-					glUseProgram(menuShader.programID);
-					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-					MVstack.push();
-						MVstack.translate(title.getPosition());
-						MVstack.rotX(1.57079f);
-						glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						title.render();
-					MVstack.pop();
-
-					//  MENU ITEMS -----------------------------------------------------------------------------------------------------
-					// info
-					for (int i = 0; i < nrOfMenuItems; i++) {
-
-						if (menuItem[i].getState()) {
-							glUseProgram(bloomShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-						} else {
-							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-						}
-
-						MVstack.push();
-							if (i == 0)
-								glBindTexture(GL_TEXTURE_2D, menuResetTex.getTextureID());
-							else if (i == 1)
-								glBindTexture(GL_TEXTURE_2D, menuSaveTex.getTextureID());
-							else if (i == 2)
-								glBindTexture(GL_TEXTURE_2D, menuLoadTex.getTextureID());
-							else if (i == 3)
-								glBindTexture(GL_TEXTURE_2D, menuWireTex.getTextureID());
-							else
-								glBindTexture(GL_TEXTURE_2D, menuMinusTex.getTextureID());
-
-
-							MVstack.translate(menuItem[i].getPosition());
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							menuItem[i].render();
-						MVstack.pop();
-					}
-
-					glBindTexture(GL_TEXTURE_2D, 0);
-					//RENDER MESH -----------------------------------------------------------------------
-					glUseProgram(meshShader.programID);
-					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-					MVstack.push();
-						MVstack.translate(mTest->getPosition());
-						MVstack.multiply(mTest->getOrientation());
-						glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						//cout << lPosTemp[0] << " " << lPosTemp[1] << " " << lPosTemp[2] << " " << lPosTemp[3] << endl;
-						glUniform4fv(locationMeshLP, 1, LP);
-						glUniform4fv(locationMeshLP2, 1, lPosTemp);
-
-						if (lines) {
-						//if (true) {
-							glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-							mTest->render();
-							glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-						} else {
-							mTest->render();
-						}
-					MVstack.pop();
-					
-					glUseProgram(phongShader.programID);
-					glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-					//RENDER WAND---------------------------------------------------------------------------
-					MVstack.push();
-						MVstack.translate(wand->getPosition());
-						MVstack.multiply(wand->getOrientation());
-
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-						MVstack.push();
-							
-							MVstack.translate(translateHandle);
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							glBindTexture(GL_TEXTURE_2D, hexTex.getTextureID());
-							boxWand.render();
-						MVstack.pop();
-
-						MVstack.push();
-							MVstack.scale(wandRadius);
-							glUseProgram(sphereShader.programID);
-							glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-							glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							sphereWand.render();
-							//MVstack.translate(translatePointer);
-							//glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							//boxPointer.render();
-						MVstack.pop();
-					MVstack.pop();
-						
+				// 4.4.1 - RENDER BOARD >--------------------------------------------------------------------------------------------------
+				glUniform4fv(locationLP, 1, LP);
+				MVstack.push();
+				MVstack.translate(board.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				board.render();
 				MVstack.pop();
 
-			MVstack.pop();			
+				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+
+				// 4.4.2 - RENDER trackingrange >-----------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(trackingRange.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(2.0f);
+				trackingRange.render();
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				MVstack.pop();
+
+				// 4.4.3 - RENDER title >---------------------------------------------------------------------------------------------------
+				glUseProgram(menuShader.programID);
+				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+				MVstack.push();
+				MVstack.translate(title.getPosition());
+				MVstack.rotX(1.57079f);
+				glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				title.render();
+				MVstack.pop();
+
+
+				// 4.4.4 - RENDER Load buttons >--------------------------------------------------------------------------------------------
+				for (int i = 1; i < NR_OF_LOAD_BUTTONS; i++) {
+
+					if (loadButton[i]->getState()) {
+						glUseProgram(bloomShader.programID);
+						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					}
+					else {
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					}
+
+					MVstack.push();
+					glBindTexture(GL_TEXTURE_2D, loadButtonTex[i]->getTextureID());
+
+					MVstack.translate(loadButton[i]->getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					loadButton[i]->render();
+					MVstack.pop();
+				}
+
+
+				// 4.4.5 - RENDER listitems >---------------------------------------------------------------------------------------------
+				// info
+				for (int i = 6; i > -1; i--) {
+
+					if (scrollList[i]->getState()) {
+						glUseProgram(bloomShader.programID);
+						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					}
+					else {
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					}
+
+					MVstack.push();
+
+					glBindTexture(GL_TEXTURE_2D, scrollListTex[i]->getTextureID());
+
+					MVstack.translate(scrollList[i]->getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					scrollList[i]->render();
+					MVstack.pop();
+				}
+
+				//glBindTexture(GL_TEXTURE_2D, 0);
+
+				// 4.4.6 - RENDER mesh >--------------------------------------------------------------------------------------------------
+				glUseProgram(meshShader.programID);
+				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+				MVstack.push();
+				MVstack.translate(mTest->getPosition());
+				MVstack.multiply(mTest->getOrientation());
+				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glUniform4fv(locationMeshLP, 1, LP);
+				glUniform4fv(locationMeshLP2, 1, lPosTemp);
+
+				if (lines) {
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					mTest->render();
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				}
+				else {
+					mTest->render();
+				}
+				MVstack.pop();
+
+				glUseProgram(sceneShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+				// 4.4.7 - RENDER wand >--------------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(wand->getPosition());
+				MVstack.multiply(wand->getOrientation());
+
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				MVstack.push();
+				translateVector[0] = 0.0f;
+				translateVector[1] = 0.0f;
+				translateVector[2] = -0.1f;
+				MVstack.translate(translateVector);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				boxWand.render();
+				MVstack.pop();
+				//render brush------------------------
+				MVstack.push();
+				/*MVstack.scale(wandRadius);
+				glUseProgram(sphereShader.programID);
+				glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+				glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				sphereWand.render();*/
+				MVstack.pop();
+				MVstack.pop();
+				MVstack.pop();
+				MVstack.pop();
+			}
+
+			break;
 		}
 
-		//test
-		/*glBindFramebuffer(GL_READ_FRAMEBUFFER, l_FBOId);
-		glReadBuffer(GL_COLOR_ATTACHMENT0);
-		float testPixel[3];
-		glReadPixels(500, 500, 1, 1, GL_RGB, GL_FLOAT, &testPixel);
-		cout << testPixel[1];
-		glReadBuffer(GL_NONE);*/
-
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
+		}
 		// Back to the default framebuffer...
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -808,6 +1191,7 @@ int Oculus::runOvr() {
 		ovrHmd_EndFrame(hmd, g_EyePoses, g_EyeTextures);
 		++l_FrameIndex;
 		glfwPollEvents();
+
 	}
 
 	// Clean up FBO...
@@ -827,53 +1211,54 @@ int Oculus::runOvr() {
 }
 
 static void WindowSizeCallback(GLFWwindow* p_Window, int p_Width, int p_Height) {
-    if (p_Width>0 && p_Height>0) {
-        g_Cfg.OGL.Header.BackBufferSize.w = p_Width;
-        g_Cfg.OGL.Header.BackBufferSize.h = p_Height;
+	if (p_Width>0 && p_Height>0) {
+		g_Cfg.OGL.Header.BackBufferSize.w = p_Width;
+		g_Cfg.OGL.Header.BackBufferSize.h = p_Height;
 
-        ovrBool l_ConfigureResult = ovrHmd_ConfigureRendering(hmd, &g_Cfg.Config, G_DISTORTIONCAPS, hmd->MaxEyeFov, g_EyeRenderDesc);
-        if (!l_ConfigureResult) {
-            printf("Configure failed.\n");
-            exit(EXIT_FAILURE);
-        }
-    }
+		ovrBool l_ConfigureResult = ovrHmd_ConfigureRendering(hmd, &g_Cfg.Config, G_DISTORTIONCAPS, hmd->MaxEyeFov, g_EyeRenderDesc);
+		if (!l_ConfigureResult) {
+			printf("Configure failed.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
 }
 
 void GLRenderCallsOculus(){
-    // Clear...
-    //GL calls
-    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+	// Clear...
+	//GL calls
+	glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 	//glEnable(GL_FLAT);
 	glShadeModel(GL_FLAT);
-    glCullFace(GL_BACK);
-    //glDisable(GL_TEXTURE);
+	glCullFace(GL_BACK);
+	//glDisable(GL_TEXTURE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glFrontFace(GL_CCW);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glFrontFace(GL_CCW);
 	//glEnable(GL_POLYGON_STIPPLE);
 
-    if (L_MULTISAMPLING) {
-        glEnable(GL_MULTISAMPLE);
-    } else {
-        glDisable(GL_MULTISAMPLE);
-    }
+	if (L_MULTISAMPLING) {
+		glEnable(GL_MULTISAMPLE);
+	}
+	else {
+		glDisable(GL_MULTISAMPLE);
+	}
 }
 
 //! checks if a menu item is choosen and sets the appropriate state 
-void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems, int* state) {
+int handleMenu(float* wandPosition, MenuItem** menuItem, const int nrOfModellingUIButtons, int* state) {
 
 
-	for (int i = 0; i < nrOfMenuItems; i++) {
-		if (wandPosition[1] < menuItem[i].getPosition()[1] + 0.01f 
-			&& wandPosition[1] > menuItem[i].getPosition()[1] - 0.01f
-			&& wandPosition[0] > menuItem[i].getPosition()[0] - menuItem[i].getDim()[0] / 4.f
-			&& wandPosition[0] < menuItem[i].getPosition()[0] + menuItem[i].getDim()[0] / 4.f
-			&& wandPosition[2] > menuItem[i].getPosition()[2] - menuItem[i].getDim()[1] / 4.f
-			&& wandPosition[2] < menuItem[i].getPosition()[2] + menuItem[i].getDim()[1] / 4.f) {									// check the item on left side
+	for (int i = 0; i < nrOfModellingUIButtons; i++) {
+		if (wandPosition[1] < menuItem[i]->getPosition()[1] + 0.02f
+			&& wandPosition[1] > menuItem[i]->getPosition()[1] - 0.02f
+			&& wandPosition[0] > menuItem[i]->getPosition()[0] - menuItem[i]->getDim()[0] / 4.f
+			&& wandPosition[0] < menuItem[i]->getPosition()[0] + menuItem[i]->getDim()[0] / 4.f
+			&& wandPosition[2] > menuItem[i]->getPosition()[2] - menuItem[i]->getDim()[1] / 4.f
+			&& wandPosition[2] < menuItem[i]->getPosition()[2] + menuItem[i]->getDim()[1] / 4.f) {									// check the item on left side
 
 			// set state
 			if (state[i] == 0) {
@@ -882,14 +1267,58 @@ void handleMenu(float* wandPosition, MenuItem* menuItem, const int nrOfMenuItems
 			else {
 				state[i] = 2;				// set to held down
 			}
-		} else {
+			return i;
+		}
+		else {
 			if (state[i] == 2 || state[i] == 1) {
 				state[i] = 3;				// set to just released
 				//menuItem[i].setState(false);
+				return i;
 			}
 			else if (state[i] == 3) {
 				state[i] = 0;				// set to deactivated
 			}
 		}
 	}
+	return -1;
 }
+
+//std::vector<std::string> getSavedFileNames() {
+//	const std::string folder = "../savedFiles";
+//	std::vector<std::string> names;
+//	char search_path[200];
+//	sprintf(search_path, "%s/*.bin", folder.c_str());
+//	WIN32_FIND_DATA fd;
+//
+//	// load saved filenames in savedFiles dir
+//	HANDLE hFind = ::FindFirstFile(search_path, &fd);
+//	if (hFind != INVALID_HANDLE_VALUE) {
+//		do {
+//			// read all (real) files in current folder
+//			// , delete '!' read other 2 default folder . and ..
+//			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+//				names.push_back(fd.cFileName);
+//			}
+//		} while (::FindNextFile(hFind, &fd));
+//		::FindClose(hFind);
+//	}
+//	return names;
+//}
+
+//void loadStaticMesh(StaticMesh* item, std::string fileName) {
+//	staticMeshLock.lock();
+//	item->loadStaticMesh(fileName);
+//	staticMeshLock.unlock();
+//}
+//
+//void loadMesh(DynamicMesh* item, std::string fileName) {
+//	meshLock.lock();
+//	item->load(fileName);
+//	meshLock.unlock();
+//}
+//
+//void saveFile(DynamicMesh* item) {
+//	meshLock.lock();
+//	item->save();
+//	meshLock.unlock();
+//}
