@@ -62,8 +62,13 @@ class DynamicMesh : public Mesh{
   private:
 
 	const int MAX_NR_OF_VERTICES = 1000000;
+	int emptyV;
+
 	const int MAX_NR_OF_TRIANGLES = 2 * MAX_NR_OF_VERTICES;
+	int emptyT;
+
 	const int MAX_NR_OF_EDGES = 3 * MAX_NR_OF_VERTICES;
+	int emptyE;
 
 	//largest index in the vertexArray where values exist 
 	int vertexCap;
