@@ -31,9 +31,9 @@ void GLRenderCallsOculus();
 //! loads a uneditable mesh
 //void loadStaticMesh(StaticMesh* item, std::string fileName);
 //! loads a mesh that can be edited
-//void loadMesh(DynamicMesh* item, std::string fileName);
+void loadMesh(DynamicMesh* item, std::string fileName);
 //! saves the main mesh to a file
-//void saveFile(DynamicMesh* item);
+void saveFile(DynamicMesh* item);
 // --------------------------------------
 // --- Variable Declerations ------------
 const bool L_MULTISAMPLING = false;
@@ -451,7 +451,7 @@ int Oculus::runOvr() {
 	float lastRadius;
 
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
-	DynamicMesh* mTest = new DynamicMesh(0.05f);
+	DynamicMesh* mTest = new DynamicMesh("2015-07-22_11-16-27.bin");
 	//DynamicMesh* mTest = new DynamicMesh("2015-07-21_16-38-01.bin");
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
@@ -584,7 +584,7 @@ int Oculus::runOvr() {
 					// save mesh
 					if (modellingButtonState[activeButton] == 1) {
 						modellingButton[activeButton]->setState(true);
-					//	th1 = std::thread(saveFile, mTest);
+						th1 = std::thread(saveFile, mTest);
 					}
 
 					//TODO: MOVE THIS JOIN AND REMOVE this if
@@ -1285,27 +1285,27 @@ int handleMenu(float* wandPosition, MenuItem** menuItem, const int nrOfModelling
 	return -1;
 }
 
-//std::vector<std::string> getSavedFileNames() {
-//	const std::string folder = "../savedFiles";
-//	std::vector<std::string> names;
-//	char search_path[200];
-//	sprintf(search_path, "%s/*.bin", folder.c_str());
-//	WIN32_FIND_DATA fd;
-//
-//	// load saved filenames in savedFiles dir
-//	HANDLE hFind = ::FindFirstFile(search_path, &fd);
-//	if (hFind != INVALID_HANDLE_VALUE) {
-//		do {
-//			// read all (real) files in current folder
-//			// , delete '!' read other 2 default folder . and ..
-//			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-//				names.push_back(fd.cFileName);
-//			}
-//		} while (::FindNextFile(hFind, &fd));
-//		::FindClose(hFind);
-//	}
-//	return names;
-//}
+std::vector<std::string> getSavedFileNames() {
+	const std::string folder = "../savedFiles";
+	std::vector<std::string> names;
+	char search_path[200];
+	sprintf(search_path, "%s/*.bin", folder.c_str());
+	WIN32_FIND_DATA fd;
+
+	// load saved filenames in savedFiles dir
+	HANDLE hFind = ::FindFirstFile(search_path, &fd);
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
+			// read all (real) files in current folder
+			// , delete '!' read other 2 default folder . and ..
+			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+				names.push_back(fd.cFileName);
+			}
+		} while (::FindNextFile(hFind, &fd));
+		::FindClose(hFind);
+	}
+	return names;
+}
 
 //void loadStaticMesh(StaticMesh* item, std::string fileName) {
 //	staticMeshLock.lock();
@@ -1313,14 +1313,14 @@ int handleMenu(float* wandPosition, MenuItem** menuItem, const int nrOfModelling
 //	staticMeshLock.unlock();
 //}
 //
-//void loadMesh(DynamicMesh* item, std::string fileName) {
-//	meshLock.lock();
-//	item->load(fileName);
-//	meshLock.unlock();
-//}
-//
-//void saveFile(DynamicMesh* item) {
-//	meshLock.lock();
-//	item->save();
-//	meshLock.unlock();
-//}
+void loadMesh(DynamicMesh* item, std::string fileName) {
+	meshLock.lock();
+	item->load(fileName);
+	meshLock.unlock();
+}
+
+void saveFile(DynamicMesh* item) {
+	meshLock.lock();
+	item->save();
+	meshLock.unlock();
+}

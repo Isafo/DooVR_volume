@@ -13,8 +13,8 @@ public:
 	StaticMesh();
 	~StaticMesh();
 
-	virtual void render() = 0;
-	virtual void createBuffers() = 0;
+	void render() = 0;
+	void createBuffers() = 0;
 
 protected:
 	texCoords* texArray;

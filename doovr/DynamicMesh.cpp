@@ -3,6 +3,9 @@
 #include "math.h"
 #include <algorithm>
 #include <iterator>
+#include <sstream>
+#include <fstream>
+#include <string>
 
 #define M_PI 3.14159265358979323846
 
@@ -260,6 +263,109 @@ DynamicMesh::~DynamicMesh(void) {
 
 }
 
+DynamicMesh::DynamicMesh(std::string fileName) {
+	vertexArray = new vertex[MAX_NR_OF_VERTICES];
+	vInfoArray = new vInfo[MAX_NR_OF_VERTICES];
+
+	triangleArray = new triangle[MAX_NR_OF_TRIANGLES];
+	triEPtr = new int[MAX_NR_OF_TRIANGLES];
+
+	e = new halfEdge[MAX_NR_OF_EDGES];
+
+	// read mesh from file
+	std::cout << "loading mesh..." << std::endl;
+
+	std::ifstream file("../savedFiles/" + fileName, std::ios::in | std::ios::binary);
+	if (file.is_open()) {
+
+		int bitCount = 0;
+
+		// read the size of the arrays
+		file.seekg(0);
+		file.read((char*)&vertexCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekg(bitCount);
+		file.read((char*)&triangleCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekg(bitCount);
+		file.read((char*)&edgeCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		// read mesh position
+		file.seekg(bitCount);
+		file.read((char*)&position[0], sizeof(float) * 3);
+		bitCount += sizeof(float) * 3;
+
+		// read mesh orientation
+		file.seekg(bitCount);
+		file.read((char*)&orientation[0], sizeof(float) * 16);
+		bitCount += sizeof(float) * 16;
+
+		// read vertecies
+		file.seekg(bitCount);
+		file.read((char*)&nrofVerts, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekg(bitCount);
+		file.read((char*)&vertexArray[0], sizeof(vertex) * (vertexCap + 1));
+		bitCount += sizeof(vertex) * (vertexCap + 1);
+
+		// read triangles
+		file.seekg(bitCount);
+		file.read((char*)&nrofTris, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekg(bitCount);
+		file.read((char*)&triangleArray[0], sizeof(triangle) * (triangleCap + 1));
+		bitCount += sizeof(triangle) * (triangleCap + 1);
+
+		// read halfEdges
+		file.seekg(bitCount);
+		file.read((char*)&e[0], sizeof(halfEdge) * (edgeCap + 1));
+		bitCount += sizeof(halfEdge) * (edgeCap + 1);
+
+		// read vInfoArray
+		file.seekg(bitCount);
+		file.read((char*)&vInfoArray[0], sizeof(vInfo) * (vertexCap + 1));
+		bitCount += sizeof(vInfo) * (vertexCap + 1);
+
+		// read triEdgePtr
+		file.seekg(bitCount);
+		file.read((char*)&triEPtr[0], sizeof(int) * (triangleCap + 1));
+
+
+		file.close();
+
+		std::cout << "load complete" << std::endl;
+	}
+	else {
+		std::cout << "could not open file" << std::endl;
+	}
+
+	//create queue for vertices
+	for (int i = vertexCap + 1; i < MAX_NR_OF_VERTICES; i++)
+	{
+		vInfoArray[i].edgePtr = -(i + 1);
+	}
+	vInfoArray[MAX_NR_OF_VERTICES - 1].edgePtr = 0;
+	//create queue for Triangles
+	for (int i = triangleCap + 1; i < MAX_NR_OF_TRIANGLES; i++)
+	{
+		triEPtr[i] = -(i + 1);
+	}
+	triEPtr[MAX_NR_OF_TRIANGLES - 1] = -1;
+	//create queue for Edges
+	for (int i = edgeCap + 1; i < MAX_NR_OF_EDGES; i++)
+	{
+		e[i].nextEdge = -(i + 1);
+	}
+	e[MAX_NR_OF_EDGES - 1].nextEdge = -1;
+
+	createBuffers();
+}
+
 
 
 void DynamicMesh::createBuffers() {
@@ -339,6 +445,173 @@ void DynamicMesh::createBuffers() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
+
+void DynamicMesh::load(std::string fileName) {
+	// read mesh from file
+	std::cout << "loading mesh..." << std::endl;
+
+	std::ifstream file("../savedFiles/" + fileName, std::ios::in | std::ios::binary);
+
+	if (file.is_open()) {
+
+		int bitCount = 0;
+
+		// read the size of the arrays
+		file.seekg(0);
+		file.read((char*)&vertexCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekg(bitCount);
+		file.read((char*)&triangleCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekg(bitCount);
+		file.read((char*)&edgeCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		// read mesh position
+		file.seekg(bitCount);
+		file.read((char*)&position[0], sizeof(float) * 3);
+		bitCount += sizeof(float) * 3;
+
+		// read mesh orientation
+		file.seekg(bitCount);
+		file.read((char*)&orientation[0], sizeof(float) * 16);
+		bitCount += sizeof(float) * 16;
+
+		// read vertecies
+		file.seekg(bitCount);
+		file.read((char*)&nrofVerts, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekg(bitCount);
+		file.read((char*)&vertexArray[0], sizeof(vertex) * (vertexCap + 1));
+		bitCount += sizeof(vertex) * (vertexCap + 1);
+
+		// read triangles
+		file.seekg(bitCount);
+		file.read((char*)&nrofTris, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekg(bitCount);
+		file.read((char*)&triangleArray[0], sizeof(triangle) * (triangleCap + 1));
+		bitCount += sizeof(triangle) * (triangleCap + 1);
+
+		// read halfEdges
+		file.seekg(bitCount);
+		file.read((char*)&e[0], sizeof(halfEdge) * edgeCap);
+		bitCount += sizeof(halfEdge) * (edgeCap + 1);
+
+		// read vInfoArray
+		file.seekg(bitCount);
+		file.read((char*)&vInfoArray[0], sizeof(vInfo) * (vertexCap + 1));
+		bitCount += sizeof(vInfo) * (vertexCap + 1);
+
+		// read triEdgePtr
+		file.seekg(bitCount);
+		file.read((char*)&triEPtr[0], sizeof(int) * (triangleCap + 1));
+
+
+		file.close();
+
+		std::cout << "load complete" << std::endl;
+	}
+	else {
+		std::cout << "could not open file" << std::endl;
+	}
+}
+
+void DynamicMesh::save() {
+
+	std::cout << "saving..." << std::endl;
+
+	// get date and time
+	time_t now = time(0);
+	struct tm tstruct;
+	char buf[80];
+	tstruct = *localtime(&now);
+
+	int bitCount = 0;
+
+	strftime(buf, sizeof(buf), "%Y-%m-%d_%X", &tstruct);
+
+	// replace : with - to be able to save file
+	buf[13] = '-';
+	buf[16] = '-';
+
+	std::string fileName(buf);
+
+
+	std::fstream file;
+	file.open("../savedFiles/" + fileName + ".bin", std::ios::out | std::ios::binary);
+
+	if (file.is_open()) {
+
+		// write the size of the different arrays to the file
+		file.seekp(0);
+		file.write((char*)&vertexCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekp(bitCount);
+		file.write((char*)&triangleCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekp(bitCount);
+		file.write((char*)&edgeCap, sizeof(int));
+		bitCount += sizeof(int);
+
+		// write position and orientation
+		file.seekp(bitCount);
+		file.write((char*)&position[0], sizeof(float) * 3);
+		bitCount += sizeof(float) * 3;
+
+		file.seekp(bitCount);
+		file.write((char*)&orientation[0], sizeof(float) * 16);
+		bitCount += sizeof(float) * 16;
+
+		// write verticies
+		file.seekp(bitCount);
+		file.write((char*)&nrofVerts, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekp(bitCount);
+		file.write((char*)&vertexArray[0], sizeof(vertex) * (vertexCap + 1));
+		bitCount += sizeof(vertex) * (vertexCap + 1);
+
+		// write triangles
+		file.seekp(bitCount);
+		file.write((char*)&nrofTris, sizeof(int));
+		bitCount += sizeof(int);
+
+		file.seekp(bitCount);
+		file.write((char*)&triangleArray[0], sizeof(triangle) * (triangleCap + 1));
+		bitCount += sizeof(triangle) * (triangleCap + 1);
+
+
+		// write edges
+		file.seekp(bitCount);
+		file.write((char*)&e[0], sizeof(halfEdge) * (edgeCap + 1));
+		bitCount += sizeof(halfEdge) * (edgeCap + 1);
+
+		// write vertex edge pointers
+		file.seekp(bitCount);
+		file.write((char*)&vInfoArray[0], sizeof(vInfo) * (vertexCap + 1));
+		bitCount += sizeof(vInfo) * (vertexCap + 1);
+
+		// write triangle edge pointers
+		file.seekp(bitCount);
+		file.write((char*)&triEPtr[0], sizeof(int) * (triangleCap + 1));
+
+		file.close();
+
+		std::cout << "save complete" << std::endl;
+
+	}
+	else {
+		std::cout << "could not open file for saving" << std::endl;
+	}
+}
+
 
 void DynamicMesh::select(Wand* wand, float rad) {
 	float newWPoint[4];

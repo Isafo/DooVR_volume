@@ -263,6 +263,7 @@ lib/
 OculusSDK/
 Src/
 Textures/
+savedFiles/
 
 # RC files
 *.rc
