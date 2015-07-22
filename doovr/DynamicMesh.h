@@ -62,8 +62,13 @@ class DynamicMesh : public Mesh{
   private:
 
 	const int MAX_NR_OF_VERTICES = 1000000;
+	int emptyV;
+
 	const int MAX_NR_OF_TRIANGLES = 2 * MAX_NR_OF_VERTICES;
+	int emptyT;
+
 	const int MAX_NR_OF_EDGES = 3 * MAX_NR_OF_VERTICES;
+	int emptyE;
 
 	//largest index in the vertexArray where values exist 
 	int vertexCap;
@@ -85,8 +90,8 @@ class DynamicMesh : public Mesh{
 	sVert sVerts[10000];
 	int sVertsNR = 0;
 
-	const float MAX_LENGTH = 0.025f * 2.0f;// *0.5f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.0124f * 2.0f;// *0.5f;
+	const float MAX_LENGTH = 0.025f  * 0.5f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f * 0.5f;
 
 	std::string fileName;
 
