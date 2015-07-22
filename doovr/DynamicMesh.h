@@ -90,8 +90,8 @@ class DynamicMesh : public Mesh{
 	sVert sVerts[10000];
 	int sVertsNR = 0;
 
-	const float MAX_LENGTH = 0.025f * 2.0f;// *0.5f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.0124f * 2.0f;// *0.5f;
+	const float MAX_LENGTH = 0.025f  * 0.5f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f * 0.5f;
 
 	std::string fileName;
 

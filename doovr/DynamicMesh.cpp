@@ -33,9 +33,9 @@ DynamicMesh::DynamicMesh(float rad) {
 	orientation[8] = 0.0f; orientation[9] = 0.0f; orientation[10] = 1.0f; orientation[11] = 0.0f;
 	orientation[12] = 0.0f; orientation[13] = 0.0f; orientation[14] = 0.0f; orientation[15] = 1.0f;
 
-	nrofVerts = 6; vertexCap = 6;
-	nrofTris = 8; triangleCap = 8;
-	nrofEdges = 24; edgeCap = 24;
+	nrofVerts = 6; vertexCap = 5;
+	nrofTris = 8; triangleCap = 7;
+	nrofEdges = 24; edgeCap = 23;
 
 	//create queue for vertices
 	for (int i = 0; i < MAX_NR_OF_VERTICES; i++)
@@ -70,14 +70,14 @@ DynamicMesh::DynamicMesh(float rad) {
 	vertexArray[5].x = 0.0f;	vertexArray[5].y = 0.0f;	vertexArray[5].z = MAX_LENGTH / 2.0f; /*normal*/	vertexArray[5].nx = 0.0f;	vertexArray[5].ny = 0.0f;	vertexArray[5].nz = 1;
 
 	// bind triangles
-	triangleArray[0].index[0] = 1;	triangleArray[0].index[1] = 4; triangleArray[0].index[2] = 6;
-	triangleArray[1].index[0] = 1;	triangleArray[1].index[1] = 6; triangleArray[1].index[2] = 3;
-	triangleArray[2].index[0] = 1;	triangleArray[2].index[1] = 3;	triangleArray[2].index[2] = 5;
-	triangleArray[3].index[0] = 1;	triangleArray[3].index[1] = 5;	triangleArray[3].index[2] = 4;
-	triangleArray[4].index[0] = 2;	triangleArray[4].index[1] = 6;	triangleArray[4].index[2] = 4;
-	triangleArray[5].index[0] = 2;	triangleArray[5].index[1] = 3;	triangleArray[5].index[2] = 6;
-	triangleArray[6].index[0] = 2;	triangleArray[6].index[1] = 5; triangleArray[6].index[2] = 3;
-	triangleArray[7].index[0] = 2; triangleArray[7].index[1] = 4; triangleArray[7].index[2] = 5;
+	triangleArray[0].index[0] = 0;	triangleArray[0].index[1] = 3; triangleArray[0].index[2] = 5;
+	triangleArray[1].index[0] = 0;	triangleArray[1].index[1] = 5; triangleArray[1].index[2] = 2;
+	triangleArray[2].index[0] = 0;	triangleArray[2].index[1] = 2;	triangleArray[2].index[2] = 4;
+	triangleArray[3].index[0] = 0;	triangleArray[3].index[1] = 4;	triangleArray[3].index[2] = 3;
+	triangleArray[4].index[0] = 1;	triangleArray[4].index[1] = 5;	triangleArray[4].index[2] = 3;
+	triangleArray[5].index[0] = 1;	triangleArray[5].index[1] = 2;	triangleArray[5].index[2] = 5;
+	triangleArray[6].index[0] = 1;	triangleArray[6].index[1] = 4; triangleArray[6].index[2] = 2;
+	triangleArray[7].index[0] = 1; triangleArray[7].index[1] = 3; triangleArray[7].index[2] = 4;
 	
 	// Bind halfEdges
 	//TOP///////////////////////
@@ -86,7 +86,7 @@ DynamicMesh::DynamicMesh(float rad) {
 	triEPtr[0] = 0;
 	
 	e[0].nextEdge = 1; e[1].vertex = 3; e[1].triangle = 0;
-	e[1].nextEdge = 3; e[2].vertex = 5; e[2].triangle = 0;
+	e[1].nextEdge = 2; e[2].vertex = 5; e[2].triangle = 0;
 	e[2].nextEdge = 0;
 
 	vInfoArray[0].edgePtr = 2;
@@ -202,7 +202,7 @@ DynamicMesh::DynamicMesh(float rad) {
 	
 	while (stepRad < rad)
 	{
-		for (int j = 1; j < vertexCap; j++)
+		for (int j = 0; j < vertexCap; j++)
 		{
 			tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
 			if (vInfoArray[j].edgePtr > 0)
@@ -224,7 +224,7 @@ DynamicMesh::DynamicMesh(float rad) {
 		stepRad += MIN_LENGTH;
 	}
 	stepRad = rad;
-	for (int i = 1; i < 60; i++)
+	for (int i = 0; i < 60; i++)
 	{
 		for (int j = 0; j < vertexCap; j++)
 		{
@@ -399,7 +399,7 @@ void DynamicMesh::createBuffers() {
 	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) *MAX_NR_OF_VERTICES,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i < MAX_NR_OF_VERTICES; i++) {
+	for (int i = 0; i < MAX_NR_OF_VERTICES; i++) {
 		vertexP[i].x = vertexArray[i].x;
 		vertexP[i].y = vertexArray[i].y;
 		vertexP[i].z = vertexArray[i].z;
@@ -437,7 +437,7 @@ void DynamicMesh::createBuffers() {
 	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * MAX_NR_OF_TRIANGLES,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i < MAX_NR_OF_TRIANGLES; i++) {
+	for (int i = 0; i < MAX_NR_OF_TRIANGLES; i++) {
 		indexP[i].index[0] = triangleArray[i].index[0];
 		indexP[i].index[1] = triangleArray[i].index[1];
 		indexP[i].index[2] = triangleArray[i].index[2];
@@ -466,7 +466,7 @@ void DynamicMesh::updateOGLData()
 	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData)*(vertexCap),
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i <= vertexCap; i++) {
+	for (int i = 0; i <= vertexCap; i++) {
 		vertexP[i].x = vertexArray[i].x;
 		vertexP[i].y = vertexArray[i].y;
 		vertexP[i].z = vertexArray[i].z;
@@ -503,7 +503,7 @@ void DynamicMesh::updateOGLData()
 	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * (triangleCap),
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 1; i <= triangleCap; i++) {
+	for (int i = 0; i <= triangleCap; i++) {
 		indexP[i].index[0] = triangleArray[i].index[0];
 		indexP[i].index[1] = triangleArray[i].index[1];
 		indexP[i].index[2] = triangleArray[i].index[2];
@@ -754,7 +754,7 @@ void DynamicMesh::select(Wand* wand, float rad) {
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 	// 1.0 >--------------------------
 	//--< 2.0 | start searching through vertexarray for points that are within the brush
-	for (int i = 1; i <= vertexCap; i++) {
+	for (int i = 0; i <= vertexCap; i++) {
 		//--< 2.1 | calculate vector between vertexposition and wandposition
 		vPoint[0] = vertexArray[i].x;
 		vPoint[1] = vertexArray[i].y;
@@ -972,7 +972,7 @@ void DynamicMesh::markUp(Wand* wand, float rad) {
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 	// 1.0 >--------------------------
 	//--< 2.0 | start searching through vertexarray for points that are within the brush
-	for (int i = 1; i <= vertexCap; i++) {
+	for (int i = 0; i <= vertexCap; i++) {
 		//--< 2.1 | calculate vector between vertexposition and wandposition
 		vPoint[0] = vertexArray[i].x;
 		vPoint[1] = vertexArray[i].y;
