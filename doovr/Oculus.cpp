@@ -47,7 +47,7 @@ ovrHmd hmd;
 ovrGLConfig g_Cfg;
 ovrEyeRenderDesc g_EyeRenderDesc[2];
 
-std::mutex staticMeshLock, meshLock;
+std::mutex loaderMeshLock, meshLock;
 
 int Oculus::runOvr() {
 
@@ -322,15 +322,15 @@ int Oculus::runOvr() {
 	glEnable(GL_TEXTURE_2D);
 	// Scene textures
 
-	Texture whiteTex("../Textures/light.DDS");
-	Texture groundTex("../Textures/stone.DDS");
-	Texture titleTex("../Textures/Title.DDS");
-	Texture resetTex("../Textures/reset.DDS");
-	Texture saveTex("../Textures/save.DDS");
-	Texture loadTex("../Textures/load.DDS");
-	Texture wireFrameTex("../Textures/wireframe.DDS");
-	Texture plusTex("../Textures/plus.DDS");
-	Texture minusTex("../Textures/minus.DDS");
+	Texture whiteTex("../Assets/Textures/light.DDS");
+	Texture groundTex("../Assets/Textures/stone.DDS");
+	Texture titleTex("../Assets/Textures/Title.DDS");
+	Texture resetTex("../Assets/Textures/reset.DDS");
+	Texture saveTex("../Assets/Textures/save.DDS");
+	Texture loadTex("../Assets/Textures/load.DDS");
+	Texture wireFrameTex("../Assets/Textures/wireframe.DDS");
+	Texture plusTex("../Assets/Textures/plus.DDS");
+	Texture minusTex("../Assets/Textures/minus.DDS");
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	//! contains the number of any active states
@@ -587,13 +587,17 @@ int Oculus::runOvr() {
 					// save mesh
 					if (modellingButtonState[activeButton] == 1) {
 						modellingButton[activeButton]->setState(true);
-						th1 = std::thread(saveFile, modellingMesh);
+
+						if (meshLock.try_lock()) {
+							meshLock.unlock();
+							th2 = std::thread(saveFile, modellingMesh);
+						}
 					}
 
 					//TODO: MOVE THIS JOIN AND REMOVE this if
 					else if (modellingButtonState[activeButton] == 2) {
-						if (th1.joinable()) {
-							th1.join();
+						if (th2.joinable()) {
+							th2.join();
 						}
 					}
 					else if (modellingButtonState[activeButton] == 3) {
@@ -620,10 +624,13 @@ int Oculus::runOvr() {
 						else {
 							// saved files found
 							// set staticMesh as main mesh as a temporary loading mesh indicator
-							placeHolder = new StaticMesh(); placeHolder->load("placeHolder.bin"); placeHolder->createBuffers();
+							placeHolder = new StaticMesh(); placeHolder->load("../Assets/Models/placeHolder.bin"); placeHolder->createBuffers();
+							placeHolder->createBuffers();
+							loaderMesh = new StaticMesh();
 
 							previewMesh = placeHolder;
-							//th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+
+							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 
 							// create the scrollList and the scrollListCover
 							for (int i = -2; i < 3; i++) {
@@ -683,6 +690,12 @@ int Oculus::runOvr() {
 				}
 
 			}
+
+			// ================================////////////// join thread after load, TODO refactor this
+			if (th2.joinable()) {
+				th2.join();
+			}
+			// ================================//////////////
 
 			// Begin the frame...
 			ovrHmd_BeginFrame(hmd, l_FrameIndex);
@@ -942,11 +955,11 @@ int Oculus::runOvr() {
 				}
 				break;
 			}
-			case 1:{
+			case 1: {
 
 				break;
 			}
-			case 2:{
+			case 2: {
 
 				break;
 			}
@@ -958,46 +971,49 @@ int Oculus::runOvr() {
 
 
 			if (listVelocity == 0) {
-				//if (staticMesh->getmeshFile() != meshFile[fileIndex]) {
-				//	delete staticMesh;
-				//}
+				if (loaderMeshLock.try_lock()) {
+					if (th1.joinable()) {
+						th1.join();
+					}
 
+					loaderMeshLock.unlock();
+					previewMesh = placeHolder;
+					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+				}
 			}
-			else
-			{
+			else {
 				if (listVelocity > 0.04f && listVelocity < -0.04f) {
 
 					listVelocity = listVelocity + listAcelleration*deltaTime;
 					listAcelleration = -0.5*listVelocity;
 				}
-				else
-				{
+				else {
 
 				}
 
-				for (int i = 0; i < 5; i++){
+				for (int i = 0; i < 5; i++) {
 					listStartPos = scrollList[i]->getPosition();
 					if (listStartPos[0] < 0.01f && listStartPos[0] > -0.01f) {
 						scrollList[i]->setState(true);
 					}
-					else{
+					else {
 						scrollList[i]->setState(false);
 					}
 
 
 					listLeft = -0.125f - (listStartPos[0] + listVelocity*deltaTime);
 					listRight = listStartPos[0] + listVelocity*deltaTime - 0.125f;
-					if (listLeft > 0.0f){
+					if (listLeft > 0.0f) {
 						tempVec[0] = 0.125f - listLeft; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
 						scrollList[i]->setPosition(tempVec);
 						fileIndex++;
 					}
-					else if (listRight > 0.0f){
+					else if (listRight > 0.0f) {
 						tempVec[0] = -0.125f + listRight; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
 						scrollList[i]->setPosition(tempVec);
 						fileIndex--;
 					}
-					else{
+					else {
 						tempVec[0] = listStartPos[0] + listVelocity*deltaTime; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
 						scrollList[i]->setPosition(tempVec);
 					}
@@ -1068,12 +1084,12 @@ int Oculus::runOvr() {
 
 				// 4.4.2 - RENDER trackingrange >-----------------------------------------------------------------------------------------
 				MVstack.push();
-				MVstack.translate(trackingRange.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				glLineWidth(2.0f);
-				trackingRange.render();
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					MVstack.translate(trackingRange.getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					glLineWidth(2.0f);
+					trackingRange.render();
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				MVstack.pop();
 
 				// 4.4.3 - RENDER title >---------------------------------------------------------------------------------------------------
@@ -1081,11 +1097,11 @@ int Oculus::runOvr() {
 				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 				MVstack.push();
-				MVstack.translate(title.getPosition());
-				MVstack.rotX(1.57079f);
-				glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				title.render();
+					MVstack.translate(title.getPosition());
+					MVstack.rotX(1.57079f);
+					glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					title.render();
 				MVstack.pop();
 
 
@@ -1140,21 +1156,27 @@ int Oculus::runOvr() {
 				glUseProgram(meshShader.programID);
 				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
-				MVstack.push();
-				MVstack.translate(modellingMesh->getPosition());
-				MVstack.multiply(modellingMesh->getOrientation());
-				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glUniform4fv(locationMeshLP, 1, LP);
-				glUniform4fv(locationMeshLP2, 1, lPosTemp);
+				if (th1.joinable()) {
+					th1.join();
+					previewMesh = loaderMesh;
+					previewMesh->createBuffers();
+				}
 
-				if (lines) {
-					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-					previewMesh->render();
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				}
-				else {
-					previewMesh->render();
-				}
+				MVstack.push();
+					MVstack.translate(modellingMesh->getPosition());
+					MVstack.multiply(modellingMesh->getOrientation());
+					glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					glUniform4fv(locationMeshLP, 1, LP);
+					glUniform4fv(locationMeshLP2, 1, lPosTemp);
+
+					if (lines) {
+						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+						previewMesh->render();
+						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					}
+					else {
+						previewMesh->render();
+					}
 				MVstack.pop();
 
 				glUseProgram(sceneShader.programID);
@@ -1305,7 +1327,8 @@ std::vector<std::string> getSavedFileNames() {
 			// read all (real) files in current folder
 			// , delete '!' read other 2 default folder . and ..
 			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-				names.push_back(fd.cFileName);
+				std::string tempFileName = fd.cFileName;
+				names.push_back("../savedFiles/" + tempFileName);
 			}
 		} while (::FindNextFile(hFind, &fd));
 		::FindClose(hFind);
@@ -1314,9 +1337,9 @@ std::vector<std::string> getSavedFileNames() {
 }
 
 void loadStaticMesh(StaticMesh* item, std::string fileName) {
-	staticMeshLock.lock();
+	loaderMeshLock.lock();
 	item->load(fileName);
-	staticMeshLock.unlock();
+	loaderMeshLock.unlock();
 }
 
 void loadMesh(DynamicMesh* item, std::string fileName) {

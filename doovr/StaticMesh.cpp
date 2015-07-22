@@ -48,7 +48,7 @@ void StaticMesh::createBuffers()
 	glBufferData(GL_ARRAY_BUFFER,
 		(nrofVerts)*sizeof(sBufferData), NULL, GL_STREAM_DRAW);
 
-	vertexP = (sBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(sBufferData) *nrofVerts,
+	vertexP = (sBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(sBufferData) * nrofVerts,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	for (int i = 0; i < nrofVerts; i++) {
@@ -110,7 +110,7 @@ void StaticMesh::load(std::string fileName) {
 	// read mesh from file
 	std::cout << "loading mesh..." << std::endl;
 
-	std::ifstream file("../savedFiles/" + fileName, std::ios::in | std::ios::binary);
+	std::ifstream file(fileName, std::ios::in | std::ios::binary);
 
 	if (file.is_open()) {
 
@@ -173,6 +173,4 @@ void StaticMesh::load(std::string fileName) {
 	else {
 		std::cout << "could not open file" << std::endl;
 	}
-	
-	createBuffers();
 }
