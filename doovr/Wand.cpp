@@ -11,18 +11,7 @@ float* Wand::getPosition() {
 	Fposition[2] = Position[2]; 
 	return Fposition;
 }
-float* Wand::getVelocity() {
-	Velocity[0] = Position[0] - lastPosition[0];
-	Velocity[1] = Position[1] - lastPosition[1];
-	Velocity[2] = Position[2] - lastPosition[2];
-	return Velocity;
-}
-float* Wand::getVelocity(float dTime) {
-	Velocity[0] = (Position[0] - lastPosition[0]) / dTime;
-	Velocity[1] = (Position[1] - lastPosition[1]) / dTime;
-	Velocity[2] = (Position[2] - lastPosition[2]) / dTime;
-	return Velocity;
-}
+
 float* Wand::getDirection() {
 	//TranslateM[3] = Position[0];
 	//TranslateM[7] = Position[1];
@@ -41,7 +30,6 @@ float* Wand::getDirection() {
 	Direction[1] = dirr[1];// + Position[1];
 	Direction[2] = dirr[2];// + Position[2];
 	return Direction;
-
 }
 
 Wand::~Wand()
