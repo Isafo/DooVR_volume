@@ -32,5 +32,5 @@ private:
 	GLfloat *vertexarray; // Vertex array on interleaved format: x y z nx ny nz s t
 	GLuint *indexarray;   // Element index array
 
-	void display(ostream& os) const;
+	void display(std::ostream& os) const;
 };

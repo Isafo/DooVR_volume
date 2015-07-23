@@ -84,7 +84,7 @@ MenuItem::MenuItem(float x, float y, float z, float dX, float dZ) {
 }
 
 MenuItem::~MenuItem() {
-	cout << "A menuItem has died." << endl;
+	std::cout << "A menuItem has died." << std::endl;
 }
 
 void MenuItem::render() {

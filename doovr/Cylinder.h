@@ -34,5 +34,5 @@ private:
 	GLuint *indexarray;   // Element index array
 
 	float radius;
-	void display(ostream& os) const;
+	void display(std::ostream& os) const;
 };

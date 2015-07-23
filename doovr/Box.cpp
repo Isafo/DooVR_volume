@@ -10,7 +10,7 @@ Box::Box(float x, float y, float z, float dX, float dY, float dZ) {
 
 
 Box::~Box(void) {
-	cout << "A box has died." << endl;
+	std::cout << "A box has died." << std::endl;
 }
 
 void Box::createBox(float xSize, float ySize, float zSize) {

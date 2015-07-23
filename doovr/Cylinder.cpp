@@ -44,7 +44,7 @@ void Cylinder::render()
 
 Cylinder::~Cylinder(void)
 {
-	cout << "A Cylinder has died" << endl;
+	std::cout << "A Cylinder has died" << std::endl;
 }
 
 void Cylinder::createCylinder(float radius, int segments) {
@@ -183,8 +183,8 @@ void Cylinder::createCylinder(float radius, int segments) {
 };
 
 
-void Cylinder::display(ostream& os) const{
-	os << "Shape: Cylinder" << endl;
-	os << "Radius: " << radius << endl;
-	os << endl;
+void Cylinder::display(std::ostream& os) const{
+	os << "Shape: Cylinder" << std::endl;
+	os << "Radius: " << radius << std::endl;
+	os << std::endl;
 }

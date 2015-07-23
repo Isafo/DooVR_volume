@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 //! Class for loading, compiling and assembeling shader program.
 class Shader {
 
@@ -25,6 +23,6 @@ public:
 
 
 private:
-	string readFile(const char *filePath);
+	std::string readFile(const char *filePath);
 
 };
