@@ -309,6 +309,8 @@ int Oculus::runOvr() {
 	float listLeft = 0.0f;
 	float listRight = 0.0f;
 
+
+
 	// 2.3 - Threads used for loading and saving meshes \__________________________________________________________________________________
 	std::thread th1; // not used
 	std::thread th2; //
@@ -448,7 +450,9 @@ int Oculus::runOvr() {
 
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
-	DynamicMesh* modellingMesh = new DynamicMesh(0.05f);
+	DynamicMesh* modellingMesh = new DynamicMesh();
+	//modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
+	modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
 	//Mesh* tempStaticMesh = new Mesh();
@@ -482,11 +486,12 @@ int Oculus::runOvr() {
 
 			// 3.1 - modellingstates \_____________________________________________________________________________________________________
 			//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
-			modellingMesh->markUp(wand, wandRadius);
+			
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 0) {
 					modellingState[0] = 1;
-					modellingMesh->push(wand, wandRadius);
+					//modellingMesh->pull(wand, wandRadius);
+					modellingMesh->select(wand, wandRadius);
 
 					aModellingStateIsActive++;
 				}
@@ -496,7 +501,7 @@ int Oculus::runOvr() {
 				}
 				else if (modellingState[0] == 2)
 				{
-					modellingMesh->push(wand, wandRadius);
+					modellingMesh->pull(wand, wandRadius);
 				}
 			}
 			else {
@@ -508,6 +513,7 @@ int Oculus::runOvr() {
 
 					aModellingStateIsActive--;
 				}
+				modellingMesh->select(wand, wandRadius);
 			}
 			modellingMesh->updateOGLData();
 			//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
@@ -568,8 +574,9 @@ int Oculus::runOvr() {
 				case 0: {
 					if (modellingButtonState[activeButton] == 1) {
 						// reset mesh
-						delete modellingMesh; // Reset mesh
-						modellingMesh = new DynamicMesh(0.3f);
+						//delete modellingMesh; // Reset mesh
+						//modellingMesh = new DynamicMesh(0.3f);
+						modellingMesh->load("2015-07-22_16-08-10.bin");
 
 						modellingButton[activeButton]->setState(true);
 
@@ -896,9 +903,7 @@ int Oculus::runOvr() {
 				glfwSetWindowShouldClose(l_Window, GL_TRUE);
 			}
 
-
 			// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
-
 			activeButton = handleMenu(wand->getPosition(), loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
 
 			switch (activeButton) {
@@ -966,7 +971,6 @@ int Oculus::runOvr() {
 			}
 			}
 
-
 			if (listVelocity == 0) {
 				if (previewMesh != loaderMesh && loaderMeshLock.try_lock()) {
 					if (th1.joinable()) {
@@ -983,11 +987,9 @@ int Oculus::runOvr() {
 				listStartPos = scrollList[leftListIndex]->getPosition();
 				
 				for (int i = 0; i < 5; i++) {
-
 					if (listStartPos[0] < 0.01f && listStartPos[0] > -0.01f) {
 						scrollList[i]->setState(true);
 						if (listVelocity > 0.04f && listVelocity < -0.04f) {
-
 							listVelocity = listVelocity + listAcelleration*deltaTime;
 							listAcelleration = -0.5*listVelocity;
 						}
@@ -999,7 +1001,6 @@ int Oculus::runOvr() {
 					else {
 						scrollList[i]->setState(false);
 					}
-
 
 					listLeft = -0.125f - (listStartPos[0] + listVelocity*deltaTime);
 					listRight = listStartPos[0] + listVelocity*deltaTime - 0.125f;

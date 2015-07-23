@@ -36,7 +36,7 @@ struct vInfo {
 //! A class representing a modifiable 3D mesh 
 class DynamicMesh : public Mesh{
   public:
-	DynamicMesh(float rad);
+	DynamicMesh();
 	DynamicMesh(std::string fileName);
 	~DynamicMesh();
 
@@ -55,6 +55,8 @@ class DynamicMesh : public Mesh{
 	void updateOGLData();
 
 	//! saves the mesh as a binary file with the current date and time as file name (yyyy-mm-dd_hh-mm-ss.bin)
+	void sphereSubdivide(float rad);
+
 	void save();
 
 	void load(std::string _fileName);
@@ -90,8 +92,8 @@ class DynamicMesh : public Mesh{
 	sVert sVerts[10000];
 	int sVertsNR = 0;
 
-	const float MAX_LENGTH = 0.025f * 3.0f;// * 0.5f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.0124f * 3.0f;// * 0.5f;
+	const float MAX_LENGTH = 0.025f * 0.5f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f  * 0.5f;
 
 	std::string fileName;
 
