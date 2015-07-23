@@ -982,10 +982,10 @@ int Oculus::runOvr() {
 				}
 			}
 			else {
-				
 
+				listStartPos = scrollList[leftListIndex]->getPosition();
+				
 				for (int i = 0; i < 5; i++) {
-					listStartPos = scrollList[i]->getPosition();
 
 					if (listStartPos[0] < 0.01f && listStartPos[0] > -0.01f) {
 						scrollList[i]->setState(true);
