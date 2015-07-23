@@ -951,7 +951,7 @@ void DynamicMesh::markUp(Wand* wand, float rad) {
 	float pLength = 0.0f;
 	float oLength = 0.0f;
 
-	int mIndex; float mLength;
+	float mLength;
 
 	for (int i = 0; i < sVertsNR; i++)
 	{
@@ -1450,8 +1450,8 @@ void DynamicMesh::edgeFlip(int &edge)
 
 void DynamicMesh::edgeCollapse(bool recursive, int &edge) {
 
-	int tempE; int tempEnd;
-	int tempE2; int tempEnd2;
+	int tempE;
+	int tempE2;
 	static int currVert; 
 	static int nVert;
 	static int ndVert;

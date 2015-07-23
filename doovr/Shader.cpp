@@ -24,8 +24,8 @@ void Shader::createShader(const char *vertexFilePath, const char *fragmentFilePa
 	GLint isLinked = 0;
 
 	//Read the source code in shader files into the buffers
-	string vertexSource = readFile(vertexFilePath);
-	string fragmentSource = readFile(fragmentFilePath);
+	std::string vertexSource = readFile(vertexFilePath);
+	std::string fragmentSource = readFile(fragmentFilePath);
 
 	// Create empty vertex shader handle
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -101,11 +101,11 @@ void Shader::createShader(const char *vertexFilePath, const char *fragmentFilePa
 }
 
 //! Reads the source code in the shader file into a string.
-string Shader::readFile(const char *filePath) {
+std::string Shader::readFile(const char *filePath) {
 
-	string sourceCode;
-	string line = "";
-	ifstream fileStream (filePath);
+	std::string sourceCode;
+	std::string line = "";
+	std::ifstream fileStream (filePath);
 
 	if (fileStream.is_open()) {
 		
@@ -115,7 +115,7 @@ string Shader::readFile(const char *filePath) {
 			sourceCode.append(line + "\n");
 		}
 	} else {
-		cerr << "Could not open file: " << filePath << endl;
+		std::cerr << "Could not open file: " << filePath << std::endl;
 		return "";
 	}
 	

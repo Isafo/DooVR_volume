@@ -10,9 +10,6 @@
 
 #include "Utilities.h"
 
-
-using namespace std;
-
 class Entity
 {
 	public:
@@ -26,7 +23,7 @@ class Entity
 		void setOrientation(float* o) { std::copy(o, o + 16, orientation); }
 
 		// To print
-		friend ostream& operator<<(ostream &os, const Entity &E);
+		friend std::ostream& operator<<(std::ostream &os, const Entity &E);
 
 		virtual void render() = 0; // Calls the TriangleSoup function to render the geometry
 

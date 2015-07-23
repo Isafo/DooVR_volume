@@ -10,7 +10,7 @@ TrackingRange::TrackingRange(float x, float y, float z, float dX, float dY, floa
 
 
 TrackingRange::~TrackingRange(void) {
-	cout << "A TrackingRange has died." << endl;
+	std::cout << "A TrackingRange has died." << std::endl;
 }
 
 void TrackingRange::createBox(float xSize, float ySize, float zSize) {

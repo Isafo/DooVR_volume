@@ -61,7 +61,7 @@ void Sphere::render()
 
 Sphere::~Sphere(void)
 {
-	cout << "A sphere has died" << endl;
+	std::cout << "A sphere has died" << std::endl;
 	clean();
 }
 

@@ -174,9 +174,9 @@ void hexBox::render()
 	glBindVertexArray(0);
 }
 
-void hexBox::display(ostream& os) const
+void hexBox::display(std::ostream& os) const
 {
-	os << "Shape: hexBox" << endl;
-	os << position[1] << endl;
+	os << "Shape: hexBox" << std::endl;
+	os << position[1] << std::endl;
 
 }

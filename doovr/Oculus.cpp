@@ -296,9 +296,6 @@ int Oculus::runOvr() {
 	float lastPos[3];
 	float lastPos2[3];
 
-	float* wandStartPos;
-	float* wandCurrPos;
-	float* wandNewPos;
 	float* wandVelocity;
 	float* listStartPos;
 
@@ -450,8 +447,8 @@ int Oculus::runOvr() {
 	float lastRadius;
 
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
-	DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
-	//DynamicMesh* modellingMesh = new DynamicMesh(0.05f);
+	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
+	DynamicMesh* modellingMesh = new DynamicMesh(0.05f);
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
 	//Mesh* tempStaticMesh = new Mesh();
