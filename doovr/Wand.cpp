@@ -12,6 +12,19 @@ float* Wand::getPosition() {
 	return Fposition;
 }
 
+void Wand::getVelocity(float* vec) {
+
+	float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
+		0.f, 0.f, 1.f, 0.f,
+		0.f, 1.f, 0.f, 0.f,
+		0.f, 0.f, 0.f, 1.0f };
+	float v[4] = { Velocity[0], Velocity[1], Velocity[2], 1.0f };
+	float vFinal[4];
+	linAlg::vectorMatrixMult(rotZX, v, vFinal);
+
+	vec[0] = vFinal[0]; vec[1] = vFinal[1]; vec[2] = vFinal[2];
+}
+
 float* Wand::getDirection() {
 	//TranslateM[3] = Position[0];
 	//TranslateM[7] = Position[1];

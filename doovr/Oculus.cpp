@@ -290,14 +290,14 @@ int Oculus::runOvr() {
 	float changePos[3] = { 0.0f };
 	float differenceR[16] = { 0.0f };
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
+	float nullVec[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
 	float moveVec[3];
 	float tempVec[3];
 	float lastPos[3];
 	float lastPos2[3];
 
-	float* wandVelocity;
-	float* listStartPos;
+	float wandVelocity[3] = {0};
 
 	float currTime = 0;
 	float lastTime;
@@ -608,6 +608,9 @@ int Oculus::runOvr() {
 
 							previewMesh = placeHolder;
 
+							loadButton[0] = new MenuItem(0.05f, -0.2599f, -0.15f, 0.1, 0.05);
+							loadButton[1] = new MenuItem(-0.05f, -0.2599f, -0.15f, 0.1, 0.05);
+
 							// Call thread to load the mesh preview
 							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 							// activate load mode
@@ -820,31 +823,34 @@ int Oculus::runOvr() {
 			//===============================================================================================================================
 			// 4 - LOAD Mode
 			//===============================================================================================================================
-
-			lastTime = currTime;
-			currTime = glfwGetTime();
-			deltaTime = currTime - lastTime;
-
 			// 4.1 - Keyboard events \_______________________________________________________________________________________________________
 			// 4.1.1 - Move mesh >-----------------------------------------------------------------------------------------------------------
 			if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 				if (modellingState[1] == 0) {
 					modellingState[1] = 1;
+					lastPos[0] = wand->getPosition()[0];
+					lastPos[1] = wand->getPosition()[1];
+					lastPos[2] = wand->getPosition()[2];
+					lastPos2[0] = previewMesh->getPosition()[0];
+					lastPos2[1] = previewMesh->getPosition()[1];
+					lastPos2[2] = previewMesh->getPosition()[2];
+
+					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+
 					aModellingStateIsActive++;
 				}
 				else if (modellingState[1] == 1) {
 					modellingState[1] = 2;
 				}
-				else if (modellingState[1] == 2) {
+				else if (modellingState[1] == 2)
+				{
 					//	move mesh
-					wandVelocity = wand->getVelocity();
-					tempMoveVec = previewMesh->getPosition();
+					linAlg::calculateVec(wand->getPosition(), lastPos, moveVec);
+					moveVec[0] = lastPos2[0] + moveVec[0];
+					moveVec[1] = lastPos2[1] + moveVec[1];
+					moveVec[2] = lastPos2[2] + moveVec[2];
 
-					tempMoveVec[0] += wandVelocity[0] * deltaTime;
-					tempMoveVec[1] += wandVelocity[1] * deltaTime;
-					tempMoveVec[2] += wandVelocity[2] * deltaTime;
-
-					previewMesh->setPosition(tempMoveVec);
+					previewMesh->setPosition(moveVec);
 				}
 			}
 			else {
@@ -854,17 +860,11 @@ int Oculus::runOvr() {
 				else if (modellingState[1] != 0) {
 					// just released button
 					
-					wandVelocity = wand->getVelocity();
-					if (linAlg::vecLength(wandVelocity) > 0.08) {
-						
-						if (wandVelocity[1] > wandVelocity[2] && wandVelocity[1] > wandVelocity[0]) { 
-							// the mesh was shot upwards
-						}
-						else {
-							changedMesh = true;
-						}
+					wand->getVelocity(wandVelocity);
+					if (linAlg::vecLength(wandVelocity) < 0.4) {
+						//changedMesh = true;
+						wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 					}
-
 					modellingState[1] = 3;
 					aModellingStateIsActive--;
 				}
@@ -874,62 +874,88 @@ int Oculus::runOvr() {
 				glfwSetWindowShouldClose(l_Window, GL_TRUE);
 			}
 
+
 			// 4.1.2 - Load next mesh \______________________________________________________________________________________________________
 			// move mesh until it leaves the tracking range then load a new mesh
-			if (changedMesh) {
-				tempMoveVec = previewMesh->getPosition();
+			tempMoveVec = previewMesh->getPosition();
+			if (linAlg::vecLength(wandVelocity) != 0) {
+				
+				tempVec[0] = tempMoveVec[0] + wandVelocity[0] * deltaTime;
+				tempVec[1] = tempMoveVec[1] + wandVelocity[1] * deltaTime;
+				tempVec[2] = tempMoveVec[2] + wandVelocity[2] * deltaTime;
 
-				// check if the preview mesh has left the tracking range area and increment fileIndex accordingly
-				if (tempMoveVec[0] > 0.25 || tempMoveVec[2] > 0) {
-					changedMesh = false;
-					previewMesh = placeHolder;
-					fileIndex--;
-				}
-				else if (tempMoveVec[0] < -0.25 || tempMoveVec[2] < -0.5) {
-					changedMesh = false;
-					previewMesh = placeHolder;
-					fileIndex++;
-				}
+				previewMesh->setPosition(tempVec);
+			}
 
-				// the mesh left the trackingrange area reload new mesh
-				if (!changedMesh) {
-					if (loaderMeshLock.try_lock()) {
-						loaderMeshLock.unlock();
-						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-					}
-				} else {
-					tempMoveVec[0] += wandVelocity[0] * deltaTime;
-					tempMoveVec[1] += wandVelocity[1] * deltaTime;
-					tempMoveVec[2] += wandVelocity[2] * deltaTime;
-
-					previewMesh->setPosition(tempMoveVec);
+			// check if the preview mesh has left the tracking range area and increment fileIndex accordingly
+			if (tempMoveVec[0] > 0.25 || tempMoveVec[2] > 0) {
+				previewMesh = placeHolder;
+				fileIndex--;
+				wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+				if (loaderMeshLock.try_lock()) {
+					loaderMeshLock.unlock();
+					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 				}
 			}
-			else {
-				// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
-				if (aModellingStateIsActive == 0) {
-					activeButton = handleMenu(wand->getPosition(), loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
-
-					switch (activeButton) {
-						case 0: {
-							// load mesh button
-
-
-							break;
-						}
-						case 1: {
-							// quit mode to modelling mode
-							mode = 0;
-							break;
-						}
-						default:{
-							break;
-						}
-					}
+			else if (tempMoveVec[0] < -0.25 || tempMoveVec[2] < -0.5) {
+				previewMesh = placeHolder;
+				fileIndex++;
+				wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+				if (loaderMeshLock.try_lock()) {
+					loaderMeshLock.unlock();
+					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 				}
 			}
 
-			
+			// check if the thread is ready with a new mesh
+			if (th1.joinable()) {
+				th1.join();
+				previewMesh = loaderMesh;
+				previewMesh->createBuffers();
+			}
+
+			// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
+			if (aModellingStateIsActive == 0) {
+				activeButton = handleMenu(wand->getPosition(), loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
+
+				switch (activeButton) {
+					case 0: {
+						// load mesh button
+						if (loadButtonState[activeButton] == 1) {
+							if (meshLock.try_lock()){
+								meshLock.unlock();
+								th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
+							}
+						}
+
+						break;
+					}
+					case 1: {
+						// quit mode to modelling mode
+						delete loadButton[0];
+						delete loadButton[1];
+						delete loaderMesh;
+						delete placeHolder;
+						mode = 0;
+						continue;
+						break;
+					}
+					default:{
+						break;
+					}
+				}
+			}
+				
+			if (th2.joinable()) {
+				th2.join();
+				delete loadButton[0];
+				delete loadButton[1];
+				delete loaderMesh;
+				delete placeHolder;
+				mode = 0;
+				continue;
+			}
+
 
 			// Begin the frame...
 			ovrHmd_BeginFrame(hmd, l_FrameIndex);
@@ -1013,7 +1039,7 @@ int Oculus::runOvr() {
 
 
 					// 4.4.4 - RENDER Load buttons >--------------------------------------------------------------------------------------------
-					for (int i = 1; i < NR_OF_LOAD_BUTTONS; i++) {
+					for (int i = 0; i < NR_OF_LOAD_BUTTONS; i++) {
 
 						if (loadButton[i]->getState()) {
 							glUseProgram(bloomShader.programID);
@@ -1036,13 +1062,6 @@ int Oculus::runOvr() {
 					// 4.4.5 - RENDER mesh >--------------------------------------------------------------------------------------------------
 					glUseProgram(meshShader.programID);
 					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-					// check if the thread is ready with a new mesh
-					if (th1.joinable()) {
-						th1.join();
-						previewMesh = loaderMesh;
-						previewMesh->createBuffers();
-					}
 
 					MVstack.push();
 						MVstack.translate(previewMesh->getPosition());
