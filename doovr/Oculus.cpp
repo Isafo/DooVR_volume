@@ -552,6 +552,8 @@ int Oculus::runOvr() {
 						moveVec[1] = lastPos2[1] + moveVec[1];
 						moveVec[2] = lastPos2[2] + moveVec[2];
 
+						wand->getDirection(wandDirection);
+
 						// rotation
 						prevDotCurrWandDirr = linAlg::dotProd(prevWandDirection, wandDirection);
 						prevLength = linAlg::vecLength(prevWandDirection);
@@ -564,28 +566,23 @@ int Oculus::runOvr() {
 						tempVec4[2] = lastPos2[2];
 						tempVec4[3] = 1.0f;
 
-						if (prevWandDirection[0] == wandDirection[0]) {
+
+						if (true) {
 							// rotation around x axis
 							linAlg::rotX(theta, tempMat4);
-
-							linAlg::vectorMatrixMult(tempMat4, moveVec, result);
 							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
 						}
-						else if (prevWandDirection[1] == wandDirection[1]) {
+						/*else if (true) {
 							// rotation around y axis
 							linAlg::rotY(theta, tempMat4);
-
-							linAlg::vectorMatrixMult(tempMat4, moveVec, result);
 							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
 						}
 						else {
 							// rotation around z axis
 							linAlg::rotZ(theta, tempMat4);
-
-							linAlg::vectorMatrixMult(tempMat4, moveVec, result);
 							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
 						}
-
+						*/
 						modellingMesh->setPosition(moveVec);
 						modellingMesh->setOrientation(meshOrientation);
 					}
@@ -871,11 +868,11 @@ int Oculus::runOvr() {
 				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 					if (modellingState[1] == 0) {
 						modellingState[1] = 1;
-
 						wand->getPosition(lastPos);
 						previewMesh->getPosition(lastPos2);
 
-						wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+						wand->getDirection(prevWandDirection);
+						previewMesh->getOrientation(prevMeshOrientation);
 
 						aModellingStateIsActive++;
 					}
@@ -890,7 +887,39 @@ int Oculus::runOvr() {
 						moveVec[1] = lastPos2[1] + moveVec[1];
 						moveVec[2] = lastPos2[2] + moveVec[2];
 
+						wand->getDirection(wandDirection);
+
+						// rotation
+						prevDotCurrWandDirr = linAlg::dotProd(prevWandDirection, wandDirection);
+						prevLength = linAlg::vecLength(prevWandDirection);
+						currLength = linAlg::vecLength(wandDirection);
+
+						theta = acos(prevDotCurrWandDirr / (prevLength * currLength));
+
+						tempVec4[0] = lastPos2[0];
+						tempVec4[1] = lastPos2[1];
+						tempVec4[2] = lastPos2[2];
+						tempVec4[3] = 1.0f;
+
+
+						if (true) {
+							// rotation around x axis
+							linAlg::rotX(theta, tempMat4);
+							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
+						}
+						/*else if (true) {
+							// rotation around y axis
+							linAlg::rotY(theta, tempMat4);
+							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
+						}
+						else {
+							// rotation around z axis
+							linAlg::rotZ(theta, tempMat4);
+							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
+						}*/
+
 						previewMesh->setPosition(moveVec);
+						previewMesh->setOrientation(meshOrientation);
 					}
 				}
 				else {

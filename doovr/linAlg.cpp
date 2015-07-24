@@ -243,25 +243,22 @@ float linAlg::lengthToSurface(float v[3], float w[3], float rad)
 }
 
 void linAlg::rotX(float angle, float* resultMat) {
-	float rx[16];
-	rx[0] = 1.0f; rx[1] = 0.0f; rx[2] = 0.0f; rx[3] = 0.0f;
-	rx[4] = 0.0f; rx[5] = cosf(angle); rx[6] = sinf(angle); rx[7] = 0.0f;
-	rx[8] = 0.0f; rx[9] = -sinf(angle); rx[10] = cosf(angle); rx[11] = 0.0f;
-	rx[12] = 0.0f; rx[13] = 0.0f; rx[14] = 0.0f; rx[15] = 1.0f;
+	resultMat[0] = 1.0f;	resultMat[1] = 0.0f;			resultMat[2] = 0.0f;			resultMat[3] = 0.0f;
+	resultMat[4] = 0.0f;	resultMat[5] = cosf(angle);		resultMat[6] = sinf(angle);		resultMat[7] = 0.0f;
+	resultMat[8] = 0.0f;	resultMat[9] = -sinf(angle);	resultMat[10] = cosf(angle);	resultMat[11] = 0.0f;
+	resultMat[12] = 0.0f;	resultMat[13] = 0.0f;			resultMat[14] = 0.0f;			resultMat[15] = 1.0f;
 };
 
 void linAlg::rotY(float angle, float* resultMat) {
-	float ry[16];
-	ry[0] = cosf(angle); ry[1] = 0.0f; ry[2] = -sinf(angle); ry[3] = 0.0f;
-	ry[4] = 0.0f; ry[5] = 1.0f; ry[6] = 0.0f; ry[7] = 0.0f;
-	ry[8] = sinf(angle); ry[9] = 0.0f; ry[10] = cosf(angle); ry[11] = 0.0f;
-	ry[12] = 0.0f; ry[13] = 0.0f; ry[14] = 0.0f; ry[15] = 1.0f;
+	resultMat[0] = cosf(angle);		resultMat[1] = 0.0f;	resultMat[2] = -sinf(angle);	resultMat[3] = 0.0f;
+	resultMat[4] = 0.0f;			resultMat[5] = 1.0f;	resultMat[6] = 0.0f;			resultMat[7] = 0.0f;
+	resultMat[8] = sinf(angle);		resultMat[9] = 0.0f;	resultMat[10] = cosf(angle);	resultMat[11] = 0.0f;
+	resultMat[12] = 0.0f;			resultMat[13] = 0.0f;	resultMat[14] = 0.0f;			resultMat[15] = 1.0f;
 };
 
 void linAlg::rotZ(float angle, float* resultMat) {
-	float rz[16];
-	rz[0] = cosf(angle); rz[1] = sinf(angle); rz[2] = 0.0f; rz[3] = 0.0f;
-	rz[4] = -sinf(angle); rz[5] = cosf(angle); rz[6] = 0.0f; rz[7] = 0.0f;
-	rz[8] = 0.0f; rz[9] = 0.0f; rz[10] = 1.0f; rz[11] = 0.0f;
-	rz[12] = 0.0f; rz[13] = 0.0f; rz[14] = 0.0f; rz[15] = 1.0f;
+	resultMat[0] = cosf(angle);		resultMat[1] = sinf(angle);		resultMat[2] = 0.0f;	resultMat[3] = 0.0f;
+	resultMat[4] = -sinf(angle);	resultMat[5] = cosf(angle);		resultMat[6] = 0.0f;	resultMat[7] = 0.0f;
+	resultMat[8] = 0.0f;			resultMat[9] = 0.0f;			resultMat[10] = 1.0f;	resultMat[11] = 0.0f;
+	resultMat[12] = 0.0f;			resultMat[13] = 0.0f;		resultMat[14] = 0.0f;		resultMat[15] = 1.0f;
 };
