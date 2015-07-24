@@ -290,14 +290,14 @@ int Oculus::runOvr() {
 	float changePos[3] = { 0.0f };
 	float differenceR[16] = { 0.0f };
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
+	float nullVec[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
 	float moveVec[3];
 	float tempVec[3];
 	float lastPos[3];
 	float lastPos2[3];
 
-	float* wandVelocity;
-	float* listStartPos;
+	float wandVelocity[3] = {0};
 
 	float currTime = 0;
 	float lastTime;
@@ -335,13 +335,13 @@ int Oculus::runOvr() {
 	int activeButton = -1;
 	// 2.5.1 - modelling states and variables used in modelling mode >--------------------------------------------------------------------
 	/*! 0 indicates that the state is not active,
-	1 indicates that the state has just been activated
-	2 indicates that the state is active
-	3 indicates that the state has just been deactivated
+		1 indicates that the state has just been activated
+		2 indicates that the state is active
+		3 indicates that the state has just been deactivated
 
-	state[0] is the use tool state
-	state[1] is the moveMesh state
-	state[2] is the changeWandSize state
+		state[0] is the use tool state
+		state[1] is the moveMesh state
+		state[2] is the changeWandSize state
 	*/
 	const int NR_OF_MODELLING_STATES = 3;
 	int modellingState[NR_OF_MODELLING_STATES] = { 0 };
@@ -349,10 +349,10 @@ int Oculus::runOvr() {
 
 	const int NR_OF_MODELLING_BUTTONS = 5;
 	/*!	[0] resetMesh
-	[1] save
-	[2] load
-	[3] Wireframe
-	[4] increase wand size */
+		[1] save
+		[2] load
+		[3] Wireframe
+		[4] increase wand size */
 	MenuItem* modellingButton[NR_OF_MODELLING_BUTTONS];
 
 	Texture* modellingButtonTex[NR_OF_MODELLING_BUTTONS];
@@ -363,17 +363,17 @@ int Oculus::runOvr() {
 	modellingButtonTex[4] = &plusTex;
 
 	/*!	0 indicates that the state is not active,
-	1 indicates that the state has just been activated
-	2 indicates that the state is active
-	3 indicates that the state has just been deactivated
-	4 indicates that the state is active (on/off)
-	5 indicates that the state has been activated and then the button was released
+		1 indicates that the state has just been activated
+		2 indicates that the state is active
+		3 indicates that the state has just been deactivated
+		4 indicates that the state is active (on/off)
+		5 indicates that the state has been activated and then the button was released
 
-	[0] reset
-	[1] save
-	[2] load
-	[3] Wireframe
-	[4] change wand size*/
+		[0] reset
+		[1] save
+		[2] load
+		[3] Wireframe
+		[4] change wand size*/
 	static int modellingButtonState[NR_OF_MODELLING_BUTTONS];
 
 	modellingButton[0] = new MenuItem(-0.2f, -0.26f, -0.2f, 0.08f, 0.08); // place reset menuItem on the other side
@@ -385,29 +385,19 @@ int Oculus::runOvr() {
 	bool lines = false;
 
 	// 2.5.2 - variables used in Load Mode >------------------------------------------------------------------------------------------------
-	//first two items are used as covers at both ends of the list
-	MenuItem* scrollList[7];
-	int leftListIndex = 2;
-	Texture* scrollListTex[7];
-	scrollListTex[0] = &loadTex;
-	scrollListTex[1] = &loadTex;
-	scrollListTex[2] = &loadTex;
-	scrollListTex[3] = &loadTex;
-	scrollListTex[4] = &loadTex;
-	scrollListTex[5] = &loadTex;
-	scrollListTex[6] = &loadTex;
-
-	const int NR_OF_LOAD_BUTTONS = 3;
+	const int NR_OF_LOAD_BUTTONS = 2;
 	/*! 0 = scrollArea
-	1 = loadFile button
-	2 = exitLoad button*/
+		1 = loadFile button
+		2 = exitLoad button*/
 	MenuItem* loadButton[NR_OF_LOAD_BUTTONS];
 	int loadButtonState[NR_OF_LOAD_BUTTONS] = { 0 };
 
 	Texture* loadButtonTex[NR_OF_LOAD_BUTTONS];
-	//loadButtonTex[0] = scrollcover
-	loadButtonTex[1] = &loadTex;
-	loadButtonTex[2] = &minusTex;
+	loadButtonTex[0] = &loadTex;
+	loadButtonTex[1] = &minusTex;
+
+	float* tempMoveVec;
+	bool changedMesh = false;
 
 	// 2.6 - Shader variables \_____________________________________________________________________________________________________________
 	Shader sceneShader;
@@ -590,13 +580,6 @@ int Oculus::runOvr() {
 							th2 = std::thread(saveFile, modellingMesh);
 						}
 					}
-
-					//TODO: MOVE THIS JOIN AND REMOVE this if
-					else if (modellingButtonState[activeButton] == 2) {
-						if (th2.joinable()) {
-							th2.join();
-						}
-					}
 					else if (modellingButtonState[activeButton] == 3) {
 						modellingButton[activeButton]->setState(false);
 					}
@@ -616,38 +599,24 @@ int Oculus::runOvr() {
 							// if no files were found leave loading state
 							// TODO: display feedback in Oculus that there are no saved files found
 							std::cout << "no saved files found!" << std::endl;
-							//modellingState[3] = 0;
 						}
 						else {
 							// saved files found
-							// set staticMesh as main mesh as a temporary loading mesh indicator
+							// set staticMesh as placeHolder during loading as a loading indicator
 							placeHolder = new StaticMesh(); placeHolder->load("../Assets/Models/placeHolder.bin"); placeHolder->createBuffers();
 							loaderMesh = new StaticMesh();
 
 							previewMesh = placeHolder;
 
+							loadButton[0] = new MenuItem(0.05f, -0.2599f, -0.15f, 0.1, 0.05);
+							loadButton[1] = new MenuItem(-0.05f, -0.2599f, -0.15f, 0.1, 0.05);
+
+							// Call thread to load the mesh preview
 							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-
-							// create the scrollList and the scrollListCover
-							for (int i = -2; i < 3; i++) {
-								scrollList[i + 2] = new MenuItem(0.05f * i, -0.26f, -0.1, 0.05, 0.05);
-							}
-							scrollList[5] = new MenuItem(-0.125f, -0.2599f, -0.1f, 0.07f, 0.06f);
-							scrollList[6] = new MenuItem(0.125f, -0.2599f, -0.1f, 0.07f, 0.06f);
-
-							scrollList[2]->setState(true);
-
-							loadButton[0] = new MenuItem(0.0f, -0.2599f, -0.1f, 0.4f, 0.05f);
-							loadButton[1] = new MenuItem(0.05f, -0.2599f, -0.15f, 0.1, 0.05);
-							loadButton[2] = new MenuItem(-0.05f, -0.2599f, -0.15f, 0.1, 0.05);
-
-							//modellingState[3] = 2;
-							//activeStates.push_back(3);
+							// activate load mode
 							mode = 1;
 						}
-
 					}
-
 					break;
 				}
 						//3.2.4 - wireframe button >---------------------------------------------------------------------------------------------
@@ -741,110 +710,110 @@ int Oculus::runOvr() {
 				// 3.4 - Scene Matrix stack \__________________________________________________________________________________________________
 				MVstack.push();
 				// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
-				glUniform4fv(locationLP, 1, LP);
-				MVstack.push();
-				MVstack.translate(board.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-				board.render();
-				MVstack.pop();
+					glUniform4fv(locationLP, 1, LP);
+					MVstack.push();
+						MVstack.translate(board.getPosition());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+						board.render();
+					MVstack.pop();
 
 
-				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+					glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
 
-				// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
-				MVstack.push();
-				MVstack.translate(trackingRange.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				glLineWidth(2.0f);
-				trackingRange.render();
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				MVstack.pop();
+					// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
+					MVstack.push();
+						MVstack.translate(trackingRange.getPosition());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+						glLineWidth(2.0f);
+						trackingRange.render();
+						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					MVstack.pop();
 
-				// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
-				glUseProgram(menuShader.programID);
-				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-				MVstack.push();
-				MVstack.translate(title.getPosition());
-				MVstack.rotX(1.57079f);
-				glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				title.render();
-				MVstack.pop();
-
-				// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
-				// info
-				for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
-
-					if (modellingButton[i]->getState()) {
-						glUseProgram(bloomShader.programID);
-						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-					}
-					else {
-						glUseProgram(menuShader.programID);
-						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-					}
+					// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
+					glUseProgram(menuShader.programID);
+					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 					MVstack.push();
-					glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
-
-					MVstack.translate(modellingButton[i]->getPosition());
-					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					modellingButton[i]->render();
+						MVstack.translate(title.getPosition());
+						MVstack.rotX(1.57079f);
+						glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						title.render();
 					MVstack.pop();
-				}
 
-				//glBindTexture(GL_TEXTURE_2D, 0);
-				// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
-				glUseProgram(meshShader.programID);
-				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
+					// info
+					for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
+
+						if (modellingButton[i]->getState()) {
+							glUseProgram(bloomShader.programID);
+							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+						}
+						else {
+							glUseProgram(menuShader.programID);
+							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+						}
+
+						MVstack.push();
+						glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
+
+						MVstack.translate(modellingButton[i]->getPosition());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						modellingButton[i]->render();
+						MVstack.pop();
+					}
+
+					//glBindTexture(GL_TEXTURE_2D, 0);
+					// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
+					glUseProgram(meshShader.programID);
+					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 
-				MVstack.push();
-				MVstack.translate(modellingMesh->getPosition());
-				MVstack.multiply(modellingMesh->getOrientation());
-				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glUniform4fv(locationMeshLP, 1, LP);
-				glUniform4fv(locationMeshLP2, 1, lPosTemp);
+					MVstack.push();
+						MVstack.translate(modellingMesh->getPosition());
+						MVstack.multiply(modellingMesh->getOrientation());
+						glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						glUniform4fv(locationMeshLP, 1, LP);
+						glUniform4fv(locationMeshLP2, 1, lPosTemp);
 
-				if (lines) {
-					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-					modellingMesh->render();
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				}
-				else {
-					modellingMesh->render();
-				}
-				MVstack.pop();
+						if (lines) {
+							glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+							modellingMesh->render();
+							glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+						}
+						else {
+							modellingMesh->render();
+						}
+					MVstack.pop();
 
-				glUseProgram(sceneShader.programID);
-				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-				// 3.4.6 Render wand >-------------------------------------------------------------------------------------------
-				MVstack.push();
-				MVstack.translate(wand->getPosition());
-				MVstack.multiply(wand->getOrientation());
+					glUseProgram(sceneShader.programID);
+					glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					// 3.4.6 Render wand >-------------------------------------------------------------------------------------------
+					MVstack.push();
+						MVstack.translate(wand->getPosition());
+						MVstack.multiply(wand->getOrientation());
 
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				MVstack.push();
-				translateVector[0] = 0.0f;
-				translateVector[1] = 0.0f;
-				translateVector[2] = -0.1f;
-				MVstack.translate(translateVector);
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-				boxWand.render();
-				MVstack.pop();
-				//render brush------------------------
-				MVstack.push();
-				/*	MVstack.scale(wandRadius);
-				glUseProgram(sphereShader.programID);
-				glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-				glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				sphereWand.render();*/
-				MVstack.pop();
-				MVstack.pop();
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						MVstack.push();
+							translateVector[0] = 0.0f;
+							translateVector[1] = 0.0f;
+							translateVector[2] = -0.1f;
+							MVstack.translate(translateVector);
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+							boxWand.render();		
+						MVstack.pop();
+					//render brush------------------------
+						MVstack.push();
+							/*	MVstack.scale(wandRadius);
+							glUseProgram(sphereShader.programID);
+							glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							sphereWand.render();*/
+						MVstack.pop();
+					MVstack.pop();
 				MVstack.pop();
 				MVstack.pop();
 			}
@@ -862,22 +831,26 @@ int Oculus::runOvr() {
 					lastPos[0] = wand->getPosition()[0];
 					lastPos[1] = wand->getPosition()[1];
 					lastPos[2] = wand->getPosition()[2];
-					lastPos2[0] = modellingMesh->getPosition()[0];
-					lastPos2[1] = modellingMesh->getPosition()[1];
-					lastPos2[2] = modellingMesh->getPosition()[2];
+					lastPos2[0] = previewMesh->getPosition()[0];
+					lastPos2[1] = previewMesh->getPosition()[1];
+					lastPos2[2] = previewMesh->getPosition()[2];
+
+					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 
 					aModellingStateIsActive++;
 				}
 				else if (modellingState[1] == 1) {
 					modellingState[1] = 2;
-
+				}
+				else if (modellingState[1] == 2)
+				{
 					//	move mesh
 					linAlg::calculateVec(wand->getPosition(), lastPos, moveVec);
 					moveVec[0] = lastPos2[0] + moveVec[0];
 					moveVec[1] = lastPos2[1] + moveVec[1];
 					moveVec[2] = lastPos2[2] + moveVec[2];
 
-					modellingMesh->setPosition(moveVec);
+					previewMesh->setPosition(moveVec);
 				}
 			}
 			else {
@@ -885,143 +858,111 @@ int Oculus::runOvr() {
 					modellingState[1] = 0;
 				}
 				else if (modellingState[1] != 0) {
+					// just released button
+					
+					wand->getVelocity(wandVelocity);
+					if (linAlg::vecLength(wandVelocity) < 0.4) {
+						//changedMesh = true;
+						wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+					}
 					modellingState[1] = 3;
-
 					aModellingStateIsActive--;
 				}
 			}
-
 			// 4.1.1 - Close application >---------------------------------------------------------------------------------------------------
 			if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 				glfwSetWindowShouldClose(l_Window, GL_TRUE);
 			}
 
 
-			// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
+			// 4.1.2 - Load next mesh \______________________________________________________________________________________________________
+			// move mesh until it leaves the tracking range then load a new mesh
+			tempMoveVec = previewMesh->getPosition();
+			if (linAlg::vecLength(wandVelocity) != 0) {
+				
+				tempVec[0] = tempMoveVec[0] + wandVelocity[0] * deltaTime;
+				tempVec[1] = tempMoveVec[1] + wandVelocity[1] * deltaTime;
+				tempVec[2] = tempMoveVec[2] + wandVelocity[2] * deltaTime;
 
-			activeButton = handleMenu(wand->getPosition(), loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
-
-			switch (activeButton) {
-			case 0:{
-				if (loadButtonState[activeButton] == 1) {
-
-					listVelocity = 0.0f;
-					listAcelleration = 0.0f;
-
-					scrollList[5]->setState(true);
-					scrollList[6]->setState(true);
-				}
-				else if (loadButtonState[activeButton] == 2) {
-
-					wandVelocity = wand->getVelocity(deltaTime);
-					listVelocity = wandVelocity[0];
-
-					/*for (int i = 0; i < 5; i++)
-					{
-						listStartPos = scrollList[i]->getPosition();
-
-						listLeft = -0.11f - (listStartPos[0] + listVelocity*deltaTime );
-						listRight = listStartPos[0] + listVelocity*deltaTime - 0.11f;
-
-						if (listLeft > 0.0f)
-						{
-							tempVec[0] = 0.11 - listLeft; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-							scrollList[i]->setPosition(tempVec);
-						}
-						else if (listRight > 0.0f)
-						{
-							tempVec[0] = -0.11 + listRight; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-							scrollList[i]->setPosition(tempVec);
-						}
-						else
-						{
-							tempVec[0] = listStartPos[0] + listVelocity*deltaTime + i*0.05f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-							scrollList[i]->setPosition(tempVec);
-						}
-					}*/
-
-				}
-				else if (loadButtonState[activeButton] == 3)
-				{
-					wandVelocity = wand->getVelocity(deltaTime);
-					listVelocity = wandVelocity[0];
-					listAcelleration = -0.5*wandVelocity[0];
-
-					scrollList[5]->setState(false);
-					scrollList[6]->setState(false);
-				}
-				break;
-			}
-			case 1: {
-
-				break;
-			}
-			case 2: {
-
-				break;
-			}
-			default:{
-
-				break;
-			}
+				previewMesh->setPosition(tempVec);
 			}
 
-
-			if (listVelocity == 0) {
-				if (previewMesh != loaderMesh && loaderMeshLock.try_lock()) {
-					if (th1.joinable()) {
-						th1.join();
-					}
-
+			// check if the preview mesh has left the tracking range area and increment fileIndex accordingly
+			if (tempMoveVec[0] > 0.25 || tempMoveVec[2] > 0) {
+				previewMesh = placeHolder;
+				fileIndex--;
+				wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+				if (loaderMeshLock.try_lock()) {
 					loaderMeshLock.unlock();
-					previewMesh = placeHolder;
 					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 				}
 			}
+			else if (tempMoveVec[0] < -0.25 || tempMoveVec[2] < -0.5) {
+				previewMesh = placeHolder;
+				fileIndex++;
+				wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+				if (loaderMeshLock.try_lock()) {
+					loaderMeshLock.unlock();
+					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+				}
+			}
+<<<<<<< HEAD
 			else {
 
 				listStartPos = scrollList[leftListIndex]->getPosition();
 				
 				for (int i = 0; i < 5; i++) {
+=======
 
-					if (listStartPos[0] < 0.01f && listStartPos[0] > -0.01f) {
-						scrollList[i]->setState(true);
-						if (listVelocity > 0.04f && listVelocity < -0.04f) {
+			// check if the thread is ready with a new mesh
+			if (th1.joinable()) {
+				th1.join();
+				previewMesh = loaderMesh;
+				previewMesh->createBuffers();
+			}
+>>>>>>> loadingMode
 
-							listVelocity = listVelocity + listAcelleration*deltaTime;
-							listAcelleration = -0.5*listVelocity;
+			// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
+			if (aModellingStateIsActive == 0) {
+				activeButton = handleMenu(wand->getPosition(), loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
+
+				switch (activeButton) {
+					case 0: {
+						// load mesh button
+						if (loadButtonState[activeButton] == 1) {
+							if (meshLock.try_lock()){
+								meshLock.unlock();
+								th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
+							}
 						}
-						else {
-							listVelocity = listVelocity + listAcelleration*deltaTime;
-							listAcelleration = -1.0*listVelocity;
-						}
-					}
-					else {
-						scrollList[i]->setState(false);
-					}
 
-
-					listLeft = -0.125f - (listStartPos[0] + listVelocity*deltaTime);
-					listRight = listStartPos[0] + listVelocity*deltaTime - 0.125f;
-					if (listLeft > 0.0f) {
-						tempVec[0] = 0.125f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-						scrollList[i]->setPosition(tempVec);
-						fileIndex++;
+						break;
 					}
-					else if (listRight > 0.0f) {
-						tempVec[0] = -0.125f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-						scrollList[i]->setPosition(tempVec);
-						fileIndex--;
+					case 1: {
+						// quit mode to modelling mode
+						delete loadButton[0];
+						delete loadButton[1];
+						delete loaderMesh;
+						delete placeHolder;
+						mode = 0;
+						continue;
+						break;
 					}
-					else {
-						tempVec[0] = listStartPos[0] + listVelocity*deltaTime; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-						scrollList[i]->setPosition(tempVec);
+					default:{
+						break;
 					}
-					//tempVec[0] = listStartPos[0] + moveVec[0] + i*0.05f; tempVec[1] = listStartPos[1]; tempVec[2] = listStartPos[2];
-					//scrollList[(leftListIndex + i)%5]->setPosition(tempVec);
 				}
 			}
-
+				
+			if (th2.joinable()) {
+				th2.join();
+				delete loadButton[0];
+				delete loadButton[1];
+				delete loaderMesh;
+				delete placeHolder;
+				mode = 0;
+				continue;
+			}
 
 
 			// Begin the frame...
@@ -1071,141 +1012,101 @@ int Oculus::runOvr() {
 
 				// 4.4 - Scene Matrix stack \__________________________________________________________________________________________________
 				MVstack.push();
-				// 4.4.1 - RENDER BOARD >--------------------------------------------------------------------------------------------------
-				glUniform4fv(locationLP, 1, LP);
-				MVstack.push();
-				MVstack.translate(board.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-				board.render();
-				MVstack.pop();
-
-				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-
-				// 4.4.2 - RENDER trackingrange >-----------------------------------------------------------------------------------------
-				MVstack.push();
-					MVstack.translate(trackingRange.getPosition());
-					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-					glLineWidth(2.0f);
-					trackingRange.render();
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				MVstack.pop();
-
-				// 4.4.3 - RENDER title >---------------------------------------------------------------------------------------------------
-				glUseProgram(menuShader.programID);
-				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-				MVstack.push();
-					MVstack.translate(title.getPosition());
-					MVstack.rotX(1.57079f);
-					glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					title.render();
-				MVstack.pop();
-
-
-				// 4.4.4 - RENDER Load buttons >--------------------------------------------------------------------------------------------
-				for (int i = 1; i < NR_OF_LOAD_BUTTONS; i++) {
-
-					if (loadButton[i]->getState()) {
-						glUseProgram(bloomShader.programID);
-						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-					}
-					else {
-						glUseProgram(menuShader.programID);
-						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-					}
-
+					// 4.4.1 - RENDER BOARD >--------------------------------------------------------------------------------------------------
+					glUniform4fv(locationLP, 1, LP);
 					MVstack.push();
-					glBindTexture(GL_TEXTURE_2D, loadButtonTex[i]->getTextureID());
-
-					MVstack.translate(loadButton[i]->getPosition());
-					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					loadButton[i]->render();
+						MVstack.translate(board.getPosition());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+						board.render();
 					MVstack.pop();
-				}
 
+					glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
 
-				// 4.4.5 - RENDER listitems >---------------------------------------------------------------------------------------------
-				// info
-				for (int i = 6; i > -1; i--) {
-
-					if (scrollList[i]->getState()) {
-						glUseProgram(bloomShader.programID);
-						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-					}
-					else {
-						glUseProgram(menuShader.programID);
-						glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-					}
-
+					// 4.4.2 - RENDER trackingrange >-----------------------------------------------------------------------------------------
 					MVstack.push();
-
-					glBindTexture(GL_TEXTURE_2D, scrollListTex[i]->getTextureID());
-
-					MVstack.translate(scrollList[i]->getPosition());
-					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					scrollList[i]->render();
-					MVstack.pop();
-				}
-
-				//glBindTexture(GL_TEXTURE_2D, 0);
-
-				// 4.4.6 - RENDER mesh >--------------------------------------------------------------------------------------------------
-				glUseProgram(meshShader.programID);
-				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-				if (th1.joinable()) {
-					th1.join();
-					previewMesh = loaderMesh;
-					previewMesh->createBuffers();
-				}
-
-				MVstack.push();
-					MVstack.translate(previewMesh->getPosition());
-					MVstack.multiply(previewMesh->getOrientation());
-					glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					glUniform4fv(locationMeshLP, 1, LP);
-					glUniform4fv(locationMeshLP2, 1, lPosTemp);
-
-					if (lines) {
+						MVstack.translate(trackingRange.getPosition());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-						previewMesh->render();
+						glLineWidth(2.0f);
+						trackingRange.render();
 						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					MVstack.pop();
+
+					// 4.4.3 - RENDER title >---------------------------------------------------------------------------------------------------
+					glUseProgram(menuShader.programID);
+					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+					MVstack.push();
+						MVstack.translate(title.getPosition());
+						MVstack.rotX(1.57079f);
+						glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						title.render();
+					MVstack.pop();
+
+
+					// 4.4.4 - RENDER Load buttons >--------------------------------------------------------------------------------------------
+					for (int i = 0; i < NR_OF_LOAD_BUTTONS; i++) {
+
+						if (loadButton[i]->getState()) {
+							glUseProgram(bloomShader.programID);
+							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+						}
+						else {
+							glUseProgram(menuShader.programID);
+							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+						}
+
+						MVstack.push();
+							glBindTexture(GL_TEXTURE_2D, loadButtonTex[i]->getTextureID());
+
+							MVstack.translate(loadButton[i]->getPosition());
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							loadButton[i]->render();
+						MVstack.pop();
 					}
-					else {
+
+					// 4.4.5 - RENDER mesh >--------------------------------------------------------------------------------------------------
+					glUseProgram(meshShader.programID);
+					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+					MVstack.push();
+						MVstack.translate(previewMesh->getPosition());
+						MVstack.multiply(previewMesh->getOrientation());
+						glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						glUniform4fv(locationMeshLP, 1, LP);
+						glUniform4fv(locationMeshLP2, 1, lPosTemp);
 						previewMesh->render();
-					}
-				MVstack.pop();
+					MVstack.pop();
 
-				glUseProgram(sceneShader.programID);
-				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+					glUseProgram(sceneShader.programID);
+					glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
-				// 4.4.7 - RENDER wand >--------------------------------------------------------------------------------------------------
-				MVstack.push();
-				MVstack.translate(wand->getPosition());
-				MVstack.multiply(wand->getOrientation());
+					// 4.4.6 - RENDER wand >--------------------------------------------------------------------------------------------------
+					MVstack.push();
+						MVstack.translate(wand->getPosition());
+						MVstack.multiply(wand->getOrientation());
 
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				MVstack.push();
-				translateVector[0] = 0.0f;
-				translateVector[1] = 0.0f;
-				translateVector[2] = -0.1f;
-				MVstack.translate(translateVector);
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-				boxWand.render();
-				MVstack.pop();
-				//render brush------------------------
-				MVstack.push();
-				/*MVstack.scale(wandRadius);
-				glUseProgram(sphereShader.programID);
-				glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-				glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				sphereWand.render();*/
-				MVstack.pop();
-				MVstack.pop();
+						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						MVstack.push();
+							translateVector[0] = 0.0f;
+							translateVector[1] = 0.0f;
+							translateVector[2] = -0.1f;
+							MVstack.translate(translateVector);
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+							boxWand.render();
+						MVstack.pop();
+						//render brush------------------------
+						MVstack.push();
+							/*MVstack.scale(wandRadius);
+							glUseProgram(sphereShader.programID);
+							glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							sphereWand.render();*/
+						MVstack.pop();
+					MVstack.pop();
 				MVstack.pop();
 				MVstack.pop();
 			}
@@ -1280,8 +1181,6 @@ void GLRenderCallsOculus(){
 
 //! checks if a menu item is choosen and sets the appropriate state 
 int handleMenu(float* wandPosition, MenuItem** menuItem, const int nrOfModellingUIButtons, int* state) {
-
-
 	for (int i = 0; i < nrOfModellingUIButtons; i++) {
 		if (wandPosition[1] < menuItem[i]->getPosition()[1] + 0.02f
 			&& wandPosition[1] > menuItem[i]->getPosition()[1] - 0.02f
