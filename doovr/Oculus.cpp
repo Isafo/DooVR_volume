@@ -588,7 +588,7 @@ int Oculus::runOvr() {
 							}
 							break;
 						}
-								//3.2.2 - save mesh button >--------------------------------------------------------------------------------------------
+						//3.2.2 - save mesh button >--------------------------------------------------------------------------------------------
 						case 1: {
 							// save mesh
 							if (modellingButtonState[activeButton] == 1) {
@@ -599,7 +599,7 @@ int Oculus::runOvr() {
 							}
 							break;
 						}
-								//3.2.3 - load mesh button >--------------------------------------------------------------------------------------------
+						//3.2.3 - load mesh button >--------------------------------------------------------------------------------------------
 						case 2: {
 							// load mesh
 							if (modellingButtonState[activeButton] == 1) { // just activated
@@ -626,13 +626,12 @@ int Oculus::runOvr() {
 
 									// Call thread to load the mesh preview
 									th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-									// activate load mode
-									mode = 1;
+									mode = 1; // activate load mode
 								}
 							}
 							break;
 						}
-								//3.2.4 - wireframe button >---------------------------------------------------------------------------------------------
+						//3.2.4 - wireframe button >---------------------------------------------------------------------------------------------
 						case 3: {
 							// wireframe
 							if (modellingButtonState[activeButton] == 1) {
@@ -750,7 +749,6 @@ int Oculus::runOvr() {
 							MVstack.pop();
 
 							// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
-							// info
 							for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
 
 								if (modellingButton[i]->getState()) {
@@ -770,12 +768,9 @@ int Oculus::runOvr() {
 								modellingButton[i]->render();
 								MVstack.pop();
 							}
-
-							//glBindTexture(GL_TEXTURE_2D, 0);
 							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
 							glUseProgram(meshShader.programID);
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
 
 							MVstack.push();
 								MVstack.translate(modellingMesh->getPosition());
@@ -811,14 +806,14 @@ int Oculus::runOvr() {
 									glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
 									boxWand.render();		
 								MVstack.pop();
-							//render brush------------------------
-								MVstack.push();
+								//render brush------------------------
+								//MVstack.push();
 									/*	MVstack.scale(wandRadius);
 									glUseProgram(sphereShader.programID);
 									glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 									glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 									sphereWand.render();*/
-								MVstack.pop();
+								//MVstack.pop();
 							MVstack.pop();
 						MVstack.pop();
 					MVstack.pop();
@@ -877,7 +872,24 @@ int Oculus::runOvr() {
 				}
 				// 4.1.1 - Close application >---------------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
-					glfwSetWindowShouldClose(l_Window, GL_TRUE);
+					// check if a thread is running, if so wait for it before close
+
+					if (loaderMeshLock.try_lock() && loaderMeshLock.try_lock()) {
+						glfwSetWindowShouldClose(l_Window, GL_TRUE);
+					} else if (!loaderMeshLock.try_lock() && !meshLock.try_lock()) {
+						th1.join();
+						th2.join();
+						glfwSetWindowShouldClose(l_Window, GL_TRUE);
+					} else if (!loaderMeshLock.try_lock()) {
+						th1.join();
+						glfwSetWindowShouldClose(l_Window, GL_TRUE);
+					} else if (!meshLock.try_lock()) {
+						th1.join();
+						glfwSetWindowShouldClose(l_Window, GL_TRUE);
+					} else {
+						th2.join();
+						glfwSetWindowShouldClose(l_Window, GL_TRUE);
+					}
 				}
 
 				// 4.1.2 - Load next mesh \______________________________________________________________________________________________________
