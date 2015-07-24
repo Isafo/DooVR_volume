@@ -906,13 +906,6 @@ int Oculus::runOvr() {
 					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 				}
 			}
-<<<<<<< HEAD
-			else {
-
-				listStartPos = scrollList[leftListIndex]->getPosition();
-				
-				for (int i = 0; i < 5; i++) {
-=======
 
 			// check if the thread is ready with a new mesh
 			if (th1.joinable()) {
@@ -920,7 +913,7 @@ int Oculus::runOvr() {
 				previewMesh = loaderMesh;
 				previewMesh->createBuffers();
 			}
->>>>>>> loadingMode
+
 
 			// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
 			if (aModellingStateIsActive == 0) {
