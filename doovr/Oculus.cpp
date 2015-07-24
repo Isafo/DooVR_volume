@@ -296,7 +296,11 @@ int Oculus::runOvr() {
 	float tempVec[3];
 	float lastPos[3];
 	float lastPos2[3];
+	float direction[3];
+	float prevDirection[3];
+	float prevMeshOrientation;
 
+	float wandPos[3];
 	float wandVelocity[3] = {0};
 
 	float currTime = 0;
@@ -478,6 +482,8 @@ int Oculus::runOvr() {
 		currTime = glfwGetTime();
 		deltaTime = currTime - lastTime;
 
+		wand->getPosition(wandPos);
+
 		switch (mode) {
 			//===============================================================================================================================
 			// 3 - Modelling Mode
@@ -522,12 +528,14 @@ int Oculus::runOvr() {
 				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 					if (modellingState[1] == 0) {
 						modellingState[1] = 1;
-						lastPos[0] = wand->getPosition()[0];
-						lastPos[1] = wand->getPosition()[1];
-						lastPos[2] = wand->getPosition()[2];
+						wand->getPosition(lastPos);
+						
 						lastPos2[0] = modellingMesh->getPosition()[0];
 						lastPos2[1] = modellingMesh->getPosition()[1];
 						lastPos2[2] = modellingMesh->getPosition()[2];
+
+						wand->getDirection(prevDirection);
+
 
 						aModellingStateIsActive++;
 					}
@@ -537,7 +545,7 @@ int Oculus::runOvr() {
 					else if (modellingState[1] == 2)
 					{
 						//	move mesh
-						linAlg::calculateVec(wand->getPosition(), lastPos, moveVec);
+						linAlg::calculateVec(wandPos, lastPos, moveVec);
 						moveVec[0] = lastPos2[0] + moveVec[0];
 						moveVec[1] = lastPos2[1] + moveVec[1];
 						moveVec[2] = lastPos2[2] + moveVec[2];
@@ -569,8 +577,7 @@ int Oculus::runOvr() {
 
 				// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
 				if (aModellingStateIsActive == 0) {
-
-					activeButton = handleMenu(wand->getPosition(), modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
+					activeButton = handleMenu(wandPos, modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
 					switch (activeButton) {
 						//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
 						case 0: {
@@ -654,9 +661,7 @@ int Oculus::runOvr() {
 
 								lastRadius = wandRadius;
 
-								lastPos[0] = wand->getPosition()[0];
-								lastPos[1] = wand->getPosition()[1];
-								lastPos[2] = wand->getPosition()[2];
+								wand->getPosition(lastPos);
 							}
 
 							if (modellingButtonState[activeButton] == 3)
@@ -793,7 +798,7 @@ int Oculus::runOvr() {
 							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 							// 3.4.6 Render wand >-------------------------------------------------------------------------------------------
 							MVstack.push();
-								MVstack.translate(wand->getPosition());
+								MVstack.translate(wandPos);
 								MVstack.multiply(wand->getOrientation());
 
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -829,9 +834,9 @@ int Oculus::runOvr() {
 				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 					if (modellingState[1] == 0) {
 						modellingState[1] = 1;
-						lastPos[0] = wand->getPosition()[0];
-						lastPos[1] = wand->getPosition()[1];
-						lastPos[2] = wand->getPosition()[2];
+
+						wand->getPosition(lastPos);
+
 						lastPos2[0] = previewMesh->getPosition()[0];
 						lastPos2[1] = previewMesh->getPosition()[1];
 						lastPos2[2] = previewMesh->getPosition()[2];
@@ -846,7 +851,7 @@ int Oculus::runOvr() {
 					else if (modellingState[1] == 2)
 					{
 						//	move mesh
-						linAlg::calculateVec(wand->getPosition(), lastPos, moveVec);
+						linAlg::calculateVec(wandPos, lastPos, moveVec);
 						moveVec[0] = lastPos2[0] + moveVec[0];
 						moveVec[1] = lastPos2[1] + moveVec[1];
 						moveVec[2] = lastPos2[2] + moveVec[2];
@@ -934,7 +939,7 @@ int Oculus::runOvr() {
 
 				// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
 				if (aModellingStateIsActive == 0) {
-					activeButton = handleMenu(wand->getPosition(), loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
+					activeButton = handleMenu(wandPos, loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
 
 					switch (activeButton) {
 						case 0: {
@@ -1094,7 +1099,7 @@ int Oculus::runOvr() {
 
 							// 4.4.6 - RENDER wand >--------------------------------------------------------------------------------------------------
 							MVstack.push();
-								MVstack.translate(wand->getPosition());
+								MVstack.translate(wandPos);
 								MVstack.multiply(wand->getOrientation());
 
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -1264,7 +1269,7 @@ int Oculus::runOvr() {
 							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 							// 5.3.6 Render wand >------------------------------------------------------------------------------------------------------
 							MVstack.push();
-								MVstack.translate(wand->getPosition());
+								MVstack.translate(wandPos);
 								MVstack.multiply(wand->getOrientation());
 
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());

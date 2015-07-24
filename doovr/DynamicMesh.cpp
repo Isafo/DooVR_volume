@@ -680,15 +680,15 @@ void DynamicMesh::select(Wand* wand, float rad) {
 	}
 	sVertsNR = 0;
 	//--< 1.0 | calculated the position and direction of the wand
-	wPoint[0] = wand->getPosition()[0] - position[0];
-	wPoint[1] = wand->getPosition()[1] - position[1];
-	wPoint[2] = wand->getPosition()[2] - position[2];
+	wand->getDirection(wPoint);
+	wPoint[0] = wPoint[0] - position[0];
+	wPoint[1] = wPoint[1] - position[1];
+	wPoint[2] = wPoint[2] - position[2];
 	wPoint[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
 
-	Dirr[0] = wand->getDirection()[0];
-	Dirr[1] = wand->getDirection()[1];
-	Dirr[2] = wand->getDirection()[2];
+
+	wand->getDirection(Dirr);
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 	// 1.0 >--------------------------
@@ -820,15 +820,14 @@ void DynamicMesh::pull(Wand* wand, float rad) {
 	float Dirr[4]; float newDirr[4];
 	int index;
 
-	wPoint[0] = wand->getPosition()[0] - position[0];
-	wPoint[1] = wand->getPosition()[1] - position[1];
-	wPoint[2] = wand->getPosition()[2] - position[2];
+	wand->getPosition(wPoint);
+	wPoint[0] = wPoint[0] - position[0];
+	wPoint[1] = wPoint[1] - position[1];
+	wPoint[2] = wPoint[2] - position[2];
 	wPoint[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
 
-	Dirr[0] = wand->getDirection()[0];
-	Dirr[1] = wand->getDirection()[1];
-	Dirr[2] = wand->getDirection()[2];
+	wand->getDirection(Dirr);
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 
@@ -847,15 +846,14 @@ void DynamicMesh::push(Wand* wand, float rad) {
 	float Dirr[4]; float newDirr[4];
 	int index;
 
-	wPoint[0] = wand->getPosition()[0] - position[0];
-	wPoint[1] = wand->getPosition()[1] - position[1];
-	wPoint[2] = wand->getPosition()[2] - position[2];
+	wand->getPosition(wPoint);
+	wPoint[0] = wPoint[0] - position[0];
+	wPoint[1] = wPoint[1] - position[1];
+	wPoint[2] = wPoint[2] - position[2];
 	wPoint[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
 
-	Dirr[0] = wand->getDirection()[0];
-	Dirr[1] = wand->getDirection()[1];
-	Dirr[2] = wand->getDirection()[2];
+	wand->getDirection(Dirr);
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 
@@ -895,15 +893,14 @@ void DynamicMesh::drag(Wand* wand, float rad) {
 	}
 	sVertsNR = 0;
 	//--< 1.0 | calculated the position and direction of the wand
-	wPoint[0] = wand->getPosition()[0] - position[0];
-	wPoint[1] = wand->getPosition()[1] - position[1];
-	wPoint[2] = wand->getPosition()[2] - position[2];
+	wand->getDirection(tempVec1);
+	wPoint[0] = tempVec1[0] - position[0];
+	wPoint[1] = tempVec1[1] - position[1];
+	wPoint[2] = tempVec1[2] - position[2];
 	wPoint[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
 
-	Dirr[0] = wand->getDirection()[0];
-	Dirr[1] = wand->getDirection()[1];
-	Dirr[2] = wand->getDirection()[2];
+	wand->getDirection(Dirr);
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 	// 1.0 >--------------------------
@@ -1053,15 +1050,11 @@ void DynamicMesh::markUp(Wand* wand, float rad) {
 	}
 	sVertsNR = 0;
 	//--< 1.0 | calculated the position and direction of the wand
-	wPoint[0] = wand->getPosition()[0] - position[0];
-	wPoint[1] = wand->getPosition()[1] - position[1];
-	wPoint[2] = wand->getPosition()[2] - position[2];
+	wand->getPosition(wPoint);
 	wPoint[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
 
-	Dirr[0] = wand->getDirection()[0];
-	Dirr[1] = wand->getDirection()[1];
-	Dirr[2] = wand->getDirection()[2];
+	wand->getDirection(Dirr);
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 	// 1.0 >--------------------------
