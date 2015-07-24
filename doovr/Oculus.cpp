@@ -292,16 +292,21 @@ int Oculus::runOvr() {
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
 	float nullVec[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
-	float moveVec[3];
+	float moveVec[4];
 	float tempVec[3];
 	float lastPos[3];
 	float lastPos2[3];
-	float direction[3];
-	float prevDirection[3];
-	float prevMeshOrientation;
+	float wandDirection[3];
+	float prevWandDirection[3];
+	float prevMeshOrientation[16];
+	float meshOrientation[16];
+	float tempVec4[4];
+	float tempMat4[16];
 
 	float wandPos[3];
 	float wandVelocity[3] = {0};
+	float prevLength, currLength, prevDotCurrWandDirr, theta;
+	float result[4];
 
 	float currTime = 0;
 	float lastTime;
@@ -529,14 +534,11 @@ int Oculus::runOvr() {
 					if (modellingState[1] == 0) {
 						modellingState[1] = 1;
 						wand->getPosition(lastPos);
+						modellingMesh->getPosition(lastPos2);
+
+						wand->getDirection(prevWandDirection);
+						modellingMesh->getOrientation(prevMeshOrientation);
 						
-						lastPos2[0] = modellingMesh->getPosition()[0];
-						lastPos2[1] = modellingMesh->getPosition()[1];
-						lastPos2[2] = modellingMesh->getPosition()[2];
-
-						wand->getDirection(prevDirection);
-
-
 						aModellingStateIsActive++;
 					}
 					else if (modellingState[1] == 1) {
@@ -550,7 +552,42 @@ int Oculus::runOvr() {
 						moveVec[1] = lastPos2[1] + moveVec[1];
 						moveVec[2] = lastPos2[2] + moveVec[2];
 
+						// rotation
+						prevDotCurrWandDirr = linAlg::dotProd(prevWandDirection, wandDirection);
+						prevLength = linAlg::vecLength(prevWandDirection);
+						currLength = linAlg::vecLength(wandDirection);
+
+						theta = acos(prevDotCurrWandDirr / (prevLength * currLength));
+
+						tempVec4[0] = lastPos2[0];
+						tempVec4[1] = lastPos2[1];
+						tempVec4[2] = lastPos2[2];
+						tempVec4[3] = 1.0f;
+
+						if (prevWandDirection[0] == wandDirection[0]) {
+							// rotation around x axis
+							linAlg::rotX(theta, tempMat4);
+
+							linAlg::vectorMatrixMult(tempMat4, moveVec, result);
+							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
+						}
+						else if (prevWandDirection[1] == wandDirection[1]) {
+							// rotation around y axis
+							linAlg::rotY(theta, tempMat4);
+
+							linAlg::vectorMatrixMult(tempMat4, moveVec, result);
+							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
+						}
+						else {
+							// rotation around z axis
+							linAlg::rotZ(theta, tempMat4);
+
+							linAlg::vectorMatrixMult(tempMat4, moveVec, result);
+							linAlg::matrixMult(tempMat4, prevMeshOrientation, meshOrientation);
+						}
+
 						modellingMesh->setPosition(moveVec);
+						modellingMesh->setOrientation(meshOrientation);
 					}
 				}
 				else {
@@ -836,10 +873,7 @@ int Oculus::runOvr() {
 						modellingState[1] = 1;
 
 						wand->getPosition(lastPos);
-
-						lastPos2[0] = previewMesh->getPosition()[0];
-						lastPos2[1] = previewMesh->getPosition()[1];
-						lastPos2[2] = previewMesh->getPosition()[2];
+						previewMesh->getPosition(lastPos2);
 
 						wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 

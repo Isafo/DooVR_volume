@@ -26,4 +26,12 @@ namespace linAlg {
 	//! Calculates the dot product
 	float dotProd(float vec1[3], float vec2[3]);
 	float lengthToSurface(float v[3], float w[3], float rad);
+
+	//! get rotation matrix around X
+	void rotX(float angle, float* rotMat);
+	//! get rotation matrix around Y
+	void rotY(float angle, float* rotMat);
+	//! get rotation matrix around Z
+	void rotZ(float angle, float* rotMat);
+
 }
