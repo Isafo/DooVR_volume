@@ -309,6 +309,8 @@ int Oculus::runOvr() {
 	float listLeft = 0.0f;
 	float listRight = 0.0f;
 
+
+
 	// 2.3 - Threads used for loading and saving meshes \__________________________________________________________________________________
 	std::thread th1; // not used
 	std::thread th2; //
@@ -438,7 +440,9 @@ int Oculus::runOvr() {
 
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
-	DynamicMesh* modellingMesh = new DynamicMesh(0.05f);
+	DynamicMesh* modellingMesh = new DynamicMesh();
+	//modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
+	modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
 	//Mesh* tempStaticMesh = new Mesh();
@@ -472,21 +476,24 @@ int Oculus::runOvr() {
 
 			// 3.1 - modellingstates \_____________________________________________________________________________________________________
 			//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
-			modellingMesh->markUp(wand, wandRadius);
+			
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
-				if (modellingState[0] == 0) {
-					modellingState[0] = 1;
-					modellingMesh->push(wand, wandRadius);
-
-					aModellingStateIsActive++;
+				if (modellingState[0] == 2) {
+					modellingMesh->select(wand, wandRadius);
+					modellingMesh->pull(wand, wandRadius);
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
-
+					modellingMesh->select(wand, wandRadius);
+					modellingMesh->pull(wand, wandRadius);
 				}
-				else if (modellingState[0] == 2)
+				else if (modellingState[0] == 0)
 				{
-					modellingMesh->push(wand, wandRadius);
+					modellingState[0] = 1;
+					//modellingMesh->pull(wand, wandRadius);
+					modellingMesh->select(wand, wandRadius);
+
+					aModellingStateIsActive++;
 				}
 			}
 			else {
@@ -498,6 +505,7 @@ int Oculus::runOvr() {
 
 					aModellingStateIsActive--;
 				}
+				modellingMesh->select(wand, wandRadius);
 			}
 			modellingMesh->updateOGLData();
 			//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
@@ -558,8 +566,9 @@ int Oculus::runOvr() {
 				case 0: {
 					if (modellingButtonState[activeButton] == 1) {
 						// reset mesh
-						delete modellingMesh; // Reset mesh
-						modellingMesh = new DynamicMesh(0.3f);
+						//delete modellingMesh; // Reset mesh
+						//modellingMesh = new DynamicMesh(0.3f);
+						modellingMesh->load("2015-07-22_16-08-10.bin");
 
 						modellingButton[activeButton]->setState(true);
 
@@ -874,7 +883,6 @@ int Oculus::runOvr() {
 				glfwSetWindowShouldClose(l_Window, GL_TRUE);
 			}
 
-
 			// 4.1.2 - Load next mesh \______________________________________________________________________________________________________
 			// move mesh until it leaves the tracking range then load a new mesh
 			tempMoveVec = previewMesh->getPosition();
@@ -883,7 +891,6 @@ int Oculus::runOvr() {
 				tempVec[0] = tempMoveVec[0] + wandVelocity[0] * deltaTime;
 				tempVec[1] = tempMoveVec[1] + wandVelocity[1] * deltaTime;
 				tempVec[2] = tempMoveVec[2] + wandVelocity[2] * deltaTime;
-
 				previewMesh->setPosition(tempVec);
 			}
 
@@ -897,6 +904,7 @@ int Oculus::runOvr() {
 					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 				}
 			}
+
 			else if (tempMoveVec[0] < -0.25 || tempMoveVec[2] < -0.5) {
 				previewMesh = placeHolder;
 				fileIndex++;

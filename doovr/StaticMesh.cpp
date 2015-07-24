@@ -30,7 +30,6 @@ void StaticMesh::createBuffers()
 	tempTex.u = 0.0f;
 	tempTex.v = 0.0f;
 
-
 	//vertexP = &vertexArray[0];
 	//indexP = &triangleArray[0];
 
