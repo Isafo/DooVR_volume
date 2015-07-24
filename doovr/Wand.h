@@ -14,9 +14,12 @@ public:
 	float* getOrientation() { return OrientationM; }
 	float* getTransformMatrix() { return Transform; }
 
+	void setLastPos() { lastPosition[0] = Position[0]; lastPosition[1] = Position[1]; lastPosition[2] = Position[2]; }
+
 	virtual void setPosition(double* t) = 0;
 	virtual void setOrientation(double* o) = 0;
 	virtual void setTransform(float* T) = 0;
+
 
 protected:
 

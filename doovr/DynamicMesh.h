@@ -25,7 +25,7 @@ struct halfEdge {
 struct sVert {
 	int index;
 	float vec[3];
-	float length;
+	sVert* next;
 };
 
 struct vInfo {
@@ -79,7 +79,6 @@ class DynamicMesh : public Mesh{
 
 	//Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle 
 	vInfo* vInfoArray;
-
 	//Array that exists parallell to the indexArray and contains indices to an edge that is part of the corresponding triangle 
 	int* triEPtr;
 
@@ -89,11 +88,15 @@ class DynamicMesh : public Mesh{
 	//largest index in the edgeArray where values exist 
 	int edgeCap;
 	
-	sVert sVerts[10000];
+	//sVert sVerts[10000];
+	sVert* sHead; sVert* sTail;
+	sVert* sIt = nullptr;
+	sVert* tempSVert = nullptr;
+	sVert* sMid = nullptr;
 	int sVertsNR = 0;
+	//float midPoint[3];
 
 	const float MAX_LENGTH = 0.025f * 0.5f; // 0.08f*0.1f;
-
 	const float MIN_LENGTH = 0.0124f * 0.5f;
 
 	std::string fileName;

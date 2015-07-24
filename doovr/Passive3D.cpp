@@ -85,10 +85,9 @@ void Passive3D::wand3dCallback(WandData data) {
 
 	float Orient[16];
 
-
-	lastPosition[0] = Position[0];
-	lastPosition[1] = Position[1];
-	lastPosition[2] = Position[2];
+	//lastPosition[0] = Position[0];
+	//lastPosition[1] = Position[1];
+	//lastPosition[2] = Position[2];
 
 	Position[0] = -data.position[0];
 	Position[1] = data.position[2] - 0.27f;

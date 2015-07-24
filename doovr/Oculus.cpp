@@ -441,8 +441,8 @@ int Oculus::runOvr() {
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
-	//modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
-	modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
+	modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
+	//modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
 	//Mesh* tempStaticMesh = new Mesh();
@@ -479,13 +479,13 @@ int Oculus::runOvr() {
 			
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 2) {
-					modellingMesh->select(wand, wandRadius);
-					modellingMesh->pull(wand, wandRadius);
+					//modellingMesh->select(wand, wandRadius);
+					//modellingMesh->drag(wand, wandRadius);
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
-					modellingMesh->select(wand, wandRadius);
-					modellingMesh->pull(wand, wandRadius);
+					//modellingMesh->select(wand, wandRadius);
+					//modellingMesh->drag(wand, wandRadius);
 				}
 				else if (modellingState[0] == 0)
 				{

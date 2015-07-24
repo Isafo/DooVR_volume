@@ -3,12 +3,8 @@
 
 //! Data structure containing the coordinates and normal coordinates of a vertex, aswell as a pointer to an adjacent face
 struct vertex {
-	GLfloat x;
-	GLfloat y;
-	GLfloat z;
-	GLfloat nx;
-	GLfloat ny;
-	GLfloat nz;
+	GLfloat xyz[3];
+	GLfloat nxyz[3];
 };
 
 //! Data structure containing three indices of the vertexArray that make a certain triangle. Points to one edge in the triangle
