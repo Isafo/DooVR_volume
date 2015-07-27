@@ -692,20 +692,26 @@ void DynamicMesh::select(Wand* wand, float rad) {
 	sTail->next = sHead;
 	sHead->next = sTail;
 	sVertsNR = 0;
+
 	sIt = sHead->next;
 
+	linAlg::transpose(orientation);
 	//--< 1.0 | calculated the position and direction of the wand
-	wPoint[0] = wand->getPosition()[0] - position[0];
-	wPoint[1] = wand->getPosition()[1] - position[1];
-	wPoint[2] = wand->getPosition()[2] - position[2];
+	wand->getPosition(wPoint);
+	wPoint[0] = wPoint[0] - position[0];
+	wPoint[1] = wPoint[1] - position[1];
+	wPoint[2] = wPoint[2] - position[2];
 	wPoint[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
 
-	Dirr[0] = wand->getDirection()[0];
-	Dirr[1] = wand->getDirection()[1];
-	Dirr[2] = wand->getDirection()[2];
+	wand->getDirection(Dirr);
+	linAlg::normVec(Dirr);
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
+	linAlg::transpose(orientation);
+	//newDirr[0] = Dirr[0];
+	//newDirr[1] = Dirr[1];
+	//newDirr[2] = Dirr[2];
 	// 1.0 >--------------------------
 	//--< 2.0 | start searching through vertexarray for points that are within the brush
 	for (int i = 0; i <= vertexCap; i++) {
@@ -810,6 +816,7 @@ void DynamicMesh::select(Wand* wand, float rad) {
 	}
 	
 }
+
 //
 //void DynamicMesh::pull(Wand* wand, float rad) {
 //	float wPoint[4]; float newWPoint[4];
@@ -868,6 +875,7 @@ void DynamicMesh::select(Wand* wand, float rad) {
 //
 //}
 //
+
 void DynamicMesh::drag(Wand* wand, float rad) {
 
 	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
@@ -899,15 +907,14 @@ void DynamicMesh::drag(Wand* wand, float rad) {
 	sIt = sHead->next;
 
 	//--< 1.0 | calculated the position and direction of the wand
-	wPoint[0] = wand->getPosition()[0] - position[0];
-	wPoint[1] = wand->getPosition()[1] - position[1];
-	wPoint[2] = wand->getPosition()[2] - position[2];
+	wand->getDirection(tempVec1);
+	wPoint[0] = tempVec1[0] - position[0];
+	wPoint[1] = tempVec1[1] - position[1];
+	wPoint[2] = tempVec1[2] - position[2];
 	wPoint[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, wPoint, newWPoint);
 
-	Dirr[0] = wand->getDirection()[0];
-	Dirr[1] = wand->getDirection()[1];
-	Dirr[2] = wand->getDirection()[2];
+	wand->getDirection(Dirr);
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
 	// 1.0 >--------------------------

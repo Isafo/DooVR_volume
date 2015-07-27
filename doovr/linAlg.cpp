@@ -227,6 +227,18 @@ void linAlg::crossProd(float normal[3], float* vec1, float* vec2) {
 	normal[2] = (vec1[0] * vec2[1] - vec1[1] * vec2[0]);
 }
 
+void linAlg::rotAxis(float axis[3], float a, float* mOut)
+{
+	float u = axis[0];
+	float v = axis[1];
+	float w = axis[2];
+
+	mOut[0] = pow(u, 2) + (1 - pow(u, 2))*cos(a);/**/ mOut[1] = u*v*(1 - cos(a)) - w*sin(a);/**/ mOut[2] = u*w*(1 - cos(a)) + v*sin(a);/**/ mOut[3] = 0;
+	mOut[4] = u*v*(1.f - cos(a)) + w*sin(a);/**/mOut[5] = pow(v, 2) + (1 - pow(v, 2))*cos(a); /**/mOut[6] = v*w*(1 - cos(a)) - u*sin(a); /**/mOut[7] = 0;
+	mOut[8] = u*w*(1.f - cos(a)) - v*sin(a);/**/ mOut[9] = v*w*(1.f - cos(a)) + u*sin(a);/**/ mOut[10] = pow(w, 2) + (1.f - pow(w, 2))*cos(a);/**/ mOut[11] = 0;
+	mOut[12] = 0.f; mOut[13] = 0.f; mOut[14] = 0.f; mOut[15] = 1.f;
+}
+
 float linAlg::vecLength(float vec[3]) {
 	return sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
 }
@@ -241,3 +253,24 @@ float linAlg::lengthToSurface(float v[3], float w[3], float rad)
 	return (-(v[0]*w[0] + v[1]*w[1] + v[2]*w[2])/(w[0]*w[0] + w[1]*w[1] + w[2]*w[2])) 
 		+ sqrt((rad*rad + (v[0]*w[0] + v[1]*w[1] + v[2]*w[2]) - (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]))/(w[0]*w[0] + w[1]*w[1] + w[2]*w[2]) );
 }
+
+void linAlg::rotX(float angle, float* resultMat) {
+	resultMat[0] = 1.0f;	resultMat[1] = 0.0f;			resultMat[2] = 0.0f;			resultMat[3] = 0.0f;
+	resultMat[4] = 0.0f;	resultMat[5] = cosf(angle);		resultMat[6] = sinf(angle);		resultMat[7] = 0.0f;
+	resultMat[8] = 0.0f;	resultMat[9] = -sinf(angle);	resultMat[10] = cosf(angle);	resultMat[11] = 0.0f;
+	resultMat[12] = 0.0f;	resultMat[13] = 0.0f;			resultMat[14] = 0.0f;			resultMat[15] = 1.0f;
+};
+
+void linAlg::rotY(float angle, float* resultMat) {
+	resultMat[0] = cosf(angle);		resultMat[1] = 0.0f;	resultMat[2] = -sinf(angle);	resultMat[3] = 0.0f;
+	resultMat[4] = 0.0f;			resultMat[5] = 1.0f;	resultMat[6] = 0.0f;			resultMat[7] = 0.0f;
+	resultMat[8] = sinf(angle);		resultMat[9] = 0.0f;	resultMat[10] = cosf(angle);	resultMat[11] = 0.0f;
+	resultMat[12] = 0.0f;			resultMat[13] = 0.0f;	resultMat[14] = 0.0f;			resultMat[15] = 1.0f;
+};
+
+void linAlg::rotZ(float angle, float* resultMat) {
+	resultMat[0] = cosf(angle);		resultMat[1] = sinf(angle);		resultMat[2] = 0.0f;	resultMat[3] = 0.0f;
+	resultMat[4] = -sinf(angle);	resultMat[5] = cosf(angle);		resultMat[6] = 0.0f;	resultMat[7] = 0.0f;
+	resultMat[8] = 0.0f;			resultMat[9] = 0.0f;			resultMat[10] = 1.0f;	resultMat[11] = 0.0f;
+	resultMat[12] = 0.0f;			resultMat[13] = 0.0f;		resultMat[14] = 0.0f;		resultMat[15] = 1.0f;
+};

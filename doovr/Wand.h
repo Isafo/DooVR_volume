@@ -8,9 +8,9 @@ public:
 	Wand();
 	~Wand();
 
-	float* getPosition() ;
+	void getPosition(float* vec) ;
 	void getVelocity(float* vec);
-	float* getDirection();
+	void getDirection(float* vec);
 	float* getOrientation() { return OrientationM; }
 	float* getTransformMatrix() { return Transform; }
 
