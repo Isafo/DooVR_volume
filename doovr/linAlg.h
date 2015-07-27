@@ -27,6 +27,8 @@ namespace linAlg {
 	float dotProd(float vec1[3], float vec2[3]);
 	float lengthToSurface(float v[3], float w[3], float rad);
 
+	void rotAxis(float axis[3], float a, float* mOut);
+
 	//! get rotation matrix around X
 	void rotX(float angle, float* rotMat);
 	//! get rotation matrix around Y

@@ -679,8 +679,9 @@ void DynamicMesh::select(Wand* wand, float rad) {
 		vInfoArray[sVerts[i].index].selected = 0.0f;
 	}
 	sVertsNR = 0;
+	linAlg::transpose(orientation);
 	//--< 1.0 | calculated the position and direction of the wand
-	wand->getDirection(wPoint);
+	wand->getPosition(wPoint);
 	wPoint[0] = wPoint[0] - position[0];
 	wPoint[1] = wPoint[1] - position[1];
 	wPoint[2] = wPoint[2] - position[2];
@@ -689,8 +690,13 @@ void DynamicMesh::select(Wand* wand, float rad) {
 
 
 	wand->getDirection(Dirr);
+	linAlg::normVec(Dirr);
 	Dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(orientation, Dirr, newDirr);
+	linAlg::transpose(orientation);
+	//newDirr[0] = Dirr[0];
+	//newDirr[1] = Dirr[1];
+	//newDirr[2] = Dirr[2];
 	// 1.0 >--------------------------
 	//--< 2.0 | start searching through vertexarray for points that are within the brush
 	for (int i = 0; i <= vertexCap; i++) {

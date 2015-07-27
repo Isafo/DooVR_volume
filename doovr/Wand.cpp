@@ -25,6 +25,21 @@ void Wand::getVelocity(float* vec) {
 }
 
 void Wand::getDirection(float* vec) {
+
+	//TranslateM[3] = Position[0];
+	//TranslateM[7] = Position[1];
+	//TranslateM[11] = Position[2];
+
+	//linAlg::matrixMult(TranslateM, OrientationM, Transform);
+
+	//float v[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+	//float dirr[4];
+	//linAlg::vectorMatrixMult(OrientationM, v, dirr);
+	//Direction[0] = Direction[0] - Position[0];
+	//Direction[1] = Direction[1] - Position[1];
+	//Direction[2] = Direction[2] - Position[2];
+	//linAlg::normVec(Direction);
+
 	vec[0] = Direction[0];
 	vec[1] = Direction[1];
 	vec[2] = Direction[2];

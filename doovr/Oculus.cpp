@@ -17,6 +17,7 @@
 
 #include <thread>
 #include <mutex>
+#include <math.h>
 
 // ------- Function declerations --------
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
@@ -292,7 +293,7 @@ int Oculus::runOvr() {
 	float currPos[3] = { 0.0f, 0.0f, 0.0f };
 	float nullVec[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
-	float moveVec[4];
+	float moveVec[4]; float nMoveVec[4];
 	float tempVec[3];
 	float lastPos[3];
 	float lastPos2[3];
@@ -544,6 +545,7 @@ int Oculus::runOvr() {
 
 						wand->getDirection(prevWandDirection);
 						modellingMesh->getOrientation(prevMeshOrientation);
+						linAlg::normVec(prevWandDirection);
 
 						aModellingStateIsActive++;
 					}
@@ -554,42 +556,25 @@ int Oculus::runOvr() {
 					{
 						//	move mesh
 						linAlg::calculateVec(wandPos, lastPos, moveVec);
-						moveVec[0] = lastPos2[0] + moveVec[0];
-						moveVec[1] = lastPos2[1] + moveVec[1];
-						moveVec[2] = lastPos2[2] + moveVec[2];
+						moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
+						moveVec[1] = lastPos2[1] + moveVec[1] - wandPos[1];
+						moveVec[2] = lastPos2[2] + moveVec[2] - wandPos[2];
 
 						wand->getDirection(wandDirection);	
-
-						linAlg::normVec(prevWandDirection);
 						linAlg::normVec(wandDirection);
-						// V = A x B
-						linAlg::crossProd(vVec, prevWandDirection, wandDirection);
-						linAlg::normVec(vVec);
-
-						if (vVec[0] != 0 && vVec[1] != 0 && vVec[2] != 0) {
-							// s = || v ||
-							sFloat = linAlg::vecLength(vVec);
-							// c = A | B
-							cFloat = linAlg::dotProd(prevWandDirection, wandDirection);
-
-							// Vx
-							vMat[1] = -vVec[2]; vMat[1] = vVec[1];
-							vMat[4] = vVec[2]; vMat[6] = -vVec[0];
-							vMat[8] = -vVec[1]; vMat[9] = vVec[0]; vMat[15] = 1;
-
-							// R = I + Vx + Vx^2(1-c)/s^2
-							for (int i = 0; i < 16; i++)
-								transform[i] = unitMat[i] + vMat[i] + vMat[i] * vMat[i] * ((1 - cFloat) / sFloat * sFloat);
-							
-						}
-						else {
-							for (int i = 0; i < 16; i++)
-								transform[i] = 1;
-						}
 						
-						linAlg::matrixMult(prevMeshOrientation, transform, meshOrientation);
+						linAlg::crossProd(vVec, wandDirection, prevWandDirection);
+						linAlg::normVec(vVec);
+						linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
 
-						modellingMesh->setPosition(moveVec);
+						linAlg::matrixMult(transform, prevMeshOrientation, meshOrientation);
+
+						linAlg::vectorMatrixMult(transform, moveVec, nMoveVec);
+						nMoveVec[0] += wandPos[0];
+						nMoveVec[1] += wandPos[1];
+						nMoveVec[2] += wandPos[2];
+
+						modellingMesh->setPosition(nMoveVec);
 						modellingMesh->setOrientation(meshOrientation);
 					}
 				}
@@ -879,6 +864,7 @@ int Oculus::runOvr() {
 
 						wand->getDirection(prevWandDirection);
 						previewMesh->getOrientation(prevMeshOrientation);
+						linAlg::normVec(prevWandDirection);
 
 						aModellingStateIsActive++;
 					}
@@ -889,13 +875,25 @@ int Oculus::runOvr() {
 					{
 						//	move mesh
 						linAlg::calculateVec(wandPos, lastPos, moveVec);
-						moveVec[0] = lastPos2[0] + moveVec[0];
-						moveVec[1] = lastPos2[1] + moveVec[1];
-						moveVec[2] = lastPos2[2] + moveVec[2];
+						moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
+						moveVec[1] = lastPos2[1] + moveVec[1] - wandPos[1];
+						moveVec[2] = lastPos2[2] + moveVec[2] - wandPos[2];
 
-						wand->getDirection(wandDirection);
+						wand->getDirection(wandDirection);	
+						linAlg::normVec(wandDirection);
+						
+						linAlg::crossProd(vVec, wandDirection, prevWandDirection);
+						linAlg::normVec(vVec);
+						linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
 
-						previewMesh->setPosition(moveVec);
+						linAlg::matrixMult(transform, prevMeshOrientation, meshOrientation);
+
+						linAlg::vectorMatrixMult(transform, moveVec, nMoveVec);
+						nMoveVec[0] += wandPos[0];
+						nMoveVec[1] += wandPos[1];
+						nMoveVec[2] += wandPos[2];
+
+						previewMesh->setPosition(nMoveVec);
 						previewMesh->setOrientation(meshOrientation);
 					}
 				}
