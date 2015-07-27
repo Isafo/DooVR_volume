@@ -560,22 +560,33 @@ int Oculus::runOvr() {
 
 						wand->getDirection(wandDirection);	
 
+						linAlg::normVec(prevWandDirection);
+						linAlg::normVec(wandDirection);
 						// V = A x B
 						linAlg::crossProd(vVec, prevWandDirection, wandDirection);
-						// s = || v ||
-						sFloat = linAlg::vecLength(vVec);
-						// c = A | B
-						cFloat = linAlg::dotProd(prevWandDirection, wandDirection);
+						linAlg::normVec(vVec);
 
-						// Vx
-						vMat[1] = -vVec[3]; vMat[2] = vVec[2];
-						vMat[4] = vVec[3]; vMat[6] = -vVec[0];
-						vMat[8] = -vVec[2]; vMat[9] = vVec[0]; vMat[15] = 1;
+						if (vVec[0] != 0 && vVec[1] != 0 && vVec[2] != 0) {
+							// s = || v ||
+							sFloat = linAlg::vecLength(vVec);
+							// c = A | B
+							cFloat = linAlg::dotProd(prevWandDirection, wandDirection);
 
-						// R = I + Vx + Vx^2(1-c)/s^2
-						for (int i = 0; i < 16; i++) 
-							transform[i] = unitMat[i] + vMat[i] + vMat[i] * vMat[i] * ((1 - cFloat) / sFloat * sFloat);
+							// Vx
+							vMat[1] = -vVec[2]; vMat[1] = vVec[1];
+							vMat[4] = vVec[2]; vMat[6] = -vVec[0];
+							vMat[8] = -vVec[1]; vMat[9] = vVec[0]; vMat[15] = 1;
 
+							// R = I + Vx + Vx^2(1-c)/s^2
+							for (int i = 0; i < 16; i++)
+								transform[i] = unitMat[i] + vMat[i] + vMat[i] * vMat[i] * ((1 - cFloat) / sFloat * sFloat);
+							
+						}
+						else {
+							for (int i = 0; i < 16; i++)
+								transform[i] = 1;
+						}
+						
 						linAlg::matrixMult(prevMeshOrientation, transform, meshOrientation);
 
 						modellingMesh->setPosition(moveVec);
