@@ -8,6 +8,7 @@
 #include <string>
 
 #define M_PI 3.14159265358979323846
+#define EPSILON 0.000001
 
 DynamicMesh::DynamicMesh() {
 	vertexArray = new vertex[MAX_NR_OF_VERTICES];
@@ -21,7 +22,10 @@ DynamicMesh::DynamicMesh() {
 	sTail = new sVert;
 	sHead = new sVert;
 	sTail->next = sHead;
+	sTail->vec[1] = 100.0f;
 	sHead->next = sTail;
+	sHead->vec[1] = 100.0f;
+	sMid = sHead;
 	sVertsNR = 0;
 
 	position[0] = 0.0f; position[1] = -0.22f; position[2] = -0.25f;
@@ -667,16 +671,17 @@ void DynamicMesh::save() {
 void DynamicMesh::select(Wand* wand, float rad) {
 	
 	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
-	float tempVec1[3]; float tempVec2[3];
-	float* vPoint; float* vPoint2; float vNorm[3];
+	float eVec1[3]; float eVec2[3];
+	float P[3]; float Q[3]; float T[3];
+	float* vPoint; float* vPoint2; 
 	int index; int index2;
 	float* ptrVec;
 
-	int tempEdge;
+	int tempEdge; int tempE;
 
-	bool success = false;
+	bool success = false; bool triB = false;
 
-	float pLength = 0.0f;
+	float pLength = 0.0f; float invP = 0.0f;; float u = 0.0f; float v = 0.0f; float t = 0.0f;
 	float oLength = 0.0f;
 	
 	int mIndex; float mLength;
@@ -717,82 +722,113 @@ void DynamicMesh::select(Wand* wand, float rad) {
 	for (int i = 0; i <= vertexCap; i++) {
 		//--< 2.1 | calculate vector between vertexposition and wandposition
 
-		linAlg::calculateVec(vertexArray[i].xyz, newWPoint, tempVec1);
+		linAlg::calculateVec(vertexArray[i].xyz, newWPoint, eVec1);
 
 		// 2.1 >---------------------
 		//--< 2.2 | calculate orthogonal and parallel distance between this vector and wandDirection
-		pLength = linAlg::dotProd(newDirr, tempVec1);;//                                                 / linAlg::vecLength(newDirr);
+		pLength = linAlg::dotProd(newDirr, eVec1);;//                                                 / linAlg::vecLength(newDirr);
 		Dirr[0] = newDirr[0] * pLength;
 		Dirr[1] = newDirr[1] * pLength;
 		Dirr[2] = newDirr[2] * pLength;
 
 
-		linAlg::calculateVec(tempVec1, Dirr, tempVec2);
-		oLength = linAlg::vecLength(tempVec2);
+		linAlg::calculateVec(eVec1, Dirr, eVec2);
+		oLength = linAlg::vecLength(eVec2);
 		// 2.2 >----------------------
-		if (pLength > 0.0f && oLength < rad)
+		if (pLength > 0.0f && oLength < MAX_LENGTH)
 		{
 			//--< 2.3 | add the found vertex to list of selected vertices and mark it as selected 
 			tempSVert = new sVert; sTail->next->next = tempSVert; sTail->next = tempSVert; tempSVert->next = sTail;
 			tempSVert->index = i;
-			tempSVert->vec[0] = oLength;
-			tempSVert->vec[1] = pLength;
-			sMid = tempSVert;
-
-			vInfoArray[i].selected = ((rad - oLength) / rad);
-
-			sIt = sHead->next;
-			// 2.3 >-----------------------
-			//--< 2.4 | a first vertex has been found, the rest of the search is done through the surface 
-			while (sIt != sTail) {
-				index2 = sIt->index;
-				tempEdge = vInfoArray[index2].edgePtr;
-
-				do {
-					if (vInfoArray[e[tempEdge].vertex].selected == 0.0f){
-						index = e[tempEdge].vertex;
-
-						linAlg::calculateVec(vertexArray[index].xyz, newWPoint, tempVec1);
-
-						pLength = linAlg::dotProd(newDirr, tempVec1);// / linAlg::vecLength(newDirr);
-						Dirr[0] = newDirr[0] * pLength;
-						Dirr[1] = newDirr[1] * pLength;
-						Dirr[2] = newDirr[2] * pLength;
-
-						linAlg::calculateVec(tempVec1, Dirr, tempVec2);
-						oLength = linAlg::vecLength(tempVec2);
-
-						if (pLength > 0.00f && oLength < rad) {
-
-							tempSVert = new sVert; sTail->next->next = tempSVert; sTail->next = tempSVert; tempSVert->next = sTail;
-							tempSVert->index = index;
-							
-							if (pLength < sMid->vec[1] && oLength < MAX_LENGTH){
-								sMid = tempSVert;
-								tempSVert->vec[0] = oLength;
-								tempSVert->vec[1] = pLength;
-							}
-							sVertsNR++;
-
-							vInfoArray[index].selected = ((rad - oLength)/rad);
-						}
-					}
-					tempEdge = e[e[tempEdge].nextEdge].sibling;
-
-				} while (tempEdge != vInfoArray[index2].edgePtr);
-
-				sIt = sIt->next;
-
+			vInfoArray[i].selected = 1.0f;
+			if (pLength < sMid->vec[1]){
+				tempSVert->vec[0] = oLength;
+				tempSVert->vec[1] = pLength;
+				sMid = tempSVert;
 			}
-			// 2.4 >---------------------
 			success = true;
-			break;
 		}
 	}
 	// 2.0 >----------------------
 
-	if (success == true) {
+	if (success) {
 		sIt = sHead;
+		while (sIt->next != sTail) {
+			index2 = sIt->next->index;
+			tempEdge = vInfoArray[index2].edgePtr;
+
+			do {
+				tempE = e[e[tempEdge].nextEdge].sibling;
+				linAlg::calculateVec(vertexArray[e[tempEdge].vertex].xyz, vertexArray[index2].xyz, eVec1);
+				linAlg::calculateVec(vertexArray[e[tempE].vertex].xyz, vertexArray[index2].xyz, eVec2);
+				linAlg::crossProd(P, newDirr, eVec2);
+
+				pLength = linAlg::dotProd(eVec1, P);
+				if (pLength < -EPSILON ||  pLength > EPSILON)
+				{
+					invP = 1.f / pLength;
+					linAlg::calculateVec(newWPoint, vertexArray[index2].xyz, T);
+
+					u = linAlg::dotProd(T, P) * invP;
+					if (u > 0.0f && u < 1.0f)
+					{
+						linAlg::crossProd(Q, T, eVec1);
+
+						v = linAlg::dotProd(newDirr, Q)*invP;
+
+						if (v > 0.0f && u + v < 1.0f)
+						{
+							t = linAlg::dotProd(eVec2, Q)*invP;
+							if (t > EPSILON)
+							{
+								sIt->next->index = e[tempEdge].triangle;
+								sIt->vec[0] = newDirr[0] * t;
+								sIt->vec[1] = newDirr[1] * t;
+								sIt->vec[2] = newDirr[2] * t;
+								tempE = vInfoArray[index2].edgePtr;
+								triB = true;
+							}
+							else
+								triB = false;
+						}
+						else
+							triB = false;
+					}
+					else
+						triB = false;
+				}
+				else
+					triB = false;
+
+				tempEdge = tempE;
+			} while (tempEdge != vInfoArray[index2].edgePtr);
+
+			if (triB)
+				sIt = sIt->next;
+			else{
+				tempSVert = sIt->next->next;
+				delete sIt->next;
+				sIt->next = tempSVert;
+			}
+		}
+		sTail->next = sIt;
+	}
+	
+	sIt = sHead;
+	while (sIt->next != sTail) {
+		index2 = sIt->next->index;
+		vPoint = sIt->vec;
+		linAlg::calculateVec(vPoint, newWPoint, eVec1);
+
+		if (linAlg::vecLength(eVec1) < linAlg::vecLength(sMid->vec))
+		{
+			sMid = sIt;
+		}
+
+	}
+
+	if (triB == true) {
+		/*sIt = sHead;
 		index = sMid->index;
 
 		vPoint = vertexArray[index].xyz;
@@ -812,7 +848,7 @@ void DynamicMesh::select(Wand* wand, float rad) {
 				sIt->next = tempSVert;
 			}
 		}
-		sTail->next = sIt;
+		sTail->next = sIt;*/
 	}
 	
 }

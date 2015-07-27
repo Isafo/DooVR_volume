@@ -25,7 +25,6 @@ void main ()
 	//	LightIntensity = vec3(0.69921f, 0.230468f, 0.125f);
 	//}
 	
-
 	vec3 Kd = vec3(0.8f, 0.8f, 0.8f);                // Diffuse reflectivity
 	vec3 Ka = vec3(0.1f, 0.1f, 0.1f);                // Ambient reflectivity
 	vec3 Ks = vec3( 0.7f, 0.7f, 0.7f);				 // Specular reflectivity
