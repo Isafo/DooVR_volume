@@ -14,6 +14,8 @@
 #include "TrackingRange.h"
 #include "DynamicMesh.h"
 #include "StaticMesh.h"
+#include "Circle.h"
+#include "Square.h"
 
 #include <thread>
 #include <mutex>
@@ -464,6 +466,9 @@ int Oculus::runOvr() {
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
 
+
+	Circle testCir(0.0f, 0.0f, 0.05f);
+
 	//=======================================================================================================================================
 	//Render loop
 	//=======================================================================================================================================
@@ -723,7 +728,6 @@ int Oculus::runOvr() {
 								board.render();
 							MVstack.pop();
 
-
 							glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
 
 							// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
@@ -807,13 +811,12 @@ int Oculus::runOvr() {
 									boxWand.render();		
 								MVstack.pop();
 								//render brush------------------------
-								//MVstack.push();
-									/*	MVstack.scale(wandRadius);
-									glUseProgram(sphereShader.programID);
-									glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-									glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									sphereWand.render();*/
-								//MVstack.pop();
+								MVstack.push();
+									MVstack.scale(1);
+									MVstack.translate(testCir.getPosition());
+									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+									testCir.render();
+								MVstack.pop();
 							MVstack.pop();
 						MVstack.pop();
 					MVstack.pop();
