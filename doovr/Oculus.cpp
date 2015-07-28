@@ -16,6 +16,8 @@
 #include "StaticMesh.h"
 #include "Circle.h"
 #include "Square.h"
+#include "LineCube.h"
+#include "LineSphere.h"
 
 #include <thread>
 #include <mutex>
@@ -467,7 +469,7 @@ int Oculus::runOvr() {
 	StaticMesh* loaderMesh;
 
 
-	Square testCir(0.0f, 0.0f, 0.0f, 0.05f, 0.05f);
+	LineSphere testCir(0.0f, 0.0f, 0.0f, 0.05f);
 
 	//=======================================================================================================================================
 	//Render loop

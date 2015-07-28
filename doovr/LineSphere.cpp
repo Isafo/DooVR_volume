@@ -1,6 +1,7 @@
-#include "Circle.h"
+#include "LineSphere.h"
 
-Circle::Circle(float pX, float pY, float pZ, float r) { 
+
+LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	position[0] = pX;
 	position[1] = pY;
 	position[2] = pZ;
@@ -8,12 +9,13 @@ Circle::Circle(float pX, float pY, float pZ, float r) {
 	const float M_PI = 3.14159265359;
 	const int nsegments = 100;
 
-	nverts = nsegments + 1;
-	nlines = nsegments + 1;
+	nverts = 2 * (nsegments + 1);
+	nlines = 2 * (nsegments + 1);
 
-	vertexarray = new GLfloat[nverts * 3];	// x y z coordinate
+	vertexarray = new GLfloat[nverts * 3];		// x y z coordinate
 	indexarray = new GLuint[nlines * 2];	// 2 vertecies per line
-
+	
+	// first circle >------------------------------------------------------------
 	float theta = 2 * M_PI / float(nsegments);
 
 	float x = r;
@@ -21,22 +23,53 @@ Circle::Circle(float pX, float pY, float pZ, float r) {
 
 	vertexarray[0] = x + pX;	// x
 	vertexarray[1] = y + pY;	// y
-	vertexarray[2] = 0;			// z
+	vertexarray[2] = pZ;		// z
 
 	indexarray[0] = 0;
 	indexarray[1] = 1;
 
 	int j = 1;
 	int k = 2;
-	for (int i = 3; (i / 3) < nsegments + 1; i = i + 3, k = k + 2, j++) {
-		theta = 2.0f * 3.1415926f * float(j) / float(nsegments);//get the current angle 
+	int i;
+	for (i = 3; (i / 3) < nsegments + 1; i = i + 3, k = k + 2, j++) {
+		theta = 2.0f * 3.1415926f * float(j) / float(nsegments); //get the current angle 
 
-		float x = r * cosf(theta);	//calculate the x component 
-		float y = r * sinf(theta);	//calculate the y component 
+		x = r * cosf(theta);
+		y = r * sinf(theta);
 
-		vertexarray[i] = x + pX; // x
-		vertexarray[i + 1] = y + pY; // y
-		vertexarray[i + 2] = 0; // x
+		vertexarray[i] = x + pX;		// x
+		vertexarray[i + 1] = y + pY;	// y
+		vertexarray[i + 2] = pZ;		// z
+
+		indexarray[k] = j - 1;
+		indexarray[k + 1] = j;
+	}
+	
+	// second circle >------------------------------------------------------------
+	theta = 2 * M_PI / float(nsegments);
+
+	float z = r;
+	y = 0;
+
+	// first pooint
+	vertexarray[i] = pX;			// x
+	vertexarray[i + 1] = y + pY;	// y
+	vertexarray[i + 2] = z + pZ;	// z
+
+	indexarray[k] = j;
+	indexarray[k + 1] = j + 1;
+
+	j = j + 2;
+	k = k + 2;
+	for (i = i + 3; (i / 3) < 2 * (nsegments + 1); i = i + 3, k = k + 2, j++) {
+		theta = 2.0f * 3.1415926f * float(j) / float(nsegments); //get the current angle 
+
+		float z = r * cosf(theta);
+		float y = r * sinf(theta);
+
+		vertexarray[i] = pX;			// x
+		vertexarray[i + 1] = y + pY;	// y
+		vertexarray[i + 2] = z + pZ;	// z
 
 		indexarray[k] = j - 1;
 		indexarray[k + 1] = j;
@@ -81,17 +114,17 @@ Circle::Circle(float pX, float pY, float pZ, float r) {
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
 }
 
-Circle::~Circle() {
+
+LineSphere::~LineSphere() {
 	delete[] vertexarray;
 	delete[] indexarray;
 }
 
-void Circle::render() {
+void LineSphere::render() {
 	glBindVertexArray(vao);
-	glDrawElements(GL_LINES, 2 * nlines, GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_LINES, 2 * nlines - 1, GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex count, type, element array buffer offset)
 	glBindVertexArray(0);
 }
