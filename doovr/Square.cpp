@@ -1,49 +1,35 @@
-#include "Circle.h"
+#include "Square.h"
 
-Circle::Circle(float pX, float pY, float pZ, float r) { 
+
+Square::Square(float pX, float pY, float pZ, float dX, float dY) {
+
 	position[0] = pX;
 	position[1] = pY;
 	position[2] = pZ;
 
-	const float M_PI = 3.14159265359;
-	const int nsegments = 100;
+	nverts = 4;
+	nlines = 4;
 
-	nverts = nsegments + 1;
-	nlines = nsegments + 1;
+	vertexarray = new GLfloat[nverts * 3];
+	indexarray = new GLuint[nlines * 2];
 
-	vertexarray = new GLfloat[nverts * 3];	// x y z coordinate
-	indexarray = new GLuint[nlines * 2 + 2];	// 2 vertecies per line
-
-	float theta = 2 * M_PI / float(nsegments);
-
-	float x = r;
-	float y = 0;
-
-	vertexarray[0] = x + pX; // x
-	vertexarray[1] = y + pY; // y
-	vertexarray[2] = 0; // z
+	//	x-coordinate				y-coordinate					z-coordinate
+	vertexarray[0] = dX / 2;	vertexarray[1] = -dY / 2;		vertexarray[2] = 0;		// 0
+	vertexarray[3] = dX / 2;	vertexarray[4] = dY / 2;		vertexarray[5] = 0;		// 1
+	vertexarray[6] = -dX / 2;	vertexarray[7] = dY / 2;		vertexarray[8] = 0;		// 2
+	vertexarray[9] = -dX / 2;	vertexarray[10] = -dY / 2;		vertexarray[11] = 0;	// 3
 
 	indexarray[0] = 0;
 	indexarray[1] = 1;
 
-	int j = 1;
-	int k = 2;
-	for (int i = 3; (i / 3) < nsegments + 1; i = i + 3, k = k + 2, j++) {
-		theta = 2.0f * 3.1415926f * float(j) / float(nsegments);//get the current angle 
+	indexarray[2] = 1;
+	indexarray[3] = 2;
 
-		float x = r * cosf(theta);	//calculate the x component 
-		float y = r * sinf(theta);	//calculate the y component 
+	indexarray[4] = 2;
+	indexarray[5] = 3;
 
-		vertexarray[i] = x + pX; // x
-		vertexarray[i + 1] = y + pY; // y
-		vertexarray[i + 2] = 0; // x
-
-		indexarray[k] = j - 1;
-		indexarray[k + 1] = j;
-	}
-
-	// last line
-	indexarray[nsegments * 2 + 1] = 0;
+	indexarray[6] = 3;
+	indexarray[7] = 0;
 
 	// Generate one vertex array object (VAO) and bind it
 	glGenVertexArrays(1, &(vao));
@@ -84,15 +70,15 @@ Circle::Circle(float pX, float pY, float pZ, float r) {
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
 }
 
-Circle::~Circle() {
+
+Square::~Square() {
 	delete[] vertexarray;
 	delete[] indexarray;
 }
 
-void Circle::render() {
+void Square::render() {
 	glBindVertexArray(vao);
 	glDrawElements(GL_LINES, 2 * nlines, GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex count, type, element array buffer offset)

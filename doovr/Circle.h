@@ -5,7 +5,7 @@ class Circle : public Brush
 {
 public:
 	Circle();
-	Circle(float cX, float cY, float r);
+	Circle(float pX, float pY, float pZ, float r);
 	~Circle();
 
 	void render();
