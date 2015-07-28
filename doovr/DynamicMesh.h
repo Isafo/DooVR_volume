@@ -25,6 +25,7 @@ struct halfEdge {
 struct sVert {
 	int index;
 	float vec[3];
+	float norm[3];
 	sVert* next;
 };
 
@@ -92,7 +93,7 @@ class DynamicMesh : public Mesh{
 	sVert* sHead; sVert* sTail;
 	sVert* sIt = nullptr;
 	sVert* tempSVert = nullptr;
-	sVert* sMid = nullptr;
+	sVert sMid;
 	int sVertsNR = 0;
 	//float midPoint[3];
 

@@ -458,6 +458,7 @@ int Oculus::runOvr() {
 
 	// 2.7.2 - Wand variables >--------------------------------------------------------------------------------------------------------------
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
+	Box boxPointer(0.0f, 0.0f, 0.0f, 0.0005f, 0.0005f, 0.6f);
 	// Initilise passive wand
 	Passive3D* wand = new Passive3D();
 	// Size of the wand tool
@@ -508,12 +509,12 @@ int Oculus::runOvr() {
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 2) {
 					//modellingMesh->select(wand, wandRadius);
-					//modellingMesh->drag(wand, wandRadius);
+					modellingMesh->drag(wand, wandRadius);
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
 					//modellingMesh->select(wand, wandRadius);
-					//modellingMesh->drag(wand, wandRadius);
+					modellingMesh->drag(wand, wandRadius);
 				}
 				else if (modellingState[0] == 0)
 				{
@@ -836,13 +837,14 @@ int Oculus::runOvr() {
 									boxWand.render();		
 								MVstack.pop();
 								//render brush------------------------
-								//MVstack.push();
-									/*	MVstack.scale(wandRadius);
-									glUseProgram(sphereShader.programID);
-									glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-									glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									sphereWand.render();*/
-								//MVstack.pop();
+								MVstack.push();
+									translateVector[0] = 0.0f;
+									translateVector[1] = 0.0f;
+									translateVector[2] = 0.3f;
+									MVstack.translate(translateVector);
+									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+									boxPointer.render();
+								MVstack.pop();
 							MVstack.pop();
 						MVstack.pop();
 					MVstack.pop();
