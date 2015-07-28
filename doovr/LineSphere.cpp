@@ -19,11 +19,11 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	float theta = 2 * M_PI / float(nsegments);
 
 	float x = r;
-	float y = 0;
+	float z = 0;
 
 	vertexarray[0] = x + pX;	// x
-	vertexarray[1] = y + pY;	// y
-	vertexarray[2] = pZ;		// z
+	vertexarray[1] = pY;	// y
+	vertexarray[2] = z + pZ;		// z
 
 	indexarray[0] = 0;
 	indexarray[1] = 1;
@@ -35,11 +35,11 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 		theta = 2.0f * 3.1415926f * float(j) / float(nsegments); //get the current angle 
 
 		x = r * cosf(theta);
-		y = r * sinf(theta);
+		z = r * sinf(theta);
 
 		vertexarray[i] = x + pX;		// x
-		vertexarray[i + 1] = y + pY;	// y
-		vertexarray[i + 2] = pZ;		// z
+		vertexarray[i + 1] = pY;	// y
+		vertexarray[i + 2] = z + pZ;		// z
 
 		indexarray[k] = j - 1;
 		indexarray[k + 1] = j;
@@ -48,8 +48,8 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	// second circle >------------------------------------------------------------
 	theta = 2 * M_PI / float(nsegments);
 
-	float z = r;
-	y = 0;
+	z = r;
+	float y = 0;
 
 	// first pooint
 	vertexarray[i] = pX;			// x
