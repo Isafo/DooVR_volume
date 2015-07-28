@@ -874,7 +874,7 @@ void DynamicMesh::select(Wand* wand, float rad) {
 
 							sVertsNR++;
 
-							vInfoArray[index].selected = 4 + ((rad - oLength) / rad);
+							vInfoArray[index].selected = 4;
 						}
 					}
 					tempEdge = e[e[tempEdge].nextEdge].sibling;
