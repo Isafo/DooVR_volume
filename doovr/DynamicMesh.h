@@ -26,6 +26,7 @@ struct sVert {
 	int index;
 	float vec[3];
 	float norm[3];
+	float length = 0.0f;
 	sVert* next;
 };
 
@@ -89,7 +90,7 @@ class DynamicMesh : public Mesh{
 	//largest index in the edgeArray where values exist 
 	int edgeCap;
 	
-	//sVert sVerts[10000];
+	sVert sVerts[10000];
 	sVert* sHead; sVert* sTail;
 	sVert* sIt = nullptr;
 	sVert* tempSVert = nullptr;
