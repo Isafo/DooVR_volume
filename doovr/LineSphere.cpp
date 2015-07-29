@@ -9,8 +9,8 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	const float M_PI = 3.14159265359;
 	const int nsegments = 100;
 
-	nverts = 2 * (nsegments + 1);
-	nlines = 2 * (nsegments + 1);
+	nverts = 3 * (nsegments + 1);
+	nlines = 3 * (nsegments) + 2;
 
 	vertexarray = new GLfloat[nverts * 3];		// x y z coordinate
 	indexarray = new GLuint[nlines * 2];	// 2 vertecies per line
@@ -29,7 +29,7 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	//indexarray[1] = 1;
 
 	int j = 1;
-	int k = 2;
+	int k = 0;
 	int i;
 	for (i = 3; (i / 3) < nsegments + 1; i = i + 3, k = k + 2, j++) {
 		theta = 2.0f * 3.1415926f * float(j) / float(nsegments); //get the current angle 
@@ -56,8 +56,8 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	vertexarray[i + 1] = y + pY;	// y
 	vertexarray[i + 2] = z + pZ;	// z
 
-	//indexarray[k] = j;
-	//indexarray[k + 1] = j + 1;
+	indexarray[k] = j;
+	indexarray[k + 1] = j + 1;
 
 	j = j + 2;
 	k = k + 2;
@@ -75,7 +75,34 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 		indexarray[k + 1] = j;
 	}
 	
-	indexarray[k - 1] = nsegments + 2;
+	indexarray[k - 1] = nsegments + 1;
+
+	// third circle >------------------------------------------------------------
+	theta = 2 * M_PI / float(nsegments);
+
+	x = r;
+	y = 0;
+
+	// first pooint
+	vertexarray[i] = x + pX;			// x
+	vertexarray[i + 1] = y + pY;	// y
+	vertexarray[i + 2] = pZ;	// z
+
+	for (i = i + 3; (i / 3) < 3 * (nsegments + 1); i = i + 3, k = k + 2, j++) {
+		theta = 2.0f * 3.1415926f * float(j) / float(nsegments); //get the current angle 
+
+		float x = r * cosf(theta);
+		float y = r * sinf(theta);
+
+		vertexarray[i] = x + pX;		// x
+		vertexarray[i + 1] = y + pY;	// y
+		vertexarray[i + 2] = pZ;		// z
+
+		indexarray[k] = j - 1;
+		indexarray[k + 1] = j;
+	}
+
+	indexarray[k - 1] = 2 * (nsegments) + 3;
 
 	// Generate one vertex array object (VAO) and bind it
 	glGenVertexArrays(1, &(vao));
