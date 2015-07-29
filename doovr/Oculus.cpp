@@ -485,9 +485,6 @@ int Oculus::runOvr() {
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
 
-
-	LineSphere testCir(0.0f, 0.0f, 0.0f, 0.05f);
-
 	//=======================================================================================================================================
 	//Render loop
 	//=======================================================================================================================================
@@ -844,12 +841,12 @@ int Oculus::runOvr() {
 									boxWand.render();		
 								MVstack.pop();
 								//render brush------------------------
-								MVstack.push();
+								/*MVstack.push();
 									MVstack.scale(1);
 									MVstack.translate(testCir.getPosition());
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 									testCir.render();
-								MVstack.pop();
+								MVstack.pop();*/
 							MVstack.pop();
 						MVstack.pop();
 					MVstack.pop();
