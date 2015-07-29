@@ -301,7 +301,7 @@ int Oculus::runOvr() {
 	float nullVec[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
 	float moveVec[4]; float nMoveVec[4];
-	float tempVec[3];
+	float tempVec[3]; float tempVec2[3];
 	float lastPos[3];
 	float lastPos2[3];
 	float wandDirection[3];
@@ -414,7 +414,7 @@ int Oculus::runOvr() {
 	bool selectingTool = false;
 	MenuItem tool[NR_OF_TOOLS];
 	for (int i = 0; i < NR_OF_TOOLS; i++)
-		tool[i] = MenuItem(0.12 * cosf((M_PI / 6) * i), 0.1f, 0.12 * sinf((M_PI / 6) * i), 0.04, 0.04);
+		tool[i] = MenuItem(0.12 * cosf((M_PI / 6) * i), 0.12 * sinf((M_PI / 6) * i), -0.1f, 0.04, 0.04);
 
 	float* prevWandOrientation;
 	float* tempVecPtr;
@@ -617,13 +617,64 @@ int Oculus::runOvr() {
 					if (modellingState[2] == 0) {
 						modellingState[2] = 1;
 						aModellingStateIsActive++;
+						prevWandDirection[0] = 0.0f; prevWandDirection[1] = 0.0f; prevWandDirection[2] = -1.0f;
 					}
 					else if (modellingState[2] == 1) {
 						modellingState[2] = 2;
+						wand->getDirection(wandDirection); linAlg::normVec(wandDirection);
+
+						linAlg::crossProd(vVec, wandDirection, prevWandDirection);
+						linAlg::normVec(vVec);
+						linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
+
+						for (int i = 0; i < 4; i++)
+						{
+							tempVecPtr = tool[i].getPosition();
+							tempVec4[0] = tempVecPtr[0]; tempVec4[1] = tempVecPtr[1]; tempVec4[2] = tempVecPtr[2]; tempVec4[3] = 1.0f;
+							linAlg::vectorMatrixMult(transform, tempVec4, vVec);
+							tool[i].setPosition(vVec);
+
+						}
+						
+						
+			/*			if (wandDirection[1] > wandDirection[2]){
+							tempVec[0] = 0.0f; tempVec[1] = 0.0f; tempVec[2] = 1.0f;
+						}
+						else{
+							tempVec[0] = 0.0f; tempVec[1] = 1.0f; tempVec[2] = 0.0f;
+						}
+							
+						linAlg::crossProd(tempVec2, wandDirection, tempVec); linAlg::normVec(tempVec2);
+						tempVec2[0] = tempVec2[0] * 0.04f + wandDirection[0] * 0.03f;
+						tempVec2[1] = tempVec2[1] * 0.04f + wandDirection[1] * 0.03f;
+						tempVec2[2] = tempVec2[2] * 0.04f + wandDirection[2] * 0.03f;
+						tool[0].setPosition(tempVec2);
+
+						linAlg::crossProd(tempVec2, tempVec, wandDirection); linAlg::normVec(tempVec2);
+						tempVec2[0] = tempVec2[0] * 0.04f + wandDirection[0] * 0.03f;
+						tempVec2[1] = tempVec2[1] * 0.04f + wandDirection[1] * 0.03f;
+						tempVec2[2] = tempVec2[2] * 0.04f + wandDirection[2] * 0.03f;
+						tool[1].setPosition(tempVec2);
+
+						tempVec[0] = wandDirection[0] + 1.0f; tempVec[1] = wandDirection[1]; tempVec[2] = wandDirection[2];
+						linAlg::crossProd(tempVec2, wandDirection, tempVec); linAlg::normVec(tempVec2);
+						tempVec2[0] = tempVec2[0] * 0.04f + wandDirection[0] * 0.03f;
+						tempVec2[1] = tempVec2[1] * 0.04f + wandDirection[1] * 0.03f;
+						tempVec2[2] = tempVec2[2] * 0.04f + wandDirection[2] * 0.03f;
+						tool[2].setPosition(tempVec2);
+
+						tempVec2[0] =  wandDirection[0] * 0.03f;
+						tempVec2[1] =  wandDirection[1] * 0.03f;
+						tempVec2[2] =  wandDirection[2] * 0.03f;
+						tool[3].setPosition(tempVec2);*/
+
+			
 
 						// create and render tool gui
-						for (int i = 0; i < NR_OF_TOOLS; i++)
-							tool[i].setOrientation(wand->getOrientation);
+						for (int i = 0; i < NR_OF_TOOLS; i++) {
+							tool[i].setOrientation(wand->getOrientation());
+						}
+							
 					
 						selectingTool = true;
 					}
@@ -642,14 +693,14 @@ int Oculus::runOvr() {
 							temp1 = (linAlg::dotProd(tempVec, wandDirection));
 							temp1 = temp1 / (linAlg::vecLength(wandDirection) * linAlg::vecLength(wandDirection));
 
-							tempVecPtr[0] = temp1 * wandDirection[0];
-							tempVecPtr[1] = temp1 * wandDirection[1];
-							tempVecPtr[2] = temp1 * wandDirection[2];
+							moveVec[0] = temp1 * wandDirection[0];
+							moveVec[1] = temp1 * wandDirection[1];
+							moveVec[2] = temp1 * wandDirection[2];
 
 							// calculate the orthogonal projection
-							tempVec[0] = tempVec[0] - tempVecPtr[0];
-							tempVec[1] = tempVec[1] - tempVecPtr[1];
-							tempVec[2] = tempVec[2] - tempVecPtr[2];
+							tempVec[0] = tempVec[0] - moveVec[0];
+							tempVec[1] = tempVec[1] - moveVec[1];
+							tempVec[2] = tempVec[2] - moveVec[2];
 
 							// if length of the orthogonal projection is shorter than MenuItems dimension/2 the wand is pointing at the tool
 							if (linAlg::vecLength(tempVec) < dim) {
@@ -663,10 +714,16 @@ int Oculus::runOvr() {
 				}
 				else {
 					if (modellingState[2] == 3) {
-						modellingState[1] = 0;
+						modellingState[2] = 0;
+						for (int i = 0; i < NR_OF_TOOLS; i++){
+							tempVec[0] = wandRadius * cosf(((M_PI / 6)* i) + M_PI / 4); tempVec[1] = wandRadius * sinf(((M_PI / 6)* i) + M_PI / 4);  tempVec[2] = 0.0f;
+							tool[i].setPosition(tempVec);
+						}
+							
+						selectingTool = false;
 					}
 					else if (modellingState[2] != 0) {
-						modellingState[1] = 3;
+						modellingState[2] = 3;
 
 						aModellingStateIsActive--;
 					}
@@ -929,13 +986,12 @@ int Oculus::runOvr() {
 							if (selectingTool) {
 								MVstack.push();
 									MVstack.translate(wandPos);
-									MVstack.multiply(tool[0].getOrientation);
 									// render tool select GUI
 									for (int i = 0; i < NR_OF_TOOLS; i++) {
 										MVstack.push();
-											MVstack.rotX(1.570796);
 											MVstack.translate(tool[i].getPosition());
-											MVstack.rotX(-M_PI);
+											MVstack.multiply(tool[i].getOrientation());
+											MVstack.rotX(-1.57079);
 											glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 											tool[i].render();
 										MVstack.pop();
