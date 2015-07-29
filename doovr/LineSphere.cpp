@@ -7,7 +7,7 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	position[2] = pZ;
 
 	const float M_PI = 3.14159265359;
-	const int nsegments = 100;
+	const int nsegments = 60;
 
 	nverts = 3 * (nsegments + 1);
 	nlines = 3 * (nsegments) + 2;
@@ -102,7 +102,7 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 		indexarray[k + 1] = j;
 	}
 
-	indexarray[k - 1] = 2 * (nsegments) + 3;
+	indexarray[k - 1] = 2 * (nsegments) + 2;
 
 	// Generate one vertex array object (VAO) and bind it
 	glGenVertexArrays(1, &(vao));
