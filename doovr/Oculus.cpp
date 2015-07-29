@@ -14,6 +14,11 @@
 #include "TrackingRange.h"
 #include "DynamicMesh.h"
 #include "StaticMesh.h"
+#include "Circle.h"
+#include "Square.h"
+#include "LineCube.h"
+#include "LineSphere.h"
+#include "Line.h"
 
 #include <thread>
 #include <mutex>
@@ -459,6 +464,8 @@ int Oculus::runOvr() {
 	// 2.7.2 - Wand variables >--------------------------------------------------------------------------------------------------------------
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
 	Box boxPointer(0.0f, 0.0f, 0.0f, 0.0005f, 0.0005f, 0.6f);
+	Line brushPointer(0.0f, 0.0f, 0.0f, 1.0f);
+	LineSphere brush(0.0f, 0.0f, 0.0f, 1.0f);
 	// Initilise passive wand
 	Passive3D* wand = new Passive3D();
 	// Size of the wand tool
@@ -753,7 +760,6 @@ int Oculus::runOvr() {
 								board.render();
 							MVstack.pop();
 
-
 							glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
 
 							// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
@@ -837,13 +843,21 @@ int Oculus::runOvr() {
 									boxWand.render();		
 								MVstack.pop();
 								//render brush------------------------
+
 								MVstack.push();
 									translateVector[0] = 0.0f;
 									translateVector[1] = 0.0f;
-									translateVector[2] = 0.3f;
+									translateVector[2] = 1.0f;
 									MVstack.translate(translateVector);
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									boxPointer.render();
+									brushPointer.render();
+								MVstack.pop();
+
+								MVstack.push();
+									MVstack.scale(wandRadius);
+									MVstack.translate(brush.getPosition());
+									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+									brush.render();
 								MVstack.pop();
 							MVstack.pop();
 						MVstack.pop();

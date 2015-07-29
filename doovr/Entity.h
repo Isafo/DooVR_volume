@@ -28,9 +28,7 @@ class Entity
 		virtual void render() = 0; // Calls the TriangleSoup function to render the geometry
 
 	protected:
-
 		char oType; 
 		float position[3];	
 		float orientation[16];
-
 };
