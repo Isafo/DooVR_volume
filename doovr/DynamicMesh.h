@@ -63,6 +63,8 @@ class DynamicMesh : public Mesh{
 
 	void load(std::string _fileName);
 
+	void updateHVerts();
+
   private:
 
 	const int MAX_NR_OF_VERTICES = 1000000;
@@ -121,5 +123,8 @@ class DynamicMesh : public Mesh{
 
 	//! updates the changed vertecies normal and checks if retriangulation is needed.
 	void updateArea(sVert* changeList, int listSize);
+
+	//! updates the changed vertecies normal 
+	void updateNormals(sVert* changeList, int listSize);
 
 };

@@ -509,12 +509,12 @@ int Oculus::runOvr() {
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 2) {
 					//modellingMesh->select(wand, wandRadius);
-					modellingMesh->drag(wand, wandRadius);
+					modellingMesh->markUp(wand, wandRadius);
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
 					//modellingMesh->select(wand, wandRadius);
-					modellingMesh->drag(wand, wandRadius);
+					modellingMesh->markUp(wand, wandRadius);
 				}
 				else if (modellingState[0] == 0)
 				{
@@ -530,7 +530,7 @@ int Oculus::runOvr() {
 					}
 					else if (modellingState[0] != 0) {
 						modellingState[0] = 3;
-
+						modellingMesh->updateHVerts();
 						aModellingStateIsActive--;
 					}
 					modellingMesh->select(wand, wandRadius);
