@@ -90,16 +90,19 @@ class DynamicMesh : public Mesh{
 	//largest index in the edgeArray where values exist 
 	int edgeCap;
 	
-	sVert sVerts[10000];
-	sVert* sHead; sVert* sTail;
-	sVert* sIt = nullptr;
-	sVert* tempSVert = nullptr;
+	sVert HVerts[10000];
+	int HNR = 0;
+	//sVert* sHead; sVert* sTail;
+	//sVert* sIt = nullptr;
+	//sVert* tempSVert = nullptr;
 	sVert sMid;
-	int sVertsNR = 0;
+	sVert CVerts[1000];
+	int CNR = 0;
+	
 	//float midPoint[3];
 
-	const float MAX_LENGTH = 0.025f * 0.5f; // 0.08f*0.1f;
-	const float MIN_LENGTH = 0.0124f * 0.5f;
+	const float MAX_LENGTH = 0.025f * 0.2f; // 0.08f*0.1f;
+	const float MIN_LENGTH = 0.0124f * 0.2f;
 
 	std::string fileName;
 
