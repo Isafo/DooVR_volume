@@ -22,11 +22,11 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	float z = 0;
 
 	vertexarray[0] = x + pX;	// x
-	vertexarray[1] = pY;	// y
-	vertexarray[2] = z + pZ;		// z
+	vertexarray[1] = pY;		// y
+	vertexarray[2] = z + pZ;	// z
 
-	indexarray[0] = 0;
-	indexarray[1] = 1;
+	//indexarray[0] = 0;
+	//indexarray[1] = 1;
 
 	int j = 1;
 	int k = 2;
@@ -38,8 +38,8 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 		z = r * sinf(theta);
 
 		vertexarray[i] = x + pX;		// x
-		vertexarray[i + 1] = pY;	// y
-		vertexarray[i + 2] = z + pZ;		// z
+		vertexarray[i + 1] = pY;		// y
+		vertexarray[i + 2] = z + pZ;	// z
 
 		indexarray[k] = j - 1;
 		indexarray[k + 1] = j;
@@ -56,8 +56,8 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 	vertexarray[i + 1] = y + pY;	// y
 	vertexarray[i + 2] = z + pZ;	// z
 
-	indexarray[k] = j;
-	indexarray[k + 1] = j + 1;
+	//indexarray[k] = j;
+	//indexarray[k + 1] = j + 1;
 
 	j = j + 2;
 	k = k + 2;
@@ -74,6 +74,8 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 		indexarray[k] = j - 1;
 		indexarray[k + 1] = j;
 	}
+	
+	indexarray[k - 1] = nsegments + 2;
 
 	// Generate one vertex array object (VAO) and bind it
 	glGenVertexArrays(1, &(vao));
@@ -124,7 +126,7 @@ LineSphere::~LineSphere() {
 
 void LineSphere::render() {
 	glBindVertexArray(vao);
-	glDrawElements(GL_LINES, 2 * nlines - 1, GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_LINES, 2 * nlines, GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex count, type, element array buffer offset)
 	glBindVertexArray(0);
 }
