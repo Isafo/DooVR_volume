@@ -1319,21 +1319,23 @@ void DynamicMesh::smooth(Wand* wand, float rad) {
 	sVert* usedList;
 	sVert* emptyList;
 
-	if (HNR == 0)
+	if (HNR == 0 && CNR == 0)
 	{
 		usedList = CVerts;
+		emptyList = HVerts;
 	}
 	else if (CNR == 0)
 	{
-
+		usedList = HVerts;
+		emptyList = CVerts;
 	}
 	else
 	{
-
+		usedList = CVerts;
+		emptyList = HVerts;
 	}
 	HNR = 0;
-	emptyHV = 0;
-	HVcap = 0;
+
 	linAlg::transpose(orientation);
 	//--< 1.0 | calculated the position and direction of the wand
 	wand->getPosition(wPoint);
@@ -1364,16 +1366,7 @@ void DynamicMesh::smooth(Wand* wand, float rad) {
 		{
 			//--< 2.3 | add the found vertex to list of selected vertices and mark it as selected 
 			//changedVertices.push_back(i);
-			if (emptyHV = HVcap)
-			{
-				HVerts[emptyHV].index = i; emptyHV++; HVcap++;
-			}
-			else
-			{
-				tempHV = HVerts[emptyHV].index;
-				HVerts[emptyHV].index = i;
-				emptyHV = tempHV;
-			}
+
 			HVerts[HNR].index = i; HNR++;
 			vInfoArray[i].selected = 4.0f;
 			break;
