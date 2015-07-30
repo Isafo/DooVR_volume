@@ -651,21 +651,11 @@ int Oculus::runOvr() {
 							tempVec[1] = tempVecPtr[1] - startWandPos[1];
 							tempVec[2] = tempVecPtr[2] - startWandPos[2];
 
-							// calculate parallel projection
-							temp1 = (linAlg::dotProd(tempVec, wandDirection));
-							temp1 = temp1 / (linAlg::vecLength(wandDirection) * linAlg::vecLength(wandDirection));
-
-							tempVec2[0] = temp1 * wandDirection[0];
-							tempVec2[1] = temp1 * wandDirection[1];
-							tempVec2[2] = temp1 * wandDirection[2];
-
-							// calculate the orthogonal projection
-							tempVec[0] = tempVec[0] - tempVec2[0];
-							tempVec[1] = tempVec[1] - tempVec2[1];
-							tempVec[2] = tempVec[2] - tempVec2[2];
+							// calculate the dotProduct of XZ
+							temp1 = wandDirection[0] * tempVec[0] + wandDirection[2] * tempVec[2];
 
 							// if length of the orthogonal projection is shorter than MenuItems dimension/2 the wand is pointing at the tool
-							if (linAlg::vecLength(tempVec) < dim) {
+							if (temp1 > 1 - dim ) {
 								tool[i].setState(true);
 								
 								tool[activeTool].setState(false);
