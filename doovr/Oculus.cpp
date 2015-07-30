@@ -622,6 +622,8 @@ int Oculus::runOvr() {
 						modellingState[2] = 2;
 						wand->getPosition(startWandPos);
 
+						tempVec2[0] = 0.7071; tempVec2[0] = 0.0; tempVec2[0] = 0.7071;
+
 						selectingTool = true;
 					}
 					else if (modellingState[2] == 2) {
@@ -632,13 +634,16 @@ int Oculus::runOvr() {
 
 						// check if the wand has traveld far enough from its starting point to be in a item
 						if (linAlg::vecLength(tempVec) > 0.08 - tool[0].getDim()[0]) {
-							temp1 = acosf(tempVec[0]);
-							//temp2 = (2 * M_PI) / NR_OF_TOOLS;
-							temp2 = (M_PI) / NR_OF_TOOLS;
+							
+							temp1 = acosf(linAlg::dotProd(tempVec, tempVec2) / linAlg::vecLength(tempVec));
 
-							tool[activeTool].setState(false);
-							activeTool = temp1 / temp2;
-							tool[activeTool].setState(true);
+							temp2 = (tempVec2[0] * tempVec[2] - tempVec2[2] * tempVec[0]);
+							// positive angle
+							if (temp2 > 0) {
+								//fmod(temp1, (2 * M_PI / NR_OF_TOOLS));
+							}
+
+
 						}
 					}
 				}
