@@ -48,6 +48,8 @@ class DynamicMesh : public Mesh{
 	void pull(Wand* wand, float rad);
 	void push(Wand* wand, float rad);
 	void drag(Wand* wand, float rad);
+	void draw(Wand* wand, float rad);
+	void smooth(Wand* wand, float rad);
 	void markUp(Wand* wand, float rad);
 
 	void render();
