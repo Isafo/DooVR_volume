@@ -305,7 +305,7 @@ int Oculus::runOvr() {
 	float lastPos[3];
 	float lastPos2[3];
 	float wandDirection[3];
-	float prevWandDirection[3];
+	float prevWandDirection[4]; prevWandDirection[3] = 1.0f;
 	float prevMeshOrientation[16];
 	float meshOrientation[16];
 	float tempVec4[4], vVec[4];
@@ -419,7 +419,7 @@ int Oculus::runOvr() {
 	float startWandPos[3];
 
 	float* tempVecPtr;
-	float temp1;
+	float temp1, temp2;
 
 	/*! tool 0 = push/pull
 			 1 = 
@@ -616,12 +616,12 @@ int Oculus::runOvr() {
 					if (modellingState[2] == 0) {
 						modellingState[2] = 1;
 						aModellingStateIsActive++;
-						prevWandDirection[0] = 0.0f; prevWandDirection[1] = 0.0f; prevWandDirection[2] = -1.0f;
+						
 					}
 					else if (modellingState[2] == 1) {
 						modellingState[2] = 2;
-						
-						wand->getPosition(startWandPos);
+
+						prevWandDirection[0] = 0.0f; prevWandDirection[1] = 0.0f; prevWandDirection[2] = -1.0f;
 
 						// place the tool selection items
 						wand->getDirection(wandDirection); linAlg::normVec(wandDirection);
@@ -637,29 +637,51 @@ int Oculus::runOvr() {
 							tool[i].setPosition(vVec);
 							tool[i].setOrientation(wand->getOrientation());
 						}
-							
+						
+						wand->getDirection(prevWandDirection);
+
 						selectingTool = true;
 					}
 					else if (modellingState[2] == 2) {
 						float dim = tool[0].getDim()[0];
 
 						wand->getDirection(wandDirection);
-						// check if and what tool is being intersected
-						for (int i = 0; i < NR_OF_TOOLS; i++) {
-							tempVecPtr = tool[i].getPosition();
-							tempVec[0] = tempVecPtr[0] - startWandPos[0];
-							tempVec[1] = tempVecPtr[1] - startWandPos[1];
-							tempVec[2] = tempVecPtr[2] - startWandPos[2];
 
-							// calculate the dotProduct of XZ
-							temp1 = wandDirection[0] * tempVec[0] + wandDirection[2] * tempVec[2];
+						// calculate the dotProduct of XZ
+						temp1 = wandDirection[0] * prevWandDirection[0] + wandDirection[2] * prevWandDirection[2];
+						tempVec2[0] = 0.0f; tempVec2[1] = 1.0f; tempVec2[2] = 0.0f;
+						linAlg::crossProd(tempVec, prevWandDirection, wandDirection);
 
-							// if length of the orthogonal projection is shorter than MenuItems dimension/2 the wand is pointing at the tool
-							if (temp1 > 1 - dim ) {
-								tool[i].setState(true);
-								
+						// rotate the starting wand direction 90 degrees around the vector resulted in crossProd
+						linAlg::rotAxis(tempVec, 1.5707963, tempMat4);
+						linAlg::vectorMatrixMult(tempMat4, prevWandDirection, tempVec4);
+
+						temp2 = linAlg::dotProd(tempVec4, wandDirection);
+
+						// the vector is counter clockwise to the starting wand directions
+						if (temp1 > 0 && temp2 > 0) {
+							if (temp1 > 0.5) {
 								tool[activeTool].setState(false);
-								activeTool = i;
+								activeTool = 2;
+								tool[2].setState(true);
+							}
+							else {
+								tool[activeTool].setState(false);
+								activeTool = 3;
+								tool[3].setState(true);
+							}
+						}
+						// the vector is clockwise to the starting wand directions
+						else {
+							if (temp1 > 0.5) {
+								tool[activeTool].setState(false);
+								activeTool = 1;
+								tool[1].setState(true);
+							}
+							else {
+								tool[activeTool].setState(false);
+								activeTool = 0;
+								tool[0].setState(true);
 							}
 						}
 					}
