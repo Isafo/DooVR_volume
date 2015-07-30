@@ -94,13 +94,13 @@ class DynamicMesh : public Mesh{
 	//largest index in the edgeArray where values exist 
 	int edgeCap;
 	
-	sVert HVerts[10000];
+	sVert HVerts[1000000];
 	int HNR = 0;
 	//sVert* sHead; sVert* sTail;
 	//sVert* sIt = nullptr;
 	//sVert* tempSVert = nullptr;
 	sVert sMid;
-	sVert CVerts[1000];
+	sVert CVerts[1000000];
 	int CNR = 0;
 	
 	//float midPoint[3];

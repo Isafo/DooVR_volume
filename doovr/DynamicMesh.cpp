@@ -1307,7 +1307,7 @@ void DynamicMesh::smooth(Wand* wand, float rad) {
 	int index; int index2;
 
 	int tempEdge;
-	int nNR = 0;
+	int nNR;
 
 	bool success = false;
 
@@ -1352,25 +1352,25 @@ void DynamicMesh::smooth(Wand* wand, float rad) {
 			//--< 2.3 | add the found vertex to list of selected vertices and mark it as selected 
 			//changedVertices.push_back(i);
 			HVerts[HNR].index = i; HNR++;
-
 			vInfoArray[i].selected = 4.0f;
+
+
 			// 2.3 >-----------------------
 			//--< 2.4 | a first vertex has been found, the rest of the search is done through the surface 
 			for (int j = 0; j < HNR; j++) {
 				index2 = HVerts[j].index;
-				
-				nNR = 0;
-				tempVec2[0] = 0.0f; tempVec2[1] = 0.0f; tempVec2[2] = 0.0f;
+				vPoint = vertexArray[index2].xyz;
+
 				tempEdge = vInfoArray[index2].edgePtr;
+				tempVec2[0] = 0.0f; tempVec2[1] = 0.0f; tempVec2[2] = 0.0f;
+				nNR = 0;
 				do {
 					index = e[tempEdge].vertex;
 					vPoint2 = vertexArray[index].xyz;
 					
 					nNR++;
 					tempVec2[0] += vPoint2[0]; tempVec2[1] += vPoint2[1]; tempVec2[2] += vPoint2[2];
-					
 					if (vInfoArray[index].selected == 0.0f){
-
 						tempVec1[0] = vPoint2[0] - newWPoint[0];
 						tempVec1[1] = vPoint2[1] - newWPoint[1];
 						tempVec1[2] = vPoint2[2] - newWPoint[2];
@@ -1378,17 +1378,20 @@ void DynamicMesh::smooth(Wand* wand, float rad) {
 						mLength = linAlg::vecLength(tempVec1);
 
 						if (mLength < rad) {
+
 							HVerts[HNR].index = index; HNR++;
+							vInfoArray[index].selected = 4.0f;
+							linAlg::normVec(tempVec1);
+
 						}
 					}
 					tempEdge = e[e[tempEdge].nextEdge].sibling;
 
 				} while (tempEdge != vInfoArray[index2].edgePtr);
-
-				vInfoArray[index2].selected = 4.0f;
-				vertexArray[index2].xyz[0] = tempVec2[0] / nNR;
-				vertexArray[index2].xyz[1] = tempVec2[1] / nNR;
-				vertexArray[index2].xyz[2] = tempVec2[2] / nNR;
+				vPoint[0] = tempVec2[0] / nNR;
+				vPoint[1] = tempVec2[1] / nNR;
+				vPoint[2] = tempVec2[2] / nNR;
+				
 			}
 			// 2.4 >---------------------
 			success = true;
@@ -1412,7 +1415,7 @@ void DynamicMesh::updateHVerts() {
 	for (int i = 0; i < HNR; i++)
 	{
 		vert3 = HVerts[i].index;
-		vInfoArray[vert3].selected = 0;
+		vInfoArray[vert3].selected = 0.f;
 
 		if (vInfoArray[vert3].edgePtr < 0)
 		{

@@ -527,7 +527,7 @@ int Oculus::runOvr() {
 				{
 					modellingState[0] = 1;
 					//modellingMesh->pull(wand, wandRadius);
-					modellingMesh->select(wand, wandRadius);
+					//modellingMesh->select(wand, wandRadius);
 						aModellingStateIsActive++;
 					}
 				}
@@ -540,7 +540,7 @@ int Oculus::runOvr() {
 						modellingMesh->updateHVerts();
 						aModellingStateIsActive--;
 					}
-					modellingMesh->select(wand, wandRadius);
+					//modellingMesh->select(wand, wandRadius);
 				}
 				modellingMesh->updateOGLData();
 				//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
