@@ -414,7 +414,7 @@ int Oculus::runOvr() {
 	bool selectingTool = false;
 	MenuItem tool[NR_OF_TOOLS];
 	for (int i = 0; i < NR_OF_TOOLS; i++)
-		tool[i] = MenuItem(0.12 * cosf((M_PI / 6) * i), 0.12 * sinf((M_PI / 6) * i), -0.1f, 0.04, 0.04);
+		tool[i] = MenuItem(0.07 * cosf(((2 * M_PI) / NR_OF_TOOLS) * i), 0.0f, 0.07 * sinf(((2 * M_PI) / NR_OF_TOOLS) * i), 0.08, 0.08);
 
 	float startWandPos[3];
 
@@ -620,80 +620,31 @@ int Oculus::runOvr() {
 					}
 					else if (modellingState[2] == 1) {
 						modellingState[2] = 2;
-
-						prevWandDirection[0] = 0.0f; prevWandDirection[1] = 0.0f; prevWandDirection[2] = -1.0f;
-
-						// place the tool selection items
-						wand->getDirection(wandDirection); linAlg::normVec(wandDirection);
-
-						linAlg::crossProd(vVec, wandDirection, prevWandDirection);
-						linAlg::normVec(vVec);
-						linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
-
-						for (int i = 0; i < NR_OF_TOOLS; i++) {
-							tempVecPtr = tool[i].getPosition();
-							tempVec4[0] = tempVecPtr[0]; tempVec4[1] = tempVecPtr[1]; tempVec4[2] = tempVecPtr[2]; tempVec4[3] = 1.0f;
-							linAlg::vectorMatrixMult(transform, tempVec4, vVec);
-							tool[i].setPosition(vVec);
-							tool[i].setOrientation(wand->getOrientation());
-						}
-						
-						wand->getDirection(prevWandDirection);
+						wand->getPosition(startWandPos);
 
 						selectingTool = true;
 					}
 					else if (modellingState[2] == 2) {
-						float dim = tool[0].getDim()[0];
+						// check what direction the wand been 
+						tempVec[0] = wandPos[0] - startWandPos[0];
+						tempVec[2] = wandPos[2] - startWandPos[2];
+						tempVec[1] = 0.0;
 
-						wand->getDirection(wandDirection);
+						// check if the wand has traveld far enough from its starting point to be in a item
+						if (linAlg::vecLength(tempVec) > 0.08 - tool[0].getDim()[0]) {
+							temp1 = acosf(tempVec[0]);
+							//temp2 = (2 * M_PI) / NR_OF_TOOLS;
+							temp2 = (M_PI) / NR_OF_TOOLS;
 
-						// calculate the dotProduct of XZ
-						temp1 = wandDirection[0] * prevWandDirection[0] + wandDirection[2] * prevWandDirection[2];
-						tempVec2[0] = 0.0f; tempVec2[1] = 1.0f; tempVec2[2] = 0.0f;
-						linAlg::crossProd(tempVec, prevWandDirection, wandDirection);
-
-						// rotate the starting wand direction 90 degrees around the vector resulted in crossProd
-						linAlg::rotAxis(tempVec, 1.5707963, tempMat4);
-						linAlg::vectorMatrixMult(tempMat4, prevWandDirection, tempVec4);
-
-						temp2 = linAlg::dotProd(tempVec4, wandDirection);
-
-						// the vector is counter clockwise to the starting wand directions
-						if (temp1 > 0 && temp2 > 0) {
-							if (temp1 > 0.5) {
-								tool[activeTool].setState(false);
-								activeTool = 2;
-								tool[2].setState(true);
-							}
-							else {
-								tool[activeTool].setState(false);
-								activeTool = 3;
-								tool[3].setState(true);
-							}
-						}
-						// the vector is clockwise to the starting wand directions
-						else {
-							if (temp1 > 0.5) {
-								tool[activeTool].setState(false);
-								activeTool = 1;
-								tool[1].setState(true);
-							}
-							else {
-								tool[activeTool].setState(false);
-								activeTool = 0;
-								tool[0].setState(true);
-							}
+							tool[activeTool].setState(false);
+							activeTool = temp1 / temp2;
+							tool[activeTool].setState(true);
 						}
 					}
 				}
 				else {
 					if (modellingState[2] == 3) {
 						modellingState[2] = 0;
-						for (int i = 0; i < NR_OF_TOOLS; i++){
-							tempVec[0] = wandRadius * cosf(((M_PI / 6)* i) + M_PI / 4); tempVec[1] = wandRadius * sinf(((M_PI / 6)* i) + M_PI / 4);  tempVec[2] = 0.0f;
-							tool[i].setPosition(tempVec);
-						}
-							
 						selectingTool = false;
 					}
 					else if (modellingState[2] != 0) {
@@ -959,7 +910,7 @@ int Oculus::runOvr() {
 							MVstack.pop();
 							if (selectingTool) {
 								MVstack.push();
-									MVstack.translate(wandPos);
+									MVstack.translate(startWandPos);
 									// render tool select GUI
 									for (int i = 0; i < NR_OF_TOOLS; i++) {
 
@@ -975,8 +926,6 @@ int Oculus::runOvr() {
 										glBindTexture(GL_TEXTURE_2D, modellingButtonTex[0]->getTextureID());
 										MVstack.push();
 											MVstack.translate(tool[i].getPosition());
-											MVstack.multiply(tool[i].getOrientation());
-											MVstack.rotX(-1.57079);
 											glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 											tool[i].render();
 										MVstack.pop();
