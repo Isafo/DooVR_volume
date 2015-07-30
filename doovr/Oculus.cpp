@@ -416,7 +416,8 @@ int Oculus::runOvr() {
 	for (int i = 0; i < NR_OF_TOOLS; i++)
 		tool[i] = MenuItem(0.12 * cosf((M_PI / 6) * i), 0.12 * sinf((M_PI / 6) * i), -0.1f, 0.04, 0.04);
 
-	float* prevWandOrientation;
+	float startWandPos[3];
+
 	float* tempVecPtr;
 	float temp1;
 
@@ -538,8 +539,7 @@ int Oculus::runOvr() {
 						modellingMesh->select(wand, wandRadius);
 						modellingMesh->pull(wand, wandRadius);
 					}
-					else if (modellingState[0] == 0)
-					{
+					else if (modellingState[0] == 0) {
 						modellingState[0] = 1;
 						//modellingMesh->pull(wand, wandRadius);
 						modellingMesh->select(wand, wandRadius);
@@ -576,8 +576,7 @@ int Oculus::runOvr() {
 					else if (modellingState[1] == 1) {
 						modellingState[1] = 2;
 					}
-					else if (modellingState[1] == 2)
-					{
+					else if (modellingState[1] == 2) {
 						//	move mesh
 						linAlg::calculateVec(wandPos, lastPos, moveVec);
 						moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
@@ -621,86 +620,49 @@ int Oculus::runOvr() {
 					}
 					else if (modellingState[2] == 1) {
 						modellingState[2] = 2;
+						
+						wand->getPosition(startWandPos);
+
+						// place the tool selection items
 						wand->getDirection(wandDirection); linAlg::normVec(wandDirection);
 
 						linAlg::crossProd(vVec, wandDirection, prevWandDirection);
 						linAlg::normVec(vVec);
 						linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
 
-						for (int i = 0; i < 4; i++)
-						{
+						for (int i = 0; i < NR_OF_TOOLS; i++) {
 							tempVecPtr = tool[i].getPosition();
 							tempVec4[0] = tempVecPtr[0]; tempVec4[1] = tempVecPtr[1]; tempVec4[2] = tempVecPtr[2]; tempVec4[3] = 1.0f;
 							linAlg::vectorMatrixMult(transform, tempVec4, vVec);
 							tool[i].setPosition(vVec);
-
-						}
-						
-						
-			/*			if (wandDirection[1] > wandDirection[2]){
-							tempVec[0] = 0.0f; tempVec[1] = 0.0f; tempVec[2] = 1.0f;
-						}
-						else{
-							tempVec[0] = 0.0f; tempVec[1] = 1.0f; tempVec[2] = 0.0f;
-						}
-							
-						linAlg::crossProd(tempVec2, wandDirection, tempVec); linAlg::normVec(tempVec2);
-						tempVec2[0] = tempVec2[0] * 0.04f + wandDirection[0] * 0.03f;
-						tempVec2[1] = tempVec2[1] * 0.04f + wandDirection[1] * 0.03f;
-						tempVec2[2] = tempVec2[2] * 0.04f + wandDirection[2] * 0.03f;
-						tool[0].setPosition(tempVec2);
-
-						linAlg::crossProd(tempVec2, tempVec, wandDirection); linAlg::normVec(tempVec2);
-						tempVec2[0] = tempVec2[0] * 0.04f + wandDirection[0] * 0.03f;
-						tempVec2[1] = tempVec2[1] * 0.04f + wandDirection[1] * 0.03f;
-						tempVec2[2] = tempVec2[2] * 0.04f + wandDirection[2] * 0.03f;
-						tool[1].setPosition(tempVec2);
-
-						tempVec[0] = wandDirection[0] + 1.0f; tempVec[1] = wandDirection[1]; tempVec[2] = wandDirection[2];
-						linAlg::crossProd(tempVec2, wandDirection, tempVec); linAlg::normVec(tempVec2);
-						tempVec2[0] = tempVec2[0] * 0.04f + wandDirection[0] * 0.03f;
-						tempVec2[1] = tempVec2[1] * 0.04f + wandDirection[1] * 0.03f;
-						tempVec2[2] = tempVec2[2] * 0.04f + wandDirection[2] * 0.03f;
-						tool[2].setPosition(tempVec2);
-
-						tempVec2[0] =  wandDirection[0] * 0.03f;
-						tempVec2[1] =  wandDirection[1] * 0.03f;
-						tempVec2[2] =  wandDirection[2] * 0.03f;
-						tool[3].setPosition(tempVec2);*/
-
-			
-
-						// create and render tool gui
-						for (int i = 0; i < NR_OF_TOOLS; i++) {
 							tool[i].setOrientation(wand->getOrientation());
 						}
 							
-					
 						selectingTool = true;
 					}
 					else if (modellingState[2] == 2) {
 						float dim = tool[0].getDim()[0];
 
 						wand->getDirection(wandDirection);
-						// check what tool is being intersected
+						// check if and what tool is being intersected
 						for (int i = 0; i < NR_OF_TOOLS; i++) {
 							tempVecPtr = tool[i].getPosition();
-							tempVec[0] = tempVecPtr[0] - wandPos[0]; 
-							tempVec[1] = tempVecPtr[1] - wandPos[1];
-							tempVec[2] = tempVecPtr[2] - wandPos[2];
+							tempVec[0] = tempVecPtr[0] - startWandPos[0];
+							tempVec[1] = tempVecPtr[1] - startWandPos[1];
+							tempVec[2] = tempVecPtr[2] - startWandPos[2];
 
 							// calculate parallel projection
 							temp1 = (linAlg::dotProd(tempVec, wandDirection));
 							temp1 = temp1 / (linAlg::vecLength(wandDirection) * linAlg::vecLength(wandDirection));
 
-							moveVec[0] = temp1 * wandDirection[0];
-							moveVec[1] = temp1 * wandDirection[1];
-							moveVec[2] = temp1 * wandDirection[2];
+							tempVec2[0] = temp1 * wandDirection[0];
+							tempVec2[1] = temp1 * wandDirection[1];
+							tempVec2[2] = temp1 * wandDirection[2];
 
 							// calculate the orthogonal projection
-							tempVec[0] = tempVec[0] - moveVec[0];
-							tempVec[1] = tempVec[1] - moveVec[1];
-							tempVec[2] = tempVec[2] - moveVec[2];
+							tempVec[0] = tempVec[0] - tempVec2[0];
+							tempVec[1] = tempVec[1] - tempVec2[1];
+							tempVec[2] = tempVec[2] - tempVec2[2];
 
 							// if length of the orthogonal projection is shorter than MenuItems dimension/2 the wand is pointing at the tool
 							if (linAlg::vecLength(tempVec) < dim) {
@@ -988,6 +950,17 @@ int Oculus::runOvr() {
 									MVstack.translate(wandPos);
 									// render tool select GUI
 									for (int i = 0; i < NR_OF_TOOLS; i++) {
+
+										if (tool[i].getState()) {
+											glUseProgram(bloomShader.programID);
+											glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+										}
+										else {
+											glUseProgram(menuShader.programID);
+											glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+										}
+
+										glBindTexture(GL_TEXTURE_2D, modellingButtonTex[0]->getTextureID());
 										MVstack.push();
 											MVstack.translate(tool[i].getPosition());
 											MVstack.multiply(tool[i].getOrientation());
@@ -1025,8 +998,7 @@ int Oculus::runOvr() {
 					else if (modellingState[1] == 1) {
 						modellingState[1] = 2;
 					}
-					else if (modellingState[1] == 2)
-					{
+					else if (modellingState[1] == 2) {
 						//	move mesh
 						linAlg::calculateVec(wandPos, lastPos, moveVec);
 						moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
@@ -1072,6 +1044,13 @@ int Oculus::runOvr() {
 					// check if a thread is running, if so wait for it before close
 
 					if (loaderMeshLock.try_lock() && loaderMeshLock.try_lock()) {
+						if (th1.joinable()) {
+							th1.join();
+						}
+						if (th2.joinable()) {
+							th2.join();
+						}
+
 						glfwSetWindowShouldClose(l_Window, GL_TRUE);
 					} else if (!loaderMeshLock.try_lock() && !meshLock.try_lock()) {
 						th1.join();
@@ -1081,9 +1060,6 @@ int Oculus::runOvr() {
 						th1.join();
 						glfwSetWindowShouldClose(l_Window, GL_TRUE);
 					} else if (!meshLock.try_lock()) {
-						th1.join();
-						glfwSetWindowShouldClose(l_Window, GL_TRUE);
-					} else {
 						th2.join();
 						glfwSetWindowShouldClose(l_Window, GL_TRUE);
 					}
