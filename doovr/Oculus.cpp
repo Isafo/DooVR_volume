@@ -463,8 +463,10 @@ int Oculus::runOvr() {
 	GLint locationMeshLP2 = glGetUniformLocation(meshShader.programID, "lightPos2");
 
 	GLint locationWIN_SCALE = glGetUniformLocation(meshWire.programID, "WIN_SCALE");
-	GLint locationWireMV = glGetUniformLocation(meshShader.programID, "MV");
-	GLint locationWireP = glGetUniformLocation(meshShader.programID, "P");
+	GLint locationWireMV = glGetUniformLocation(meshWire.programID, "MV");
+	GLint locationWireP = glGetUniformLocation(meshWire.programID, "P");
+	GLint locationWireLP = glGetUniformLocation(meshWire.programID, "lightPos");
+	GLint locationWireLP2 = glGetUniformLocation(meshWire.programID, "lightPos2");
 
 	// 2.7 - Scene objects and variables \___________________________________________________________________________________________________
 
@@ -823,6 +825,8 @@ int Oculus::runOvr() {
 								MVstack.translate(modellingMesh->getPosition());
 								MVstack.multiply(modellingMesh->getOrientation());
 								glUniformMatrix4fv(locationWireMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								glUniform4fv(locationWireLP, 1, LP);
+								glUniform4fv(locationWireLP2, 1, lPosTemp);
 								glUniform2iv(locationWIN_SCALE, 1, WIN_SCALE);
 
 								if (lines) {
