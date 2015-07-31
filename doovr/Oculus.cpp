@@ -537,7 +537,8 @@ int Oculus::runOvr() {
 					}
 					else if (modellingState[0] != 0) {
 						modellingState[0] = 3;
-						modellingMesh->updateHVerts();
+						//modellingMesh->updateHVerts();
+						modellingMesh->deSelect();
 						aModellingStateIsActive--;
 					}
 					//modellingMesh->select(wand, wandRadius);

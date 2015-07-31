@@ -43,6 +43,7 @@ class DynamicMesh : public Mesh{
 	~DynamicMesh();
 
 	void select(Wand* wand, float rad);
+	void deSelect();
 
 	//dilate/erode based modelling
 	void pull(Wand* wand, float rad);
