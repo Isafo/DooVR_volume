@@ -638,12 +638,22 @@ int Oculus::runOvr() {
 							temp1 = acosf(linAlg::dotProd(tempVec, tempVec2) / linAlg::vecLength(tempVec));
 
 							temp2 = (tempVec2[0] * tempVec[2] - tempVec2[2] * tempVec[0]);
-							// positive angle
+							
 							if (temp2 > 0) {
-								//fmod(temp1, (2 * M_PI / NR_OF_TOOLS));
+								// positive angle
+								temp2 = floor(temp1 / (2 * M_PI / NR_OF_TOOLS));
+								tool[activeTool].setState(false);
+								activeTool = temp2;
+								tool[activeTool].setState(true);
 							}
-
-
+							else {
+								// negative angle
+								temp1 = 2 * M_PI - temp1;
+								temp2 = floor(temp1 / (2 * M_PI / NR_OF_TOOLS));
+								tool[activeTool].setState(false);
+								activeTool = temp2;
+								tool[activeTool].setState(true);
+							}
 						}
 					}
 				}
