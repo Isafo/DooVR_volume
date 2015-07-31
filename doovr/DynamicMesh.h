@@ -1,8 +1,12 @@
+#pragma once
 #include "Utilities.h"
 #include "linAlg.h"
 #include "Mesh.h"
 #include "Wand.h"
 #include <vector>
+
+#ifndef DYNAMICMESH_H
+#define DYNAMICMESH_H
 
 struct dBufferData {
 	GLfloat x;
@@ -35,8 +39,12 @@ struct vInfo {
 	GLfloat selected = 0;
 };
 
+#endif
+
 //! A class representing a modifiable 3D mesh 
 class DynamicMesh : public Mesh{
+	friend class Smooth;
+
   public:
 	DynamicMesh();
 	DynamicMesh(std::string fileName);

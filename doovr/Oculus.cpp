@@ -19,6 +19,7 @@
 #include "LineCube.h"
 #include "LineSphere.h"
 #include "Line.h"
+#include "Smooth.h"
 
 #include <thread>
 #include <mutex>
@@ -465,6 +466,7 @@ int Oculus::runOvr() {
 	GLint locationLP = glGetUniformLocation(sceneShader.programID, "lightPos");
 	GLint locationP = glGetUniformLocation(sceneShader.programID, "P"); //perspective matrix
 	GLint locationMV = glGetUniformLocation(sceneShader.programID, "MV"); //modelview matrix
+//	GLint* MVptr = &locationMV;
 	GLint locationTex = glGetUniformLocation(sceneShader.programID, "tex"); //texcoords
 
 	GLint locationMeshMV = glGetUniformLocation(meshShader.programID, "MV"); //modelview matrix
@@ -476,6 +478,7 @@ int Oculus::runOvr() {
 
 	// 2.7.1 - Matrix stack and static scene objects >---------------------------------------------------------------------------------------
 	MatrixStack MVstack; MVstack.init();
+	MatrixStack* MVptr = &MVstack;
 	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70); TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
 	MenuItem wandSizePanel(0.2f, -0.25f, -0.12f, 0.10f, 0.03f);
@@ -507,6 +510,8 @@ int Oculus::runOvr() {
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
 
+	Smooth smoothTool(modellingMesh, wand);
+
 	//=======================================================================================================================================
 	//Render loop
 	//=======================================================================================================================================
@@ -534,13 +539,18 @@ int Oculus::runOvr() {
 			
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 2) {
+					smoothTool.deSelect();
 					//modellingMesh->select(wand, wandRadius);
-					modellingMesh->smooth(wand, wandRadius);
+					//modellingMesh->smooth(wand, wandRadius);
+					smoothTool.firstSelect(modellingMesh, wand);
+					
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
+					smoothTool.deSelect();
 					//modellingMesh->select(wand, wandRadius);
-					modellingMesh->smooth(wand, wandRadius);
+					//modellingMesh->smooth(wand, wandRadius);
+					smoothTool.firstSelect(modellingMesh, wand);
 				}
 				else if (modellingState[0] == 0)
 				{
@@ -557,7 +567,9 @@ int Oculus::runOvr() {
 					else if (modellingState[0] != 0) {
 						modellingState[0] = 3;
 						//modellingMesh->updateHVerts();
-						modellingMesh->deSelect();
+						//modellingMesh->deSelect();
+						smoothTool.deSelect();
+						
 						aModellingStateIsActive--;
 					}
 					//modellingMesh->select(wand, wandRadius);
@@ -921,7 +933,7 @@ int Oculus::runOvr() {
 								MVstack.pop();
 								//render brush------------------------
 
-								MVstack.push();
+								/*MVstack.push();
 									translateVector[0] = 0.0f;
 									translateVector[1] = 0.0f;
 									translateVector[2] = 1.0f;
@@ -935,7 +947,8 @@ int Oculus::runOvr() {
 									MVstack.translate(brush.getPosition());
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 									brush.render();
-								MVstack.pop();
+								MVstack.pop();*/
+								smoothTool.render(MVptr, locationMV);
 							MVstack.pop();
 							if (selectingTool) {
 								MVstack.push();

@@ -1,14 +1,18 @@
+#pragma once
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "Utilities.h"
 
 // A linked list implementing a matrix stack
+
+#ifndef MATRIXSTACK_H
+#define MATRIXSTACK_H
 struct Matrix {
   float m[16];
   Matrix *previous;
 };
-
+#endif
 class MatrixStack {
 
 public:

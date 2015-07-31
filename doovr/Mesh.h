@@ -14,6 +14,7 @@ struct triangle {
 
 class Mesh
 {
+
 public:
 	Mesh();
 	~Mesh();
@@ -46,5 +47,7 @@ protected:
 	GLuint vao;          // Vertex array object, the main handle for geometry
 	GLuint vertexbuffer; // Buffer ID to bind to GL_ARRAY_BUFFER
 	GLuint indexbuffer;  // Buffer ID to bind to GL_ELEMENT_ARRAY_BUFFER
+
+	friend class Smooth;
 };
 
