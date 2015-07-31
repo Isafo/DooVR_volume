@@ -416,6 +416,8 @@ int Oculus::runOvr() {
 	for (int i = 0; i < NR_OF_TOOLS; i++)
 		tool[i] = MenuItem(0.07 * cosf(((2 * M_PI) / NR_OF_TOOLS) * i), 0.0f, 0.07 * sinf(((2 * M_PI) / NR_OF_TOOLS) * i), 0.08, 0.08);
 
+
+
 	float startWandPos[3];
 
 	float* tempVecPtr;
@@ -425,7 +427,7 @@ int Oculus::runOvr() {
 			 1 = 
 	*/
 	int activeTool = 0;
-
+	tool[activeTool].setState(true);
 	// 2.5.2 - variables used in Load Mode >------------------------------------------------------------------------------------------------
 	const int NR_OF_LOAD_BUTTONS = 2;
 	/*! 0 = loadFile button
@@ -616,13 +618,12 @@ int Oculus::runOvr() {
 					if (modellingState[2] == 0) {
 						modellingState[2] = 1;
 						aModellingStateIsActive++;
-						
 					}
 					else if (modellingState[2] == 1) {
 						modellingState[2] = 2;
 						wand->getPosition(startWandPos);
 
-						tempVec2[0] = 0.7071; tempVec2[0] = 0.0; tempVec2[0] = 0.7071;
+						tempVec2[0] = 0.7071; tempVec2[1] = 0.0; tempVec2[2] = 0.7071;
 
 						selectingTool = true;
 					}
@@ -632,10 +633,12 @@ int Oculus::runOvr() {
 						tempVec[2] = wandPos[2] - startWandPos[2];
 						tempVec[1] = 0.0;
 
+						
+
 						// check if the wand has traveld far enough from its starting point to be in a item
-						if (linAlg::vecLength(tempVec) > 0.08 - tool[0].getDim()[0]) {
+						if (linAlg::vecLength(tempVec) > 0.03) {
 							
-							temp1 = acosf(linAlg::dotProd(tempVec, tempVec2) / linAlg::vecLength(tempVec));
+							temp1 = acosf(linAlg::dotProd(tempVec, tempVec2) / (linAlg::vecLength(tempVec) * linAlg::vecLength(tempVec2)));
 
 							temp2 = (tempVec2[0] * tempVec[2] - tempVec2[2] * tempVec[0]);
 							
