@@ -446,7 +446,8 @@ int Oculus::runOvr() {
 	bloomShader.createShader("bloomV.glsl", "bloomF.glsl");
 	Shader menuShader;
 	menuShader.createShader("menuV.glsl", "menuF.glsl");
-
+	Shader flatShader;
+	flatShader.createShader("meshFlatV.glsl", "meshFlatF.glsl");
 	Shader meshWire;
 	meshWire.createShader("wireframeV.glsl", "wireframeF.glsl", "wireframeG.glsl");
 
@@ -467,6 +468,12 @@ int Oculus::runOvr() {
 	GLint locationWireP = glGetUniformLocation(meshWire.programID, "P");
 	GLint locationWireLP = glGetUniformLocation(meshWire.programID, "lightPos");
 	GLint locationWireLP2 = glGetUniformLocation(meshWire.programID, "lightPos2");
+
+	GLint locationFlatMV = glGetUniformLocation(flatShader.programID, "MV"); //modelview matrix
+	GLint locationFlatP = glGetUniformLocation(flatShader.programID, "P"); //perspective matrix
+	GLint locationFlatLP = glGetUniformLocation(flatShader.programID, "lightPos");
+	GLint locationFlatLP2 = glGetUniformLocation(flatShader.programID, "lightPos2");
+
 
 	// 2.7 - Scene objects and variables \___________________________________________________________________________________________________
 
@@ -818,16 +825,16 @@ int Oculus::runOvr() {
 								MVstack.pop();
 							}
 							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
-							glUseProgram(meshWire.programID);
-							glUniformMatrix4fv(locationWireP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							glUseProgram(flatShader.programID);
+							glUniformMatrix4fv(locationFlatP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							MVstack.push();
 								MVstack.translate(modellingMesh->getPosition());
 								MVstack.multiply(modellingMesh->getOrientation());
-								glUniformMatrix4fv(locationWireMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glUniform4fv(locationWireLP, 1, LP);
-								glUniform4fv(locationWireLP2, 1, lPosTemp);
-								glUniform2iv(locationWIN_SCALE, 1, WIN_SCALE);
+								glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								glUniform4fv(locationFlatLP, 1, LP);
+								glUniform4fv(locationFlatLP2, 1, lPosTemp);
+								//glUniform2iv(locationWIN_SCALE, 1, WIN_SCALE);
 
 								if (lines) {
 									glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
