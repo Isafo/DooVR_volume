@@ -623,7 +623,7 @@ int Oculus::runOvr() {
 						modellingState[2] = 2;
 						wand->getPosition(startWandPos);
 
-						tempVec2[0] = 0.7071; tempVec2[1] = 0.0; tempVec2[2] = 0.7071;
+						tempVec2[0] = 0.7071; tempVec2[1] = 0.0; tempVec2[2] = -0.7071;
 
 						selectingTool = true;
 					}
@@ -633,7 +633,6 @@ int Oculus::runOvr() {
 						tempVec[2] = wandPos[2] - startWandPos[2];
 						tempVec[1] = 0.0;
 
-						
 
 						// check if the wand has traveld far enough from its starting point to be in a item
 						if (linAlg::vecLength(tempVec) > 0.03) {
