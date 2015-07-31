@@ -18,14 +18,14 @@ void main ()
 	vec3 Normal = normalize(mat3(MV) * VertexNormal);
 	vec3 LightIntensity;
 	//vec3 LightIntensity = vec3(0.58039f,0.423529f, 0.282352f);
-	//if(Selected > 1.0f){
+	if(Selected > 3.0f){
 		//LightIntensity = vec3(0.125f, 0.230468f, 0.69921f);
 		LightIntensity = vec3(0.69921f + abs(Selected), 0.230468f ,0.125f);
-	//} else {
-	//	LightIntensity = vec3(0.69921f, 0.230468f, 0.125f);
-	//}
+	} 
+	else {
+		LightIntensity = vec3(0.69921f, 0.230468f, 0.125f);
+	}
 	
-
 	vec3 Kd = vec3(0.8f, 0.8f, 0.8f);                // Diffuse reflectivity
 	vec3 Ka = vec3(0.1f, 0.1f, 0.1f);                // Ambient reflectivity
 	vec3 Ks = vec3( 0.7f, 0.7f, 0.7f);				 // Specular reflectivity

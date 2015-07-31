@@ -69,6 +69,8 @@ int Oculus::runOvr() {
 	OVR::Sizei g_RenderTargetSize;
 	//ovrVector3f g_CameraPosition;
 
+	int WIN_SCALE[2];
+
 	ovr_Initialize();
 	int det;
 	// Check for attached head mounted display...
@@ -132,6 +134,9 @@ int Oculus::runOvr() {
 
 		l_ClientSize.w = hmd->Resolution.w; // 1920 for DK2...
 		l_ClientSize.h = hmd->Resolution.h; // 1080 for DK2...
+
+		WIN_SCALE[0] = hmd->Resolution.w;
+		WIN_SCALE[1] = hmd->Resolution.h;
 	}
 
 	l_Window = glfwCreateWindow(l_ClientSize.w, l_ClientSize.h, "GLFW Oculus Rift Test", l_Monitor, NULL);
@@ -442,6 +447,10 @@ int Oculus::runOvr() {
 	Shader menuShader;
 	menuShader.createShader("menuV.glsl", "menuF.glsl");
 
+	Shader meshWire;
+	meshWire.createShader("wireframeV.glsl", "wireframeF.glsl", "wireframeG.glsl");
+
+
 	// 2.6.1 - Uniform variables >-----------------------------------------------------------------------------------------------------------
 	GLint locationLP = glGetUniformLocation(sceneShader.programID, "lightPos");
 	GLint locationP = glGetUniformLocation(sceneShader.programID, "P"); //perspective matrix
@@ -452,6 +461,10 @@ int Oculus::runOvr() {
 	GLint locationMeshP = glGetUniformLocation(meshShader.programID, "P"); //perspective matrix
 	GLint locationMeshLP = glGetUniformLocation(meshShader.programID, "lightPos");
 	GLint locationMeshLP2 = glGetUniformLocation(meshShader.programID, "lightPos2");
+
+	GLint locationWIN_SCALE = glGetUniformLocation(meshWire.programID, "WIN_SCALE");
+	GLint locationWireMV = glGetUniformLocation(meshShader.programID, "MV");
+	GLint locationWireP = glGetUniformLocation(meshShader.programID, "P");
 
 	// 2.7 - Scene objects and variables \___________________________________________________________________________________________________
 
@@ -772,7 +785,7 @@ int Oculus::runOvr() {
 
 							// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
 							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							MVstack.push();
 								MVstack.translate(title.getPosition());
@@ -787,11 +800,11 @@ int Oculus::runOvr() {
 
 								if (modellingButton[i]->getState()) {
 									glUseProgram(bloomShader.programID);
-									glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 								}
 								else {
 									glUseProgram(menuShader.programID);
-									glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 								}
 
 								MVstack.push();
@@ -803,15 +816,14 @@ int Oculus::runOvr() {
 								MVstack.pop();
 							}
 							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
-							glUseProgram(meshShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							glUseProgram(meshWire.programID);
+							glUniformMatrix4fv(locationWireP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							MVstack.push();
 								MVstack.translate(modellingMesh->getPosition());
 								MVstack.multiply(modellingMesh->getOrientation());
-								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glUniform4fv(locationMeshLP, 1, LP);
-								glUniform4fv(locationMeshLP2, 1, lPosTemp);
+								glUniformMatrix4fv(locationWireMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								glUniform2iv(locationWIN_SCALE, 1, WIN_SCALE);
 
 								if (lines) {
 									glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -821,6 +833,7 @@ int Oculus::runOvr() {
 								else {
 									modellingMesh->render();
 								}
+
 							MVstack.pop();
 
 							glUseProgram(sceneShader.programID);
@@ -1090,7 +1103,7 @@ int Oculus::runOvr() {
 
 							// 4.4.3 - RENDER title >---------------------------------------------------------------------------------------------------
 							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							MVstack.push();
 								MVstack.translate(title.getPosition());
@@ -1106,11 +1119,11 @@ int Oculus::runOvr() {
 
 								if (loadButton[i]->getState()) {
 									glUseProgram(bloomShader.programID);
-									glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 								}
 								else {
 									glUseProgram(menuShader.programID);
-									glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 								}
 
 								MVstack.push();
@@ -1251,7 +1264,7 @@ int Oculus::runOvr() {
 
 							// 5.3.3 Render title >----------------------------------------------------------------------------------------------------
 							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							MVstack.push();
 								MVstack.translate(title.getPosition());
@@ -1267,11 +1280,11 @@ int Oculus::runOvr() {
 
 								if (modellingButton[i]->getState()) {
 									glUseProgram(bloomShader.programID);
-									glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 								}
 								else {
 									glUseProgram(menuShader.programID);
-									glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 								}
 
 								MVstack.push();
@@ -1304,6 +1317,9 @@ int Oculus::runOvr() {
 								else {
 									modellingMesh->render();
 								}
+
+
+
 							MVstack.pop();
 
 							glUseProgram(sceneShader.programID);
