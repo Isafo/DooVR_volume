@@ -226,7 +226,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	float tempP1[3];
 	sVert tempSV;
 
-	std::vector<sVert> changedVertices;
+	std::vector<int> changedVertices;
 	changedVertices.reserve(10000);
 
 	nrofVerts = 6; vertexCap = 5;
@@ -406,8 +406,8 @@ void DynamicMesh::sphereSubdivide(float rad) {
 				vertexArray[j].xyz[1] = vertexArray[j].xyz[1] * stepRad;
 				vertexArray[j].xyz[2] = vertexArray[j].xyz[2] * stepRad;
 
-				tempSV.index = j;
-				changedVertices.push_back(tempSV);
+				//tempSV.index = j;
+				changedVertices.push_back(j);
 				vInfoArray[j].selected = 4.0f;
 			}
 		}
@@ -430,8 +430,8 @@ void DynamicMesh::sphereSubdivide(float rad) {
 				vertexArray[j].xyz[1] = vertexArray[j].xyz[1] * stepRad;
 				vertexArray[j].xyz[2] = vertexArray[j].xyz[2] * stepRad;
 
-				tempSV.index = j;
-				changedVertices.push_back(tempSV);
+				//tempSV.index = j;
+				changedVertices.push_back(j);
 				vInfoArray[j].selected = 4.0f;
 			}
 		}
@@ -1475,7 +1475,7 @@ void DynamicMesh::smooth(Wand* wand, float rad) {
 	}
 		
 
-	updateArea(usedList, usedSize);
+	//updateArea(usedList, usedSize);
 	// 2.0 >----------------------
 }
 
@@ -1656,7 +1656,7 @@ void DynamicMesh::updateHVerts() {
 	}
 }
 
-void DynamicMesh::updateArea(sVert* changeList, int listSize) {
+void DynamicMesh::updateArea(int* changeList, int listSize) {
 
 	static float* vPoint1; static float* vPoint2; static float* vPoint3; static float* vPoint4;
 	static float tempVec1[3], tempVec2[3], tempVec3[3];
@@ -1669,7 +1669,7 @@ void DynamicMesh::updateArea(sVert* changeList, int listSize) {
 	//sIt = sHead->next;
 	for (int i = 0; i < listSize; i++)
 	{
-		vert3 = changeList[i].index;
+		vert3 = changeList[i];
 		vInfoArray[vert3].selected = vInfoArray[vert3].selected - floor(vInfoArray[vert3].selected);
 		
 		if (vInfoArray[vert3].edgePtr < 0)

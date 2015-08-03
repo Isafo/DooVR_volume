@@ -1,5 +1,5 @@
 #pragma once
-#include "Brush.h"
+#include "nPolygon.h"
 #include "DynamicMesh.h"
 #include "Wand.h"
 #include "MatrixStack.h"
@@ -12,15 +12,17 @@ public:
 	~Tool();
 	
 	virtual void render(MatrixStack* MVstack, GLint locationMV) = 0;
+	virtual void renderIntersection(MatrixStack* MVstack, GLint locationMV) = 0;
 
 	virtual void firstSelect(DynamicMesh* mesh, Wand* wand) = 0;
 	virtual void moveVertices(DynamicMesh* mesh, Wand* wand) = 0;
 	virtual void deSelect() = 0;
 protected:
-	Brush* toolBrush;
 
-	int* currentlySelectedVertices;
-	int currentlySelectedSize;
+	//Polygon* toolBrush;
+	nPolygon* toolBrush;
+	int* selectedVertices;
+	int selectedSize;
 
 	const int MAX_SELECTED = 10000;
 };

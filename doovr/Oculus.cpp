@@ -20,6 +20,7 @@
 #include "LineSphere.h"
 #include "Line.h"
 #include "Smooth.h"
+#include "Push.h"
 
 #include <thread>
 #include <mutex>
@@ -511,6 +512,10 @@ int Oculus::runOvr() {
 	StaticMesh* loaderMesh;
 
 	Smooth smoothTool(modellingMesh, wand);
+	Push pushTool(modellingMesh, wand);
+
+	Tool* currentTool;
+	currentTool = &pushTool;
 
 	//=======================================================================================================================================
 	//Render loop
@@ -539,18 +544,18 @@ int Oculus::runOvr() {
 			
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 2) {
-					smoothTool.deSelect();
+					//currentTool->deSelect();
 					//modellingMesh->select(wand, wandRadius);
 					//modellingMesh->smooth(wand, wandRadius);
-					smoothTool.firstSelect(modellingMesh, wand);
+					currentTool->moveVertices(modellingMesh, wand);
 					
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
-					smoothTool.deSelect();
+					currentTool->deSelect();
 					//modellingMesh->select(wand, wandRadius);
 					//modellingMesh->smooth(wand, wandRadius);
-					smoothTool.firstSelect(modellingMesh, wand);
+					currentTool->firstSelect(modellingMesh, wand);
 				}
 				else if (modellingState[0] == 0)
 				{
@@ -568,11 +573,13 @@ int Oculus::runOvr() {
 						modellingState[0] = 3;
 						//modellingMesh->updateHVerts();
 						//modellingMesh->deSelect();
-						smoothTool.deSelect();
+						currentTool->deSelect();
 						
 						aModellingStateIsActive--;
 					}
 					//modellingMesh->select(wand, wandRadius);
+					currentTool->deSelect();
+					currentTool->firstSelect(modellingMesh, wand);
 				}
 				modellingMesh->updateOGLData();
 				//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
@@ -904,6 +911,7 @@ int Oculus::runOvr() {
 								glUniform4fv(locationMeshLP, 1, LP);
 								glUniform4fv(locationMeshLP2, 1, lPosTemp);
 
+								
 								if (lines) {
 									glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 									modellingMesh->render();
@@ -912,6 +920,9 @@ int Oculus::runOvr() {
 								else {
 									modellingMesh->render();
 								}
+
+								currentTool->renderIntersection(MVptr, locationMeshMV);
+
 							MVstack.pop();
 
 							glUseProgram(sceneShader.programID);
@@ -948,7 +959,7 @@ int Oculus::runOvr() {
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 									brush.render();
 								MVstack.pop();*/
-								smoothTool.render(MVptr, locationMV);
+								currentTool->render(MVptr, locationMV);
 							MVstack.pop();
 							if (selectingTool) {
 								MVstack.push();

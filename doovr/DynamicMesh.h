@@ -44,6 +44,7 @@ struct vInfo {
 //! A class representing a modifiable 3D mesh 
 class DynamicMesh : public Mesh{
 	friend class Smooth;
+	friend class Push;
 
   public:
 	DynamicMesh();
@@ -133,7 +134,7 @@ class DynamicMesh : public Mesh{
 	void edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad);
 
 	//! updates the changed vertecies normal and checks if retriangulation is needed.
-	void updateArea(sVert* changeList, int listSize);
+	void updateArea(int* changeList, int listSize);
 
 	//! updates the changed vertecies normal 
 	void updateNormals(sVert* changeList, int listSize);

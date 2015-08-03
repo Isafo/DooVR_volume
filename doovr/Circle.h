@@ -1,7 +1,7 @@
 #pragma once
-#include "Brush.h"
+#include "nPolygon.h"
 
-class Circle : public Brush
+class Circle : public nPolygon
 {
 public:
 	Circle();

@@ -1,7 +1,7 @@
 #pragma once
-#include "Brush.h"
+#include "nPolygon.h"
 
-class Square : public Brush
+class Square : public nPolygon
 {
 public:
 	//! draws a square with the center in (pX, pY, pZ) and dimensions dX, dY
