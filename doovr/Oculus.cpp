@@ -288,6 +288,8 @@ int Oculus::runOvr() {
 	// 2 - Variable Declarations
 	//=====================================================================================================================================
 
+	const float M_PI = 3.14159265359;
+
 	// 2.2 - Various vectors and matrices \________________________________________________________________________________________________
 	// Lightposition 
 	float lPos[4] = { 2.0f, 2.0f, 2.0f, 1.0f };
@@ -304,11 +306,11 @@ int Oculus::runOvr() {
 	float nullVec[3] = { 0.0f, 0.0f, 0.0f };
 	float translateVector[3] = { 0.0f, 0.0f, 0.0f };
 	float moveVec[4]; float nMoveVec[4];
-	float tempVec[3];
+	float tempVec[3]; float tempVec2[3];
 	float lastPos[3];
 	float lastPos2[3];
 	float wandDirection[3];
-	float prevWandDirection[3];
+	float prevWandDirection[4]; prevWandDirection[3] = 1.0f;
 	float prevMeshOrientation[16];
 	float meshOrientation[16];
 	float vVec[4];
@@ -331,8 +333,8 @@ int Oculus::runOvr() {
 	float listRight = 0.0f;
 
 	// 2.3 - Threads used for loading and saving meshes \__________________________________________________________________________________
-	std::thread th1; // not used
-	std::thread th2; //
+	std::thread th1; 
+	std::thread th2; 
 	// indicates if something has been loaded by a thread and gl data has not yet been updated
 	bool loadingMesh = false;
 
@@ -409,6 +411,25 @@ int Oculus::runOvr() {
 	//variable used with the button that switches wireframe, TODO: should be replaced by something
 	bool lines = false;
 
+	// MenuItems representing a tool
+	const int NR_OF_TOOLS = 4;
+	bool selectingTool = false;
+	MenuItem tool[NR_OF_TOOLS];
+	for (int i = 0; i < NR_OF_TOOLS; i++)
+		tool[i] = MenuItem(0.07 * cosf(((2 * M_PI) / NR_OF_TOOLS) * i), 0.0f, 0.07 * sinf(((2 * M_PI) / NR_OF_TOOLS) * i), 0.08, 0.08);
+
+
+
+	float startWandPos[3];
+
+	float* tempVecPtr;
+	float temp1, temp2;
+
+	/*! tool 0 = push/pull
+			 1 = 
+	*/
+	int activeTool = 0;
+	tool[activeTool].setState(true);
 	// 2.5.2 - variables used in Load Mode >------------------------------------------------------------------------------------------------
 	const int NR_OF_LOAD_BUTTONS = 2;
 	/*! 0 = loadFile button
@@ -474,6 +495,9 @@ int Oculus::runOvr() {
 
 	// 2.7.2 - Wand variables >--------------------------------------------------------------------------------------------------------------
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
+	Box boxPointer(0.0f, 0.0f, 0.0f, 0.0005f, 0.0005f, 0.6f);
+	Line brushPointer(0.0f, 0.0f, 0.0f, 1.0f);
+	LineSphere brush(0.0f, 0.0f, 0.0f, 1.0f);
 	// Initilise passive wand
 	Passive3D* wand = new Passive3D();
 	// Size of the wand tool
@@ -521,22 +545,21 @@ int Oculus::runOvr() {
 				// 3.1 - modellingstates \_____________________________________________________________________________________________________
 				//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
 			
-				if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
-					if (modellingState[0] == 2) {
-						modellingMesh->select(wand, wandRadius);
-						modellingMesh->pull(wand, wandRadius);
-					}
-					else if (modellingState[0] == 1) {
-						modellingState[0] = 2;
-						modellingMesh->select(wand, wandRadius);
-						modellingMesh->pull(wand, wandRadius);
-					}
-					else if (modellingState[0] == 0)
-					{
-						modellingState[0] = 1;
-						//modellingMesh->pull(wand, wandRadius);
-						modellingMesh->select(wand, wandRadius);
-
+			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
+				if (modellingState[0] == 2) {
+					//modellingMesh->select(wand, wandRadius);
+					modellingMesh->smooth(wand, wandRadius);
+				}
+				else if (modellingState[0] == 1) {
+					modellingState[0] = 2;
+					//modellingMesh->select(wand, wandRadius);
+					modellingMesh->smooth(wand, wandRadius);
+				}
+				else if (modellingState[0] == 0)
+				{
+					modellingState[0] = 1;
+					//modellingMesh->pull(wand, wandRadius);
+					//modellingMesh->select(wand, wandRadius);
 						aModellingStateIsActive++;
 					}
 				}
@@ -546,13 +569,15 @@ int Oculus::runOvr() {
 					}
 					else if (modellingState[0] != 0) {
 						modellingState[0] = 3;
-
+						//modellingMesh->updateHVerts();
+						modellingMesh->deSelect();
 						aModellingStateIsActive--;
 					}
-					modellingMesh->select(wand, wandRadius);
+					//modellingMesh->select(wand, wandRadius);
 				}
 				modellingMesh->updateOGLData();
 				//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
+				
 				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 					if (modellingState[1] == 0) {
 						modellingState[1] = 1;
@@ -568,17 +593,16 @@ int Oculus::runOvr() {
 					else if (modellingState[1] == 1) {
 						modellingState[1] = 2;
 					}
-					else if (modellingState[1] == 2)
-					{
+					else if (modellingState[1] == 2) {
 						//	move mesh
 						linAlg::calculateVec(wandPos, lastPos, moveVec);
 						moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
 						moveVec[1] = lastPos2[1] + moveVec[1] - wandPos[1];
 						moveVec[2] = lastPos2[2] + moveVec[2] - wandPos[2];
 
-						wand->getDirection(wandDirection);	
+						wand->getDirection(wandDirection);
 						linAlg::normVec(wandDirection);
-						
+
 						linAlg::crossProd(vVec, wandDirection, prevWandDirection);
 						linAlg::normVec(vVec);
 						linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
@@ -600,6 +624,63 @@ int Oculus::runOvr() {
 					}
 					else if (modellingState[1] != 0) {
 						modellingState[1] = 3;
+
+						aModellingStateIsActive--;
+					}
+				}
+				// select tool >---------------------------------------------------------------------------------------------------------
+				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_CONTROL)) {
+					if (modellingState[2] == 0) {
+						modellingState[2] = 1;
+						aModellingStateIsActive++;
+					}
+					else if (modellingState[2] == 1) {
+						modellingState[2] = 2;
+						wand->getPosition(startWandPos);
+
+						tempVec2[0] = 0.7071; tempVec2[1] = 0.0; tempVec2[2] = -0.7071;
+
+						selectingTool = true;
+					}
+					else if (modellingState[2] == 2) {
+						// check what direction the wand been 
+						tempVec[0] = wandPos[0] - startWandPos[0];
+						tempVec[2] = wandPos[2] - startWandPos[2];
+						tempVec[1] = 0.0;
+
+
+						// check if the wand has traveld far enough from its starting point to be in a item
+						if (linAlg::vecLength(tempVec) > 0.03) {
+							
+							temp1 = acosf(linAlg::dotProd(tempVec, tempVec2) / (linAlg::vecLength(tempVec) * linAlg::vecLength(tempVec2)));
+
+							temp2 = (tempVec2[0] * tempVec[2] - tempVec2[2] * tempVec[0]);
+							
+							if (temp2 > 0) {
+								// positive angle
+								temp2 = floor(temp1 / (2 * M_PI / NR_OF_TOOLS));
+								tool[activeTool].setState(false);
+								activeTool = temp2;
+								tool[activeTool].setState(true);
+							}
+							else {
+								// negative angle
+								temp1 = 2 * M_PI - temp1;
+								temp2 = floor(temp1 / (2 * M_PI / NR_OF_TOOLS));
+								tool[activeTool].setState(false);
+								activeTool = temp2;
+								tool[activeTool].setState(true);
+							}
+						}
+					}
+				}
+				else {
+					if (modellingState[2] == 3) {
+						modellingState[2] = 0;
+						selectingTool = false;
+					}
+					else if (modellingState[2] != 0) {
+						modellingState[2] = 3;
 
 						aModellingStateIsActive--;
 					}
@@ -864,13 +945,48 @@ int Oculus::runOvr() {
 									boxWand.render();		
 								MVstack.pop();
 								//render brush------------------------
-								/*MVstack.push();
-									MVstack.scale(1);
-									MVstack.translate(testCir.getPosition());
+
+								MVstack.push();
+									translateVector[0] = 0.0f;
+									translateVector[1] = 0.0f;
+									translateVector[2] = 1.0f;
+									MVstack.translate(translateVector);
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									testCir.render();
-								MVstack.pop();*/
+									brushPointer.render();
+								MVstack.pop();
+
+								MVstack.push();
+									MVstack.scale(wandRadius);
+									MVstack.translate(brush.getPosition());
+									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+									brush.render();
+								MVstack.pop();
 							MVstack.pop();
+							if (selectingTool) {
+								MVstack.push();
+									MVstack.translate(startWandPos);
+									// render tool select GUI
+									for (int i = 0; i < NR_OF_TOOLS; i++) {
+
+										if (tool[i].getState()) {
+											glUseProgram(bloomShader.programID);
+											glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+										}
+										else {
+											glUseProgram(menuShader.programID);
+											glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+										}
+
+										glBindTexture(GL_TEXTURE_2D, modellingButtonTex[0]->getTextureID());
+										MVstack.push();
+											MVstack.translate(tool[i].getPosition());
+											glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+											tool[i].render();
+										MVstack.pop();
+									}
+								MVstack.pop();
+							}
+
 						MVstack.pop();
 					MVstack.pop();
 				}
@@ -943,6 +1059,13 @@ int Oculus::runOvr() {
 					// check if a thread is running, if so wait for it before close
 
 					if (loaderMeshLock.try_lock() && loaderMeshLock.try_lock()) {
+						if (th1.joinable()) {
+							th1.join();
+						}
+						if (th2.joinable()) {
+							th2.join();
+						}
+
 						glfwSetWindowShouldClose(l_Window, GL_TRUE);
 					} else if (!loaderMeshLock.try_lock() && !meshLock.try_lock()) {
 						th1.join();
@@ -952,9 +1075,6 @@ int Oculus::runOvr() {
 						th1.join();
 						glfwSetWindowShouldClose(l_Window, GL_TRUE);
 					} else if (!meshLock.try_lock()) {
-						th1.join();
-						glfwSetWindowShouldClose(l_Window, GL_TRUE);
-					} else {
 						th2.join();
 						glfwSetWindowShouldClose(l_Window, GL_TRUE);
 					}

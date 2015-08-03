@@ -51,12 +51,12 @@ void StaticMesh::createBuffers()
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	for (int i = 0; i < nrofVerts; i++) {
-		vertexP[i].x = vertexArray[i].x;
-		vertexP[i].y = vertexArray[i].y;
-		vertexP[i].z = vertexArray[i].z;
-		vertexP[i].nx = vertexArray[i].nx;
-		vertexP[i].ny = vertexArray[i].ny;
-		vertexP[i].nz = vertexArray[i].nz;
+		vertexP[i].x = vertexArray[i].xyz[0];
+		vertexP[i].y = vertexArray[i].xyz[1];
+		vertexP[i].z = vertexArray[i].xyz[2];
+		vertexP[i].nx = vertexArray[i].nxyz[0];
+		vertexP[i].ny = vertexArray[i].nxyz[1];
+		vertexP[i].nz = vertexArray[i].nxyz[2];
 		vertexP[i].u = tempTex.u;
 		vertexP[i].v = tempTex.v;
 	}
