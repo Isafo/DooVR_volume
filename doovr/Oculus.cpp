@@ -458,12 +458,6 @@ int Oculus::runOvr() {
 	GLint locationMeshLP = glGetUniformLocation(meshShader.programID, "lightPos");
 	GLint locationMeshLP2 = glGetUniformLocation(meshShader.programID, "lightPos2");
 
-	GLint locationWIN_SCALE = glGetUniformLocation(meshWire.programID, "WIN_SCALE");
-	GLint locationWireMV = glGetUniformLocation(meshWire.programID, "MV");
-	GLint locationWireP = glGetUniformLocation(meshWire.programID, "P");
-	GLint locationWireLP = glGetUniformLocation(meshWire.programID, "lightPos");
-	GLint locationWireLP2 = glGetUniformLocation(meshWire.programID, "lightPos2");
-
 	GLint locationFlatMV = glGetUniformLocation(flatShader.programID, "MV"); //modelview matrix
 	GLint locationFlatP = glGetUniformLocation(flatShader.programID, "P"); //perspective matrix
 	GLint locationFlatLP = glGetUniformLocation(flatShader.programID, "lightPos");
@@ -820,27 +814,37 @@ int Oculus::runOvr() {
 								MVstack.pop();
 							}
 							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
-							glUseProgram(flatShader.programID);
-							glUniformMatrix4fv(locationFlatP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							
 
-							MVstack.push();
-								MVstack.translate(modellingMesh->getPosition());
-								MVstack.multiply(modellingMesh->getOrientation());
-								glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glUniform4fv(locationFlatLP, 1, LP);
-								glUniform4fv(locationFlatLP2, 1, lPosTemp);
-								//glUniform2iv(locationWIN_SCALE, 1, WIN_SCALE);
+							if (lines) {
+								glUseProgram(flatShader.programID);
+								glUniformMatrix4fv(locationFlatP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
-								if (lines) {
-									glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+								MVstack.push();
+									MVstack.translate(modellingMesh->getPosition());
+									MVstack.multiply(modellingMesh->getOrientation());
+									glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+									glUniform4fv(locationFlatLP, 1, LP);
+									glUniform4fv(locationFlatLP2, 1, lPosTemp);
+
 									modellingMesh->render();
-									glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-								}
-								else {
-									modellingMesh->render();
-								}
+								MVstack.pop();
 
-							MVstack.pop();
+							} else {
+								glUseProgram(meshShader.programID);
+								glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+								MVstack.push();
+									MVstack.translate(modellingMesh->getPosition());
+									MVstack.multiply(modellingMesh->getOrientation());
+									glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+									glUniform4fv(locationMeshLP, 1, LP);
+									glUniform4fv(locationMeshLP2, 1, lPosTemp);
+
+									modellingMesh->render();
+								MVstack.pop();
+
+							}
 
 							glUseProgram(sceneShader.programID);
 							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
