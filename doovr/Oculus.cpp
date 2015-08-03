@@ -311,19 +311,14 @@ int Oculus::runOvr() {
 	float prevWandDirection[3];
 	float prevMeshOrientation[16];
 	float meshOrientation[16];
-	float tempVec4[4], vVec[4];
+	float vVec[4];
 	float vMat[16] = { 0.0f };
-	float sFloat, cFloat;
 	float transform[16];
 
 	float unitMat[16] = { 0.0f }; unitMat[0] = 1; unitMat[5] = 1; unitMat[10] = 1; unitMat[15] = 1;
 
-
-	float tempMat4[16];
-
 	float wandPos[3];
 	float wandVelocity[3] = {0};
-	float result[4];
 
 	float currTime = 0;
 	float lastTime;
@@ -898,8 +893,7 @@ int Oculus::runOvr() {
 					else if (modellingState[1] == 1) {
 						modellingState[1] = 2;
 					}
-					else if (modellingState[1] == 2)
-					{
+					else if (modellingState[1] == 2) {
 						//	move mesh
 						linAlg::calculateVec(wandPos, lastPos, moveVec);
 						moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
