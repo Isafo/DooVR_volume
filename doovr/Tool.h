@@ -17,6 +17,8 @@ public:
 	virtual void firstSelect(DynamicMesh* mesh, Wand* wand) = 0;
 	virtual void moveVertices(DynamicMesh* mesh, Wand* wand) = 0;
 	virtual void deSelect() = 0;
+
+	//virtual void changeToolSize(bool sign) = 0;
 protected:
 
 	//Polygon* toolBrush;

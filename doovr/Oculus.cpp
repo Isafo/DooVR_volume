@@ -2,25 +2,32 @@
 //#define GLFW_EXPOSE_NATIVE_WGL
 
 #include "Oculus.h"
+
 #include "Shader.h"
 #include "MatrixStack.h"
+
 #include "Sphere.h"
 #include "MenuItem.h"
 #include "Box.h"
 #include "hexBox.h"
 #include "Texture.h"
+
 #include "Wand.h"
 #include "Passive3D.h"
 #include "TrackingRange.h"
+
 #include "DynamicMesh.h"
 #include "StaticMesh.h"
+
 #include "Circle.h"
 #include "Square.h"
 #include "LineCube.h"
 #include "LineSphere.h"
 #include "Line.h"
+
 #include "Smooth.h"
 #include "Push.h"
+#include "Draw.h"
 
 #include <thread>
 #include <mutex>
@@ -343,7 +350,7 @@ int Oculus::runOvr() {
 	// Scene textures
 
 	Texture whiteTex("../Assets/Textures/light.DDS");
-	Texture groundTex("../Assets/Textures/stone.DDS");
+	Texture groundTex("../Assets/Textures/Gbord.DDS");
 	Texture titleTex("../Assets/Textures/Title.DDS");
 	Texture resetTex("../Assets/Textures/reset.DDS");
 	Texture saveTex("../Assets/Textures/save.DDS");
@@ -351,6 +358,9 @@ int Oculus::runOvr() {
 	Texture wireFrameTex("../Assets/Textures/wireframe.DDS");
 	Texture plusTex("../Assets/Textures/plus.DDS");
 	Texture minusTex("../Assets/Textures/minus.DDS");
+	Texture radialTex("../Assets/Textures/radial.DDS");
+	Texture tIconTex("../Assets/Textures/testICON.DDS");
+	Texture boxFrameTex("../Assets/Textures/squareFrame.DDS");
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
@@ -481,6 +491,10 @@ int Oculus::runOvr() {
 	MatrixStack MVstack; MVstack.init();
 	MatrixStack* MVptr = &MVstack;
 	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70); TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
+	Box tBox(0.0f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
+	Box tBox2(0.034f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
+	Box tBox3(0.068f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
+	MenuItem radial(0.0f, 0.5f, -0.3f, 0.1f, 0.1f);
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
 	MenuItem wandSizePanel(0.2f, -0.25f, -0.12f, 0.10f, 0.03f);
 
@@ -513,6 +527,7 @@ int Oculus::runOvr() {
 
 	Smooth smoothTool(modellingMesh, wand);
 	Push pushTool(modellingMesh, wand);
+	Draw drawTool(modellingMesh, wand);
 
 	Tool* currentTool;
 	currentTool = &pushTool;
@@ -552,10 +567,10 @@ int Oculus::runOvr() {
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
-					currentTool->deSelect();
+					//currentTool->deSelect();
 					//modellingMesh->select(wand, wandRadius);
 					//modellingMesh->smooth(wand, wandRadius);
-					currentTool->firstSelect(modellingMesh, wand);
+					//currentTool->firstSelect(modellingMesh, wand);
 				}
 				else if (modellingState[0] == 0)
 				{
@@ -578,7 +593,7 @@ int Oculus::runOvr() {
 						aModellingStateIsActive--;
 					}
 					//modellingMesh->select(wand, wandRadius);
-					currentTool->deSelect();
+					//currentTool->deSelect();
 					currentTool->firstSelect(modellingMesh, wand);
 				}
 				modellingMesh->updateOGLData();
@@ -698,9 +713,18 @@ int Oculus::runOvr() {
 				}
 				if (glfwGetKey(l_Window, GLFW_KEY_Q)) {
 					wandRadius += 0.001f;
+					currentTool = &smoothTool;
+					currentTool->deSelect();
 				}
 				if (glfwGetKey(l_Window, GLFW_KEY_W)) {
 					wandRadius -= 0.001f;
+					currentTool = &drawTool;
+					currentTool->deSelect();
+				}
+				if (glfwGetKey(l_Window, GLFW_KEY_E)) {
+					wandRadius -= 0.001f;
+					currentTool = &pushTool;
+					currentTool->deSelect();
 				}
 
 				// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
@@ -880,6 +904,7 @@ int Oculus::runOvr() {
 								title.render();
 							MVstack.pop();
 
+
 							// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
 							for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
 
@@ -961,6 +986,37 @@ int Oculus::runOvr() {
 								MVstack.pop();*/
 								currentTool->render(MVptr, locationMV);
 							MVstack.pop();
+
+							// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
+							glUseProgram(bloomShader.programID);
+							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+							MVstack.push();
+							MVstack.translate(title.getPosition());
+							MVstack.rotX(1.57079f);
+							glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							title.render();
+							MVstack.pop();
+							MVstack.push();
+							MVstack.translate(tBox.getPosition());
+							glBindTexture(GL_TEXTURE_2D, boxFrameTex.getTextureID());
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							tBox.render();
+							MVstack.pop();
+							MVstack.push();
+							MVstack.translate(tBox2.getPosition());
+							glBindTexture(GL_TEXTURE_2D, boxFrameTex.getTextureID());
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							tBox2.render();
+							MVstack.pop();
+							MVstack.push();
+							MVstack.translate(tBox3.getPosition());
+							glBindTexture(GL_TEXTURE_2D, boxFrameTex.getTextureID());
+							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+							tBox3.render();
+							MVstack.pop();
+
 							if (selectingTool) {
 								MVstack.push();
 									MVstack.translate(startWandPos);

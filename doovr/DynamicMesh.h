@@ -45,6 +45,7 @@ struct vInfo {
 class DynamicMesh : public Mesh{
 	friend class Smooth;
 	friend class Push;
+	friend class Draw;
 
   public:
 	DynamicMesh();
@@ -137,6 +138,6 @@ class DynamicMesh : public Mesh{
 	void updateArea(int* changeList, int listSize);
 
 	//! updates the changed vertecies normal 
-	void updateNormals(sVert* changeList, int listSize);
+	void updateNormals(int* changeList, int listSize);
 
 };

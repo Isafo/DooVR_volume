@@ -3,11 +3,11 @@
 #include "Line.h"
 #include "Circle.h"
 
-class Smooth : public Tool
+class Draw : public Tool
 {
 public:
-	Smooth(DynamicMesh* mesh, Wand* wand);
-	~Smooth();
+	Draw(DynamicMesh* mesh, Wand* wand);
+	~Draw();
 
 	void render(MatrixStack* MVstack, GLint locationMV);
 	void renderIntersection(MatrixStack* MVstack, GLint locationMV);

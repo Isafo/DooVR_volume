@@ -2,12 +2,11 @@
 #include "Tool.h"
 #include "Line.h"
 #include "Circle.h"
-
-class Smooth : public Tool
+class Spray : public Tool
 {
 public:
-	Smooth(DynamicMesh* mesh, Wand* wand);
-	~Smooth();
+	Spray(DynamicMesh* mesh, Wand* wand);
+	~Spray();
 
 	void render(MatrixStack* MVstack, GLint locationMV);
 	void renderIntersection(MatrixStack* MVstack, GLint locationMV);

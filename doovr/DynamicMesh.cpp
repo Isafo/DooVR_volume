@@ -1179,7 +1179,7 @@ void DynamicMesh::draw(Wand* wand, float rad) {
 				vInfoArray[index2].selected += 2.0f;
 			}
 
-			updateNormals(CVerts, CNR);
+			//updateNormals(CVerts, CNR);
 		}
 	}
 
@@ -1683,7 +1683,7 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 		vPoint1 = vertexArray[vert3].xyz;
 
 		do {
-			if (vInfoArray[e[tempEdge].vertex].selected >= 4.0f)
+			if (vInfoArray[e[tempEdge].vertex].selected >= 1.0f)
 			{
 				tempE = tempEdge;
 				tempEdge = e[e[tempEdge].nextEdge].sibling;
@@ -1819,7 +1819,7 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 		//sIt = sIt->next;
 	}
 }
-void DynamicMesh::updateNormals(sVert* changeList, int listSize) {
+void DynamicMesh::updateNormals(int* changeList, int listSize) {
 
 	static float* vPoint1; static float* vPoint2; static float* vPoint3; static float* vPoint4;
 	static float tempVec1[3], tempVec2[3], tempVec3[3];
@@ -1832,7 +1832,8 @@ void DynamicMesh::updateNormals(sVert* changeList, int listSize) {
 	//sIt = sHead->next;
 	for (int i = 0; i < listSize; i++)
 	{
-		vert3 = changeList[i].index;
+		vert3 = changeList[i];
+		vInfoArray[vert3].selected = vInfoArray[vert3].selected - floor(vInfoArray[vert3].selected);
 
 		//>-----------------------
 		vPoint1 = vertexArray[vert3].xyz;
@@ -1901,6 +1902,8 @@ void DynamicMesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	vertexArray[tempV].xyz[0] = (vertexArray[vert1].xyz[0] + vertexArray[vert2].xyz[0]) / 2.0f;
 	vertexArray[tempV].xyz[1] = (vertexArray[vert1].xyz[1] + vertexArray[vert2].xyz[1]) / 2.0f;
 	vertexArray[tempV].xyz[2] = (vertexArray[vert1].xyz[2] + vertexArray[vert2].xyz[2]) / 2.0f;
+	//TODO: TEST
+	//vInfoArray[tempV].selected = (vInfoArray[vert1].selected + vInfoArray[vert2].selected) / 2.0f;
 
 	//copy triangles
 	tempT1 = -emptyT;
