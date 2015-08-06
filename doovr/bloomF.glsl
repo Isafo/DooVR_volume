@@ -8,13 +8,13 @@ in vec2 UV;
 uniform vec4 lightPos;
 uniform sampler2D tex;
 
-const float texDimension = 256.0f;
+const float texDimension = 1536.0f;
 const float texScaler =  1.0/texDimension;
 const float texOffset = -0.5/texDimension;
 
-const vec2 size = vec2(256.0f, 256.0f);
-const int samples = 16; // pixels per axis; higher = bigger glow, worse performance
-const float quality = 1.0; // lower = smaller glow, better quality
+const vec2 size = vec2(1536.0f, 1536.0f);
+const int samples = 8; // pixels per axis; higher = bigger glow, worse performance
+const float quality = 3.0; // lower = smaller glow, better quality
 
 void main () {
 	// DXT from directX, so we have to invert the UV coordinates 
