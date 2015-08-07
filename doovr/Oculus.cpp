@@ -991,32 +991,6 @@ int Oculus::runOvr() {
 							glUseProgram(bloomShader.programID);
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
-							MVstack.push();
-							MVstack.translate(title.getPosition());
-							MVstack.rotX(1.57079f);
-							glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							title.render();
-							MVstack.pop();
-							MVstack.push();
-							MVstack.translate(tBox.getPosition());
-							glBindTexture(GL_TEXTURE_2D, boxFrameTex.getTextureID());
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							tBox.render();
-							MVstack.pop();
-							MVstack.push();
-							MVstack.translate(tBox2.getPosition());
-							glBindTexture(GL_TEXTURE_2D, boxFrameTex.getTextureID());
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							tBox2.render();
-							MVstack.pop();
-							MVstack.push();
-							MVstack.translate(tBox3.getPosition());
-							glBindTexture(GL_TEXTURE_2D, boxFrameTex.getTextureID());
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							tBox3.render();
-							MVstack.pop();
-
 							if (selectingTool) {
 								MVstack.push();
 									MVstack.translate(startWandPos);
