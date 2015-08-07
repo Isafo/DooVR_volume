@@ -342,7 +342,7 @@ int Oculus::runOvr() {
 	// Scene textures
 
 	Texture whiteTex("../Assets/Textures/light.DDS");
-	Texture groundTex("../Assets/Textures/stone.DDS");
+	Texture groundTex("../Assets/Textures/Gbord.DDS");
 	Texture titleTex("../Assets/Textures/Title.DDS");
 	Texture resetTex("../Assets/Textures/reset.DDS");
 	Texture saveTex("../Assets/Textures/save.DDS");
@@ -482,7 +482,6 @@ int Oculus::runOvr() {
 	MatrixStack MVstack; MVstack.init();
 	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70); TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
 	menuBox testMenu(0.0f, -0.2f, -0.25f, 0.09, 0.005, 0.03, 2, 1, 3 ,1 );
-	Box testBox(0.0f, -0.2f, -0.25f, 0.09, 0.005, 0.03) ;
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
 	MenuItem wandSizePanel(0.2f, -0.25f, -0.12f, 0.10f, 0.03f);
 
@@ -906,13 +905,6 @@ int Oculus::runOvr() {
 								glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								title.render();
-							MVstack.pop();
-
-							MVstack.push();
-							MVstack.translate(testBox.getPosition());
-							glBindTexture(GL_TEXTURE_2D, testFrame.getTextureID());
-							glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-							testBox.render();
 							MVstack.pop();
 
 							// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
