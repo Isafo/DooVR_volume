@@ -19,7 +19,7 @@ Passive3D::Passive3D()
 
 	//connection----------------------
 	try {
-		wand = new Wand3d("COM4"); // usb port
+		wand = new Wand3d("COM3"); // usb port
 	}
 	catch (Wand3dSerialException error) {
 		std::cout << error.what() << std::endl;
@@ -64,9 +64,9 @@ Passive3D::~Passive3D() {
 
 void Passive3D::wand3dCallback(WandData data) {
 
-	Position[0] = (float) data.position[0];
-	Position[1] = (float)data.position[1];// -0.25f;
-	Position[2] = (float)data.position[2];// -0.27f;
+	Position[0] = (float) data.position[0] + 0.3;
+	Position[1] = (float)data.position[1] -0.25f;
+	Position[2] = (float)data.position[2] -0.27f;
 	
 	utils::getGLRotMatrix(data, OrientationM);
 
