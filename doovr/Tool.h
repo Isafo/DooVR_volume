@@ -18,6 +18,8 @@ public:
 	virtual void moveVertices(DynamicMesh* mesh, Wand* wand) = 0;
 	virtual void deSelect() = 0;
 
+	virtual void setRadius(float rad) = 0;
+
 	//virtual void changeToolSize(bool sign) = 0;
 protected:
 

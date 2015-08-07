@@ -9,6 +9,7 @@
 #include "Sphere.h"
 #include "MenuItem.h"
 #include "Box.h"
+#include "menuBox.h"
 #include "hexBox.h"
 #include "Texture.h"
 
@@ -335,11 +336,11 @@ int Oculus::runOvr() {
 	float lastTime;
 	float deltaTime;
 
-	float listVelocity = 0.0f;
-	float prevListVelocity = 0.0f;
-	float listAcelleration = 0.0f;
-	float listLeft = 0.0f;
-	float listRight = 0.0f;
+
+	float startWandPos[3];
+
+	float* tempVecPtr;
+	float temp1, temp2;
 
 	// 2.3 - Threads used for loading and saving meshes \__________________________________________________________________________________
 	std::thread th1; 
@@ -360,9 +361,11 @@ int Oculus::runOvr() {
 	Texture wireFrameTex("../Assets/Textures/wireframe.DDS");
 	Texture plusTex("../Assets/Textures/plus.DDS");
 	Texture minusTex("../Assets/Textures/minus.DDS");
-	Texture radialTex("../Assets/Textures/radial.DDS");
-	Texture tIconTex("../Assets/Textures/testICON.DDS");
-	Texture boxFrameTex("../Assets/Textures/squareFrame.DDS");
+
+	Texture menuIcons("../Assets/Textures/menuICONS.DDS");
+	Texture menuStrings("../Assets/Textures/menuSTRINGS.DDS");
+	Texture testFrame("../Assets/Textures/squareFRAME.DDS");
+
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
@@ -424,18 +427,18 @@ int Oculus::runOvr() {
 	bool lines = false;
 
 	// MenuItems representing a tool
-	const int NR_OF_TOOLS = 4;
+	const int NR_OF_TOOLS = 3;
 	bool selectingTool = false;
-	MenuItem tool[NR_OF_TOOLS];
+	menuBox tool[NR_OF_TOOLS];
 	for (int i = 0; i < NR_OF_TOOLS; i++)
-		tool[i] = MenuItem(0.07 * cosf(((2 * M_PI) / NR_OF_TOOLS) * i), 0.0f, 0.07 * sinf(((2 * M_PI) / NR_OF_TOOLS) * i), 0.08, 0.08);
+		tool[i] = menuBox(i*0.035f, -0.2f, -0.25f, 0.03f, 0.03f, 0.03f, i, 0, 1, 1);
 
-
-
-	float startWandPos[3];
-
-	float* tempVecPtr;
-	float temp1, temp2;
+	menuBox toolSize(0.035f, -0.2f, -0.25f, 0.02f, 0.02f, 0.15f, 3, 3, 1, 1);
+	menuBox toolSizeFill(0.035f, -0.2f, -0.25f, 0.015f, 0.015f, 0.15f, 3, 3, 1, 1);
+	menuBox toolSizeText(0.035f, -0.2f, -0.34f, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1);
+	menuBox toolStrength(0.035f, -0.2f, -0.25f, 0.02f, 0.02f, 0.15f, 3, 3, 1, 1);
+	menuBox toolStrengthFill(0.035f, -0.2f, -0.25f, 0.015f, 0.015f, 0.15f, 3, 3, 1, 1);
+	menuBox toolStrengthText(0.035f, -0.2f, -0.34f, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1);
 
 	/*! tool 0 = push/pull
 			 1 = 
@@ -476,8 +479,6 @@ int Oculus::runOvr() {
 	menuShader.createShader("menuV.glsl", "menuF.glsl");
 	Shader flatShader;
 	flatShader.createShader("meshFlatV.glsl", "meshFlatF.glsl");
-	Shader meshWire;
-	meshWire.createShader("wireframeV.glsl", "wireframeF.glsl", "wireframeG.glsl");
 
 
 	// 2.6.1 - Uniform variables >-----------------------------------------------------------------------------------------------------------
@@ -504,10 +505,9 @@ int Oculus::runOvr() {
 	MatrixStack MVstack; MVstack.init();
 	MatrixStack* MVptr = &MVstack;
 	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70); TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
-	Box tBox(0.0f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
-	Box tBox2(0.034f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
-	Box tBox3(0.068f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
-	MenuItem radial(0.0f, 0.5f, -0.3f, 0.1f, 0.1f);
+
+	menuBox testMenu(0.0f, -0.2f, -0.25f, 0.09, 0.005, 0.03, 2, 1, 3 ,1 );
+
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
 	MenuItem wandSizePanel(0.2f, -0.25f, -0.12f, 0.10f, 0.03f);
 
@@ -671,41 +671,80 @@ int Oculus::runOvr() {
 					else if (modellingState[2] == 1) {
 						modellingState[2] = 2;
 						wand->getPosition(startWandPos);
+						for (int i = 0; i < NR_OF_TOOLS; i++) {
+							tempVecPtr = tool[i].getPosition();
+							tempVecPtr[0] = startWandPos[0] + (i - NR_OF_TOOLS / 2)*0.035;
+							tempVecPtr[1] = startWandPos[1] - 0.015;
+							tempVecPtr[2] = startWandPos[2] + 0.05f;
+						}
+						
+						tempVecPtr = toolSize.getPosition();
+						tempVecPtr[0] = startWandPos[0] - (0.035f*NR_OF_TOOLS/2) - 0.02 ;
+						tempVecPtr[1] = startWandPos[1] - 0.015;
+						tempVecPtr[2] = startWandPos[2] - 0.04f;
+						tempVecPtr = toolStrength.getPosition();
+						tempVecPtr[0] = startWandPos[0] + (0.035f*NR_OF_TOOLS / 2) + 0.02;
+						tempVecPtr[1] = startWandPos[1] - 0.015;
+						tempVecPtr[2] = startWandPos[2] - 0.04f;
 
-						tempVec2[0] = 0.7071; tempVec2[1] = 0.0; tempVec2[2] = -0.7071;
+						tempVecPtr = toolSizeFill.getPosition();
+						tempVecPtr[0] = startWandPos[0] - (0.035f*NR_OF_TOOLS / 2) - 0.02;
+						tempVecPtr[1] = startWandPos[1] - 0.015;
+						tempVecPtr[2] = startWandPos[2] - 0.04f;
+						tempVecPtr = toolStrengthFill.getPosition();
+						tempVecPtr[0] = startWandPos[0] + (0.035f*NR_OF_TOOLS / 2) + 0.02;
+						tempVecPtr[1] = startWandPos[1] - 0.015;
+						tempVecPtr[2] = startWandPos[2] - 0.04f;
+
+						tempVecPtr = toolSizeText.getPosition();
+						tempVecPtr[0] = startWandPos[0] - (0.035f*NR_OF_TOOLS / 2) - 0.02;
+						tempVecPtr[1] = startWandPos[1] - 0.015;
+						tempVecPtr[2] = startWandPos[2] - 0.13f;
+						tempVecPtr = toolStrengthText.getPosition();
+						tempVecPtr[0] = startWandPos[0] + (0.035f*NR_OF_TOOLS / 2) + 0.02;
+						tempVecPtr[1] = startWandPos[1] - 0.015;
+						tempVecPtr[2] = startWandPos[2] - 0.13f;
+
 
 						selectingTool = true;
 					}
 					else if (modellingState[2] == 2) {
 						// check what direction the wand been 
-						tempVec[0] = wandPos[0] - startWandPos[0];
-						tempVec[2] = wandPos[2] - startWandPos[2];
-						tempVec[1] = 0.0;
-
-
-						// check if the wand has traveld far enough from its starting point to be in a item
-						if (linAlg::vecLength(tempVec) > 0.03) {
-							
-							temp1 = acosf(linAlg::dotProd(tempVec, tempVec2) / (linAlg::vecLength(tempVec) * linAlg::vecLength(tempVec2)));
-
-							temp2 = (tempVec2[0] * tempVec[2] - tempVec2[2] * tempVec[0]);
-							
-							if (temp2 > 0) {
-								// positive angle
-								temp2 = floor(temp1 / (2 * M_PI / NR_OF_TOOLS));
-								tool[activeTool].setState(false);
-								activeTool = temp2;
-								tool[activeTool].setState(true);
-							}
-							else {
-								// negative angle
-								temp1 = 2 * M_PI - temp1;
-								temp2 = floor(temp1 / (2 * M_PI / NR_OF_TOOLS));
-								tool[activeTool].setState(false);
-								activeTool = temp2;
-								tool[activeTool].setState(true);
+						for (int i = 0; i < NR_OF_TOOLS; i++) {
+							if (wandPos[0] < tool[i].getPosition()[0] + tool[i].getDim()[0] / 2.f
+								&& wandPos[0] > tool[i].getPosition()[0] - tool[i].getDim()[0] / 2.f
+								&& wandPos[1] > tool[i].getPosition()[1] - tool[i].getDim()[1] / 2.f
+								&& wandPos[1] < tool[i].getPosition()[1] + tool[i].getDim()[1] / 2.f
+								&& wandPos[2] > tool[i].getPosition()[2] - tool[i].getDim()[2] / 2.f
+								&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {	
+								if (!tool[i].getState()) {	
+									tool[activeTool].setState(false);
+									tool[i].setState(true);
+									activeTool = i;
+									break;
+								}
 							}
 						}
+						if (wandPos[0] < toolSize.getPosition()[0] + toolSize.getDim()[0] / 2.f
+							&& wandPos[0] > toolSize.getPosition()[0] - toolSize.getDim()[0] / 2.f
+							&& wandPos[1] > toolSize.getPosition()[1] - toolSize.getDim()[1] / 2.f
+							&& wandPos[1] < toolSize.getPosition()[1] + toolSize.getDim()[1] / 2.f
+							&& wandPos[2] > toolSize.getPosition()[2] - toolSize.getDim()[2] / 2.f
+							&& wandPos[2] < toolSize.getPosition()[2] + toolSize.getDim()[2] / 2.f) {
+							tempVecPtr = toolSize.getPosition();
+							toolSizeFill.setDim(0.0f, 0.0f, (wandPos[2] - tempVecPtr[2]));
+							currentTool->setRadius((wandPos[2] - tempVecPtr[2]));
+						}
+						else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
+							&& wandPos[0] > toolStrength.getPosition()[0] - toolStrength.getDim()[0] / 2.f
+							&& wandPos[1] > toolStrength.getPosition()[1] - toolStrength.getDim()[1] / 2.f
+							&& wandPos[1] < toolStrength.getPosition()[1] + toolStrength.getDim()[1] / 2.f
+							&& wandPos[2] > toolStrength.getPosition()[2] - toolStrength.getDim()[2] / 2.f
+							&& wandPos[2] < toolStrength.getPosition()[2] + toolStrength.getDim()[2] / 2.f) {
+							tempVecPtr = toolStrength.getPosition();
+							toolStrengthFill.setDim(0.0f, 0.0f, (wandPos[2] - tempVecPtr[2]));
+						}
+
 					}
 				}
 				else {
@@ -885,6 +924,9 @@ int Oculus::runOvr() {
 						// 3.4 - Scene Matrix stack \__________________________________________________________________________________________________
 						MVstack.push();
 							// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
+						
+						
+						
 							glUniform4fv(locationLP, 1, LP);
 							MVstack.push();
 								MVstack.translate(board.getPosition());
@@ -906,8 +948,9 @@ int Oculus::runOvr() {
 							MVstack.pop();
 
 							// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
-							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
+							glUseProgram(bloomShader.programID);
+							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							MVstack.push();
 								MVstack.translate(title.getPosition());
@@ -938,6 +981,8 @@ int Oculus::runOvr() {
 								modellingButton[i]->render();
 								MVstack.pop();
 							}
+							
+
 							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
 							
 
@@ -1016,29 +1061,70 @@ int Oculus::runOvr() {
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							if (selectingTool) {
-								MVstack.push();
-									MVstack.translate(startWandPos);
-									// render tool select GUI
-									for (int i = 0; i < NR_OF_TOOLS; i++) {
+								
+								
+								// render tool select GUI
+								for (int i = 0; i < NR_OF_TOOLS; i++) {
 
-										if (tool[i].getState()) {
-											glUseProgram(bloomShader.programID);
-											glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-										}
-										else {
-											glUseProgram(menuShader.programID);
-											glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-										}
-
-										glBindTexture(GL_TEXTURE_2D, modellingButtonTex[0]->getTextureID());
-										MVstack.push();
-											MVstack.translate(tool[i].getPosition());
-											glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-											tool[i].render();
-										MVstack.pop();
+									if (tool[i].getState()) {
+										glUseProgram(bloomShader.programID);
+										
+										glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 									}
+									else {
+										glUseProgram(menuShader.programID);
+										glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+									}
+
+									glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
+									MVstack.push();
+										MVstack.translate(tool[i].getPosition());
+										glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+										tool[i].render();
+									MVstack.pop();
+								}
+
+								glUseProgram(bloomShader.programID);
+								MVstack.push();
+								MVstack.translate(toolSizeFill.getPosition());
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								toolSizeFill.render();
 								MVstack.pop();
+								MVstack.push();
+								MVstack.translate(toolStrengthFill.getPosition());
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								toolStrengthFill.render();
+								MVstack.pop();
+
+								glUseProgram(menuShader.programID);
+								MVstack.push();
+								MVstack.translate(toolSize.getPosition());
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								toolSize.render();
+								MVstack.pop();
+								MVstack.push();
+								MVstack.translate(toolStrength.getPosition());
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								toolStrength.render();
+								MVstack.pop();
+
+								glBindTexture(GL_TEXTURE_2D, menuStrings.getTextureID());
+								MVstack.push();
+								MVstack.translate(toolSizeText.getPosition());
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								toolSizeText.render();
+								MVstack.pop();
+								MVstack.push();
+								MVstack.translate(toolStrengthText.getPosition());
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								toolStrengthText.render();
+								MVstack.pop();
+
+								
+								
 							}
+							
+
 
 						MVstack.pop();
 					MVstack.pop();

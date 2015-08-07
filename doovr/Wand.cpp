@@ -11,6 +11,18 @@ void Wand::getPosition(float* vec) {
 	vec[2] = Position[2];
 }
 
+float* Wand::getOrientation()
+{
+	float start[3] = { 0.0f, 0.0f, 1.0f };
+	float temp[3];
+	linAlg::normVec(Direction);
+
+	linAlg::crossProd(temp, start, Direction );
+
+	linAlg::rotAxis(temp, acos(linAlg::dotProd(start, Direction)), OrientationM);
+	return OrientationM;
+}
+
 void Wand::getVelocity(float* vec) {
 
 	float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,

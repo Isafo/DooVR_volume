@@ -16,6 +16,8 @@ public:
 	void moveVertices(DynamicMesh* mesh, Wand* wand);
 	void deSelect();
 
+	void setRadius(float rad) { radius = rad; };
+
 private:
 	float radius;
 

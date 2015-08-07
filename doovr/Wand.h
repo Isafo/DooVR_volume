@@ -11,7 +11,7 @@ public:
 	void getPosition(float* vec) ;
 	void getVelocity(float* vec);
 	void getDirection(float* vec);
-	float* getOrientation() { return OrientationM; }
+	float* getOrientation();
 	float* getTransformMatrix() { return Transform; }
 
 	void setLastPos() { lastPosition[0] = Position[0]; lastPosition[1] = Position[1]; lastPosition[2] = Position[2]; }

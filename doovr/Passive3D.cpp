@@ -77,12 +77,12 @@ void Passive3D::wand3dCallback(WandData data) {
 	Position[1] = data.position[2] - 0.27f;
 	Position[2] = data.position[1] - 0.25f;
 
-	utils::getGLRotMatrix(data, Orient);
+	//utils::getGLRotMatrix(data, Orient);
 	float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
 		0.f, 0.f, 1.f, 0.f,
 		0.f, 1.f, 0.f, 0.f,
 		0.f, 0.f, 0.f, 1.0f };
-	linAlg::matrixMult(rotZX, Orient, OrientationM);
+	//linAlg::matrixMult(rotZX, Orient, OrientationM);
 
 	Velocity[0] = data.velocity[0];
 	Velocity[1] = data.velocity[1];
