@@ -25,7 +25,7 @@ Passive3D::Passive3D()
 		std::cout << error.what() << std::endl;
 	}
 	
-	Network newNet;
+	/*Network newNet;
 	
 	newNet.setSensorPosition(0, 0.15, 0.0, 0.082);
 	newNet.setSensorPosition(1, -0.15, 0.0, 0.082);
@@ -49,7 +49,7 @@ Passive3D::Passive3D()
 	newNet.setSensorRotation(2, rotZ);
 	newNet.setSensorRotation(3, rot);
 
-	wand->setNetwork(newNet);
+	wand->setNetwork(newNet);*/
 
 	Wand3dObserver* observer = this;
 	wand->addObserver(observer);
@@ -64,19 +64,40 @@ Passive3D::~Passive3D() {
 
 void Passive3D::wand3dCallback(WandData data) {
 
-	Position[0] = (float) data.position[0] + 0.3;
-	Position[1] = (float)data.position[1] -0.25f;
-	Position[2] = (float)data.position[2] -0.27f;
-	
-	utils::getGLRotMatrix(data, OrientationM);
+	float Orient[16];
+
+	//lastPosition[0] = Position[0];
+	//lastPosition[1] = Position[1];
+	//lastPosition[2] = Position[2];
+
+	float dirr[4];
+	float dirrResult[4];
+
+	Position[0] = -data.position[0];
+	Position[1] = data.position[2] - 0.27f;
+	Position[2] = data.position[1] - 0.25f;
+
+	utils::getGLRotMatrix(data, Orient);
+	float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
+		0.f, 0.f, 1.f, 0.f,
+		0.f, 1.f, 0.f, 0.f,
+		0.f, 0.f, 0.f, 1.0f };
+	linAlg::matrixMult(rotZX, Orient, OrientationM);
 
 	Velocity[0] = data.velocity[0];
 	Velocity[1] = data.velocity[1];
 	Velocity[2] = data.velocity[2];
 
-	Direction[0] = data.orientation[0];
-	Direction[1] = data.orientation[1];
-	Direction[2] = data.orientation[2];
+
+	dirr[0] = data.orientation[0];
+	dirr[1] = data.orientation[1];
+	dirr[2] = data.orientation[2];
+	dirr[3] = 1.0f;
+	linAlg::vectorMatrixMult(rotZX, dirr, dirrResult);
+
+	Direction[0] = dirrResult[0];
+	Direction[1] = dirrResult[1];
+	Direction[2] = dirrResult[2];
 }
 
 void Passive3D::calibrate()
