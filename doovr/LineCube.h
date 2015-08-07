@@ -1,6 +1,6 @@
 #pragma once
-#include "Brush.h"
-class LineCube : public Brush
+#include "nPolygon.h"
+class LineCube : public nPolygon
 {
 public:
 	//! draws a cube, using lines, with the center in (pX, pY, pZ) and dimensions dX, dY, dZ

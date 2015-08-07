@@ -2,23 +2,32 @@
 //#define GLFW_EXPOSE_NATIVE_WGL
 
 #include "Oculus.h"
+
 #include "Shader.h"
 #include "MatrixStack.h"
+
 #include "Sphere.h"
 #include "MenuItem.h"
 #include "Box.h"
 #include "hexBox.h"
 #include "Texture.h"
+
 #include "Wand.h"
 #include "Passive3D.h"
 #include "TrackingRange.h"
+
 #include "DynamicMesh.h"
 #include "StaticMesh.h"
+
 #include "Circle.h"
 #include "Square.h"
 #include "LineCube.h"
 #include "LineSphere.h"
 #include "Line.h"
+
+#include "Smooth.h"
+#include "Push.h"
+#include "Draw.h"
 
 #include <thread>
 #include <mutex>
@@ -343,7 +352,7 @@ int Oculus::runOvr() {
 	// Scene textures
 
 	Texture whiteTex("../Assets/Textures/light.DDS");
-	Texture groundTex("../Assets/Textures/stone.DDS");
+	Texture groundTex("../Assets/Textures/Gbord.DDS");
 	Texture titleTex("../Assets/Textures/Title.DDS");
 	Texture resetTex("../Assets/Textures/reset.DDS");
 	Texture saveTex("../Assets/Textures/save.DDS");
@@ -351,6 +360,9 @@ int Oculus::runOvr() {
 	Texture wireFrameTex("../Assets/Textures/wireframe.DDS");
 	Texture plusTex("../Assets/Textures/plus.DDS");
 	Texture minusTex("../Assets/Textures/minus.DDS");
+	Texture radialTex("../Assets/Textures/radial.DDS");
+	Texture tIconTex("../Assets/Textures/testICON.DDS");
+	Texture boxFrameTex("../Assets/Textures/squareFrame.DDS");
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
@@ -472,6 +484,7 @@ int Oculus::runOvr() {
 	GLint locationLP = glGetUniformLocation(sceneShader.programID, "lightPos");
 	GLint locationP = glGetUniformLocation(sceneShader.programID, "P"); //perspective matrix
 	GLint locationMV = glGetUniformLocation(sceneShader.programID, "MV"); //modelview matrix
+//	GLint* MVptr = &locationMV;
 	GLint locationTex = glGetUniformLocation(sceneShader.programID, "tex"); //texcoords
 
 	GLint locationMeshMV = glGetUniformLocation(meshShader.programID, "MV"); //modelview matrix
@@ -489,7 +502,12 @@ int Oculus::runOvr() {
 
 	// 2.7.1 - Matrix stack and static scene objects >---------------------------------------------------------------------------------------
 	MatrixStack MVstack; MVstack.init();
+	MatrixStack* MVptr = &MVstack;
 	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70); TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
+	Box tBox(0.0f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
+	Box tBox2(0.034f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
+	Box tBox3(0.068f, -0.2f, -0.25f, 0.03, 0.03, 0.03);
+	MenuItem radial(0.0f, 0.5f, -0.3f, 0.1f, 0.1f);
 	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
 	MenuItem wandSizePanel(0.2f, -0.25f, -0.12f, 0.10f, 0.03f);
 
@@ -520,6 +538,13 @@ int Oculus::runOvr() {
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
 
+	Smooth smoothTool(modellingMesh, wand);
+	Push pushTool(modellingMesh, wand);
+	Draw drawTool(modellingMesh, wand);
+
+	Tool* currentTool;
+	currentTool = &pushTool;
+
 	//=======================================================================================================================================
 	//Render loop
 	//=======================================================================================================================================
@@ -547,13 +572,18 @@ int Oculus::runOvr() {
 			
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 2) {
+					//currentTool->deSelect();
 					//modellingMesh->select(wand, wandRadius);
-					modellingMesh->smooth(wand, wandRadius);
+					//modellingMesh->smooth(wand, wandRadius);
+					currentTool->moveVertices(modellingMesh, wand);
+					
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
+					//currentTool->deSelect();
 					//modellingMesh->select(wand, wandRadius);
-					modellingMesh->smooth(wand, wandRadius);
+					//modellingMesh->smooth(wand, wandRadius);
+					//currentTool->firstSelect(modellingMesh, wand);
 				}
 				else if (modellingState[0] == 0)
 				{
@@ -570,10 +600,14 @@ int Oculus::runOvr() {
 					else if (modellingState[0] != 0) {
 						modellingState[0] = 3;
 						//modellingMesh->updateHVerts();
-						modellingMesh->deSelect();
+						//modellingMesh->deSelect();
+						currentTool->deSelect();
+						
 						aModellingStateIsActive--;
 					}
 					//modellingMesh->select(wand, wandRadius);
+					//currentTool->deSelect();
+					currentTool->firstSelect(modellingMesh, wand);
 				}
 				modellingMesh->updateOGLData();
 				//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
@@ -692,9 +726,18 @@ int Oculus::runOvr() {
 				}
 				if (glfwGetKey(l_Window, GLFW_KEY_Q)) {
 					wandRadius += 0.001f;
+					currentTool = &smoothTool;
+					currentTool->deSelect();
 				}
 				if (glfwGetKey(l_Window, GLFW_KEY_W)) {
 					wandRadius -= 0.001f;
+					currentTool = &drawTool;
+					currentTool->deSelect();
+				}
+				if (glfwGetKey(l_Window, GLFW_KEY_E)) {
+					wandRadius -= 0.001f;
+					currentTool = &pushTool;
+					currentTool->deSelect();
 				}
 
 				// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
@@ -874,6 +917,7 @@ int Oculus::runOvr() {
 								title.render();
 							MVstack.pop();
 
+
 							// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
 							for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
 
@@ -908,8 +952,8 @@ int Oculus::runOvr() {
 									glUniform4fv(locationFlatLP, 1, LP);
 									glUniform4fv(locationFlatLP2, 1, lPosTemp);
 
+
 									modellingMesh->render();
-								MVstack.pop();
 
 							} else {
 								glUseProgram(meshShader.programID);
@@ -923,9 +967,12 @@ int Oculus::runOvr() {
 									glUniform4fv(locationMeshLP2, 1, lPosTemp);
 
 									modellingMesh->render();
-								MVstack.pop();
 
-							}
+								}
+
+								currentTool->renderIntersection(MVptr, locationMeshMV);
+
+							MVstack.pop();
 
 							glUseProgram(sceneShader.programID);
 							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
@@ -946,7 +993,7 @@ int Oculus::runOvr() {
 								MVstack.pop();
 								//render brush------------------------
 
-								MVstack.push();
+								/*MVstack.push();
 									translateVector[0] = 0.0f;
 									translateVector[1] = 0.0f;
 									translateVector[2] = 1.0f;
@@ -960,8 +1007,14 @@ int Oculus::runOvr() {
 									MVstack.translate(brush.getPosition());
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 									brush.render();
-								MVstack.pop();
+								MVstack.pop();*/
+								currentTool->render(MVptr, locationMV);
 							MVstack.pop();
+
+							// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
+							glUseProgram(bloomShader.programID);
+							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+
 							if (selectingTool) {
 								MVstack.push();
 									MVstack.translate(startWandPos);

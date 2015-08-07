@@ -1,8 +1,12 @@
+#pragma once
 #include "Utilities.h"
 #include "linAlg.h"
 #include "Mesh.h"
 #include "Wand.h"
 #include <vector>
+
+#ifndef DYNAMICMESH_H
+#define DYNAMICMESH_H
 
 struct dBufferData {
 	GLfloat x;
@@ -35,8 +39,14 @@ struct vInfo {
 	GLfloat selected = 0;
 };
 
+#endif
+
 //! A class representing a modifiable 3D mesh 
 class DynamicMesh : public Mesh{
+	friend class Smooth;
+	friend class Push;
+	friend class Draw;
+
   public:
 	DynamicMesh();
 	DynamicMesh(std::string fileName);
@@ -125,9 +135,9 @@ class DynamicMesh : public Mesh{
 	void edgeSubdivide(float* pA, float* vecA2B, halfEdge* &edge, bool update, float rad);
 
 	//! updates the changed vertecies normal and checks if retriangulation is needed.
-	void updateArea(sVert* changeList, int listSize);
+	void updateArea(int* changeList, int listSize);
 
 	//! updates the changed vertecies normal 
-	void updateNormals(sVert* changeList, int listSize);
+	void updateNormals(int* changeList, int listSize);
 
 };

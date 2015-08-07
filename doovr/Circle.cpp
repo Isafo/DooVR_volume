@@ -5,6 +5,12 @@ Circle::Circle(float pX, float pY, float pZ, float r) {
 	position[1] = pY;
 	position[2] = pZ;
 
+	orientation[0] = 1.0f; orientation[1] = 0.0f; orientation[2] = 0.0f; orientation[3] = 0.0f;
+	orientation[4] = 0.0f; orientation[5] = 1.0f; orientation[6] = 0.0f; orientation[7] = 0.0f;
+	orientation[8] = 0.0f; orientation[9] = 0.0f; orientation[10] = 1.0f; orientation[11] = 0.0f;
+	orientation[12] = 0.0f; orientation[13] = 0.0f; orientation[14] = 0.0f; orientation[15] = 1.0f;
+
+
 	const float M_PI = 3.14159265359;
 	const int nsegments = 100;
 

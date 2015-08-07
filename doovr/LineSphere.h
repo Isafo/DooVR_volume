@@ -1,7 +1,7 @@
 #pragma once
-#include "Brush.h"
+#include "nPolygon.h"
 
-class LineSphere : public Brush
+class LineSphere : public nPolygon
 {
 public:
 	//! draws a sphere consisting of 3 circles with origin in (pX, pY, pZ) and radius r;

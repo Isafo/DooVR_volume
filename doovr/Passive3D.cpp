@@ -19,57 +19,38 @@ Passive3D::Passive3D()
 
 	//connection----------------------
 	try {
-		wand = new Wand3d("COM4"); // usb port
+		wand = new Wand3d("COM3"); // usb port
 	}
 	catch (Wand3dSerialException error) {
 		std::cout << error.what() << std::endl;
 	}
 	
-	//Network newNet;
-	//
-	//newNet.setSensorPosition(0, 0.15, 0.0, 0.082);
-	//newNet.setSensorPosition(1, -0.15, 0.0, 0.082);
-	//newNet.setSensorPosition(2, -0.15, 0.0, -0.082);
-	//newNet.setSensorPosition(3, 0.15, 0.0, -0.082);
-
-	//double rotZX[9] = { -1.f, 0.f, 0.f,
-	//	                  0.f, 0.f, 1.f,
-	//	                  0.f, 1.f, 0.f};
-	//double rot[9] = { 1.0f, 0.0f, 0.0f,
-	//				  0.0f, 1.0f, 0.0f,
-	//				  0.0f, 0.0f, 1.0f };
-	//double rotZ[9] = { -1.0f, 0.0f, 0.0f,
-	//					0.0f, -1.0f, 0.0f,
-	//					0.0f, 0.0f, 1.0f };
-	//double rotZXZ[9] = { -1.f, 0.f, 0.f,
-	//						0.f, 0.f, 1.f,
-	//						0.f, -1.f, 0.f };
-	//double rotX[9] = { 1.f, 0.f, 0.f,
-	//	0.f, 0.f, -1.f,
-	//	0.f, 1.f, 0.f };
-	//double rotY[9] = { -1.f, 0.f, 0.f,
-	//	0.f, 1.f, 0.f,
-	//	0.f, 0.f, -1.f };
-	//double rotXY[9] = { -1.f, 0.f, 0.f,
-	//	0.f, 0.f, 1.f,
-	//	0.f, 1.f, 0.f };
-	//double rotXYY[9] = { 1.f, 0.f, 0.f,
-	//	0.f, 0.f, 1.f,
-	//	0.f, -1.f, 0.f };
+	/*Network newNet;
+	
+	newNet.setSensorPosition(0, 0.15, 0.0, 0.082);
+	newNet.setSensorPosition(1, -0.15, 0.0, 0.082);
+	newNet.setSensorPosition(2, -0.15, 0.0, -0.082);
+	newNet.setSensorPosition(3, 0.15, 0.0, -0.082);
 
 
 
-	///*double rotZXY[9] = {  1.f, 0.f, 0.f,
-	//					   0.f, 0.f, 1.f,
-	//	                   0.f, -1.f, 0.f};*/
+	double rot[9] = { -1.f, 0.f, 0.f,
+					   0.f, 0.f, 1.f,
+					   0.f, 1.f, 0.f };
 
-	//newNet.setSensorRotation(0, rotXY);
-	//newNet.setSensorRotation(1, rotXYY);
-	//newNet.setSensorRotation(2, rotXYY);
-	//newNet.setSensorRotation(3, rotXY);
+	double rotZ[9] = { 1.f, 0.f, 0.f,
+					   0.f, 0.f, -1.f,
+					   0.f, 1.f, 0.f };
 
-	//wand->setNetwork(newNet);
-	//
+
+
+	newNet.setSensorRotation(0, rot);
+	newNet.setSensorRotation(1, rotZ);
+	newNet.setSensorRotation(2, rotZ);
+	newNet.setSensorRotation(3, rot);
+
+	wand->setNetwork(newNet);*/
+
 	Wand3dObserver* observer = this;
 	wand->addObserver(observer);
 	
@@ -95,12 +76,12 @@ void Passive3D::wand3dCallback(WandData data) {
 	Position[0] = -data.position[0];
 	Position[1] = data.position[2] - 0.27f;
 	Position[2] = data.position[1] - 0.25f;
-	
+
 	utils::getGLRotMatrix(data, Orient);
 	float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
-						 0.f, 0.f, 1.f, 0.f,
-						 0.f, 1.f, 0.f, 0.f,
-						 0.f, 0.f, 0.f, 1.0f };
+		0.f, 0.f, 1.f, 0.f,
+		0.f, 1.f, 0.f, 0.f,
+		0.f, 0.f, 0.f, 1.0f };
 	linAlg::matrixMult(rotZX, Orient, OrientationM);
 
 	Velocity[0] = data.velocity[0];
@@ -113,7 +94,7 @@ void Passive3D::wand3dCallback(WandData data) {
 	dirr[2] = data.orientation[2];
 	dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(rotZX, dirr, dirrResult);
-	
+
 	Direction[0] = dirrResult[0];
 	Direction[1] = dirrResult[1];
 	Direction[2] = dirrResult[2];

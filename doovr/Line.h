@@ -1,7 +1,7 @@
 #pragma once
-#include "Brush.h"
+#include "nPolygon.h"
 
-class Line : public Brush
+class Line : public nPolygon
 {
 public:
 	//! draws a line starting at position (pX, pY, pZ) going to position (pX, pY, pZ - length)
