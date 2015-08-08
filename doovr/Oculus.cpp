@@ -432,11 +432,11 @@ int Oculus::runOvr() {
 	for (int i = 0; i < NR_OF_TOOLS; i++)
 		tool[i] = menuBox(i*0.035f, -0.2f, -0.25f, 0.03f, 0.03f, 0.03f, i, 0, 1, 1);
 
-	menuBox toolSize(0.035f, -0.2f, -0.25f, 0.02f, 0.02f, 0.15f, 3, 3, 1, 1);
-	menuBox toolSizeFill(0.035f, -0.2f, -0.25f, 0.015f, 0.015f, 0.15f, 3, 3, 1, 1);
+	menuBox toolSize(0.035f, -0.2f, -0.25f, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1);
+	menuBox toolSizeFill(0.035f, -0.2f, -0.25f, 0.015f, 0.15f, 0.015f, 3, 3, 1, 1);
 	menuBox toolSizeText(0.035f, -0.2f, -0.34f, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1);
-	menuBox toolStrength(0.035f, -0.2f, -0.25f, 0.02f, 0.02f, 0.15f, 3, 3, 1, 1);
-	menuBox toolStrengthFill(0.035f, -0.2f, -0.25f, 0.015f, 0.015f, 0.15f, 3, 3, 1, 1);
+	menuBox toolStrength(0.035f, -0.2f, -0.25f, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1);
+	menuBox toolStrengthFill(0.035f, -0.2f, -0.25f, 0.015f, 0.15f, 0.015f, 3, 3, 1, 1);
 	menuBox toolStrengthText(0.035f, -0.2f, -0.34f, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1);
 
 	/*! tool 0 = push/pull
@@ -670,16 +670,16 @@ int Oculus::runOvr() {
 							tempVecPtr = tool[i].getPosition();
 							tempVecPtr[0] = startWandPos[0] + (i - NR_OF_TOOLS / 2)*0.035;
 							tempVecPtr[1] = startWandPos[1] - 0.015;
-							tempVecPtr[2] = startWandPos[2] + 0.05f;
+							tempVecPtr[2] = startWandPos[2] + 0.03f;
 						}
 						
 						tempVecPtr = toolSize.getPosition();
-						tempVecPtr[0] = startWandPos[0] - (0.035f*NR_OF_TOOLS/2) - 0.02 ;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
+						tempVecPtr[0] = startWandPos[0] -  0.02 ;
+						tempVecPtr[1] = startWandPos[1] + 0.075;
 						tempVecPtr[2] = startWandPos[2] - 0.04f;
 						tempVecPtr = toolStrength.getPosition();
-						tempVecPtr[0] = startWandPos[0] + (0.035f*NR_OF_TOOLS / 2) + 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
+						tempVecPtr[0] = startWandPos[0]  + 0.02;
+						tempVecPtr[1] = startWandPos[1] + 0.075;
 						tempVecPtr[2] = startWandPos[2] - 0.04f;
 
 						tempVecPtr = toolSizeFill.getPosition();
