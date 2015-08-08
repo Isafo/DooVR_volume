@@ -291,7 +291,6 @@ int Oculus::runOvr() {
 	g_EyeOffsets[ovrEye_Left] = g_EyeRenderDesc[ovrEye_Left].HmdToEyeViewOffset;
 	g_EyeOffsets[ovrEye_Right] = g_EyeRenderDesc[ovrEye_Right].HmdToEyeViewOffset;
 
-	//glfwSetKeyCallback(l_Window, KeyCallback);
 	glfwSetWindowSizeCallback(l_Window, WindowSizeCallback);
 
 	//=====================================================================================================================================
@@ -538,12 +537,8 @@ int Oculus::runOvr() {
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
 
-	Smooth smoothTool(modellingMesh, wand);
-	Push pushTool(modellingMesh, wand);
-	Draw drawTool(modellingMesh, wand);
-
 	Tool* currentTool;
-	currentTool = &pushTool;
+	currentTool = new Push(modellingMesh, wand);
 
 	//=======================================================================================================================================
 	//Render loop
@@ -719,8 +714,15 @@ int Oculus::runOvr() {
 								&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {	
 								if (!tool[i].getState()) {	
 									tool[activeTool].setState(false);
+									delete currentTool;
 									tool[i].setState(true);
 									activeTool = i;
+									if (i == 0)
+										currentTool = new Push(modellingMesh, wand);
+									else if (i == 1)
+										currentTool = new Smooth(modellingMesh, wand);
+									else if (i == 2)
+										currentTool = new Draw(modellingMesh, wand);
 									break;
 								}
 							}
@@ -758,25 +760,10 @@ int Oculus::runOvr() {
 						aModellingStateIsActive--;
 					}
 				}
-
+				
 				//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 					glfwSetWindowShouldClose(l_Window, GL_TRUE);
-				}
-				if (glfwGetKey(l_Window, GLFW_KEY_Q)) {
-					wandRadius += 0.001f;
-					currentTool = &smoothTool;
-					currentTool->deSelect();
-				}
-				if (glfwGetKey(l_Window, GLFW_KEY_W)) {
-					wandRadius -= 0.001f;
-					currentTool = &drawTool;
-					currentTool->deSelect();
-				}
-				if (glfwGetKey(l_Window, GLFW_KEY_E)) {
-					wandRadius -= 0.001f;
-					currentTool = &pushTool;
-					currentTool->deSelect();
 				}
 
 				// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
@@ -1014,12 +1001,13 @@ int Oculus::runOvr() {
 									modellingMesh->render();
 
 								}
-
+								glUseProgram(sceneShader.programID);
+								glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
 								currentTool->renderIntersection(MVptr, locationMeshMV);
 
 							MVstack.pop();
 
-							glUseProgram(sceneShader.programID);
+							
 							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 							// 3.4.6 Render wand >-------------------------------------------------------------------------------------------
 							MVstack.push();
@@ -1033,7 +1021,7 @@ int Oculus::runOvr() {
 									translateVector[2] = -0.1f;
 									MVstack.translate(translateVector);
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+									
 									boxWand.render();		
 								MVstack.pop();
 								//render brush------------------------
@@ -1181,6 +1169,9 @@ int Oculus::runOvr() {
 					if (modellingState[1] == 3) {
 						modellingState[1] = 0;
 					}
+					else if (modellingState[1] == -1){
+						modellingState[1] = 0;
+					}
 					else if (modellingState[1] != 0) {
 						// just released button
 					
@@ -1234,6 +1225,7 @@ int Oculus::runOvr() {
 				if (tempMoveVec[0] > 0.25 || tempMoveVec[2] > 0) {
 					previewMesh = placeHolder;
 					fileIndex--;
+					modellingState[1] = -1;
 					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 					if (loaderMeshLock.try_lock()) {
 						loaderMeshLock.unlock();
@@ -1244,6 +1236,7 @@ int Oculus::runOvr() {
 				else if (tempMoveVec[0] < -0.25 || tempMoveVec[2] < -0.5) {
 					previewMesh = placeHolder;
 					fileIndex++;
+					modellingState[1] = -1;
 					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 					if (loaderMeshLock.try_lock()) {
 						loaderMeshLock.unlock();
@@ -1637,13 +1630,13 @@ int Oculus::runOvr() {
 	glDeleteTextures(1, &l_TextureId);
 	glDeleteFramebuffers(1, &l_FBOId);
 
-	// Clean up Oculus...
-	ovrHmd_Destroy(hmd);
-	ovr_Shutdown();
-
 	// Clean up window...
 	glfwDestroyWindow(l_Window);
 	glfwTerminate();
+
+	// Clean up Oculus...
+	ovrHmd_Destroy(hmd);
+	ovr_Shutdown();
 
 	return 1;
 }

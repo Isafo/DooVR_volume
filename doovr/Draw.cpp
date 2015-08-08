@@ -282,7 +282,7 @@ void Draw::firstSelect(DynamicMesh* mesh, Wand* wand)
 						linAlg::calculateVec(eVec1, Dirr, eVec2);
 						oLength = linAlg::vecLength(eVec2);
 
-						if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius + 0.002) {
+						if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius) {
 							//tempSVert = new sVert; sTail->next->next = tempSVert; sTail->next = tempSVert; tempSVert->next = sTail;
 							//tempSVert->index = index;
 							selectedVertices[selectedSize] = index; selectedSize++;
@@ -501,7 +501,7 @@ void Draw::moveVertices(DynamicMesh* mesh, Wand* wand)
 			linAlg::calculateVec(eVec1, Dirr, eVec2);
 			oLength = linAlg::vecLength(eVec2);
 
-			if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius + 0.01) {
+			if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius) {
 				selectedVertices[selectedSize] = index2; selectedSize++;
 				if (oLength < radius)
 				{

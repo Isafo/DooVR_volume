@@ -89,9 +89,9 @@ void Passive3D::wand3dCallback(WandData data) {
 	Velocity[2] = data.velocity[2];
 
 
-	dirr[0] = data.orientation[0];
-	dirr[1] = data.orientation[1];
-	dirr[2] = data.orientation[2];
+	dirr[0] = -data.orientation[0];
+	dirr[1] = -data.orientation[1];
+	dirr[2] = -data.orientation[2];
 	dirr[3] = 1.0f;
 	linAlg::vectorMatrixMult(rotZX, dirr, dirrResult);
 

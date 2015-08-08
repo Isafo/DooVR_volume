@@ -298,7 +298,7 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 			}
 			for (int i = 0; i < previouslySelectedSize; i++)
 			{
-				mVInfoArray[previouslySelectedVertices[i]].selected = 0.0f;
+				mVInfoArray[previouslySelectedVertices[i]].selected = 1.0f;
 			}
 		}
 	}

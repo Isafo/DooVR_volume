@@ -13,13 +13,13 @@ void Wand::getPosition(float* vec) {
 
 float* Wand::getOrientation()
 {
+
 	float start[3] = { 0.0f, 0.0f, 1.0f };
 	float temp[3];
 	linAlg::normVec(Direction);
-
-	linAlg::crossProd(temp, start, Direction );
-
-	linAlg::rotAxis(temp, acos(linAlg::dotProd(start, Direction)), OrientationM);
+	linAlg::crossProd(temp, Direction, start);
+	linAlg::normVec(temp);
+	linAlg::rotAxis(temp, acos(linAlg::dotProd(Direction, start)), OrientationM);
 	return OrientationM;
 }
 
