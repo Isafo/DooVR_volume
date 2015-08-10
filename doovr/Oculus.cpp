@@ -38,7 +38,7 @@
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
 static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
 //! checks if the wand is colliding with a menuItem and sets the menuItems state accordingly, returns true if a menuItem choise has occured
-int handleMenu(float* wandPosition, MenuItem** menuItem, const int nrOfModellingUIButtons, int* state);
+int handleMenu(float* wandPosition, menuBox** menuItem, const int nrOfModellingUIButtons, int* state);
 void GLRenderCallsOculus();
 //! reads all filenames in savedFiles folder
 std::vector<std::string> getSavedFileNames();
@@ -64,6 +64,11 @@ ovrGLConfig g_Cfg;
 ovrEyeRenderDesc g_EyeRenderDesc[2];
 
 std::mutex loaderMeshLock, meshLock;
+
+void keycallback(GLFWwindow* window, int key, int asd, int fasd, int asdf)
+{
+	std::cout << key << std::endl;
+}
 
 int Oculus::runOvr() {
 
@@ -365,6 +370,8 @@ int Oculus::runOvr() {
 	Texture menuStrings("../Assets/Textures/menuSTRINGS.DDS");
 	Texture testFrame("../Assets/Textures/squareFRAME.DDS");
 
+	float boardPos[3] = { 0.0f, -0.3f, 0.0f };
+	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
@@ -388,20 +395,19 @@ int Oculus::runOvr() {
 	int modellingState[NR_OF_MODELLING_STATES] = { 0 };
 	int aModellingStateIsActive = 0;
 
-	const int NR_OF_MODELLING_BUTTONS = 5;
+	const int NR_OF_MODELLING_BUTTONS = 4;
 	/*!	[0] resetMesh
 		[1] save
 		[2] load
 		[3] Wireframe
 		[4] increase wand size */
-	MenuItem* modellingButton[NR_OF_MODELLING_BUTTONS];
+	menuBox* modellingButton[NR_OF_MODELLING_BUTTONS];
 
 	Texture* modellingButtonTex[NR_OF_MODELLING_BUTTONS];
-	modellingButtonTex[0] = &resetTex;
-	modellingButtonTex[1] = &saveTex;
-	modellingButtonTex[2] = &loadTex;
-	modellingButtonTex[3] = &wireFrameTex;
-	modellingButtonTex[4] = &plusTex;
+	modellingButtonTex[0] = &menuIcons;
+	modellingButtonTex[1] = &menuIcons;
+	modellingButtonTex[2] = &menuIcons;
+	modellingButtonTex[3] = &menuIcons;
 
 	/*!	0 indicates that the state is not active,
 		1 indicates that the state has just been activated
@@ -417,11 +423,10 @@ int Oculus::runOvr() {
 		[4] change wand size*/
 	static int modellingButtonState[NR_OF_MODELLING_BUTTONS];
 
-	modellingButton[0] = new MenuItem(-0.2f, -0.26f, -0.2f, 0.08f, 0.08); // place reset menuItem on the other side
-
-	for (int i = -(NR_OF_MODELLING_BUTTONS - 1) / 2 + 1; i <= (NR_OF_MODELLING_BUTTONS - 1) / 2; i++) {
-		modellingButton[i + (NR_OF_MODELLING_BUTTONS - 1) / 2] = new MenuItem(0.2f, -0.26f, -0.25f + i * 0.0801f, 0.08f, 0.08);
-	}
+	modellingButton[0] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.03f, boardPos[2] + 0.06, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1); // place reset menuItem on the other side
+	modellingButton[1] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.03f, boardPos[2] + -0.03, 0.025f, 0.025f, 0.025f, 3, 0, 1, 1);
+	modellingButton[2] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.03f, boardPos[2] + -0.06, 0.025f, 0.025f, 0.025f, 4, 0, 1, 1);
+	modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.03f, boardPos[2] + -0.09, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1);
 	//variable used with the button that switches wireframe, TODO: should be replaced by something
 	bool lines = false;
 
@@ -430,14 +435,14 @@ int Oculus::runOvr() {
 	bool selectingTool = false;
 	menuBox tool[NR_OF_TOOLS];
 	for (int i = 0; i < NR_OF_TOOLS; i++)
-		tool[i] = menuBox(i*0.035f, -0.2f, -0.25f, 0.03f, 0.03f, 0.03f, i, 0, 1, 1);
+		tool[i] = menuBox(boardPos[0] + 0.2, boardPos[1] + 0.03f, boardPos[2] - 0.03*i, 0.03f, 0.03f, 0.03f, i, 0, 1, 1);
 
-	menuBox toolSize(0.035f, -0.2f, -0.25f, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1);
-	menuBox toolSizeFill(0.035f, -0.2f, -0.25f, 0.015f, 0.15f, 0.015f, 3, 3, 1, 1);
-	menuBox toolSizeText(0.035f, -0.2f, -0.34f, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1);
-	menuBox toolStrength(0.035f, -0.2f, -0.25f, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1);
-	menuBox toolStrengthFill(0.035f, -0.2f, -0.25f, 0.015f, 0.15f, 0.015f, 3, 3, 1, 1);
-	menuBox toolStrengthText(0.035f, -0.2f, -0.34f, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1);
+	menuBox toolSize(boardPos[0] + 0.2, boardPos[1] + 0.03f, -0.25f, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1);
+	menuBox toolSizeFill(boardPos[0] + 0.2, boardPos[1] + 0.03f, -0.25f, 0.015f, 0.15f, 0.015f, 3, 3, 1, 1);
+	menuBox toolSizeText(boardPos[0] + 0.2, boardPos[1] + 0.03f, -0.34f, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1);
+	menuBox toolStrength(boardPos[0] + 0.2, boardPos[1] + 0.03f, -0.25f, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1);
+	menuBox toolStrengthFill(boardPos[0] + 0.2, boardPos[1] + 0.03f, -0.25f, 0.015f, 0.15f, 0.015f, 3, 3, 1, 1);
+	menuBox toolStrengthText(boardPos[0] + 0.2, boardPos[1] + 0.03f, -0.34f, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1);
 
 	/*! tool 0 = push/pull
 			 1 = 
@@ -448,7 +453,7 @@ int Oculus::runOvr() {
 	const int NR_OF_LOAD_BUTTONS = 2;
 	/*! 0 = loadFile button
 		1 = exitLoad button*/
-	MenuItem* loadButton[NR_OF_LOAD_BUTTONS];
+	menuBox* loadButton[NR_OF_LOAD_BUTTONS];
 	/*! 0 indicates that the state is not active,
 		1 indicates that the state has just been activated
 		2 indicates that the state is active
@@ -503,18 +508,12 @@ int Oculus::runOvr() {
 	// 2.7.1 - Matrix stack and static scene objects >---------------------------------------------------------------------------------------
 	MatrixStack MVstack; MVstack.init();
 	MatrixStack* MVptr = &MVstack;
-	Box board(0.0f, -0.28f, -0.25f, 1.4, 0.02, 0.70); TrackingRange trackingRange(0.0f, -0.145f, -0.25f, 0.50, 0.25, 0.50);
+	
 
-	menuBox testMenu(0.0f, -0.2f, -0.25f, 0.09, 0.005, 0.03, 2, 1, 3 ,1 );
-
-	MenuItem title(0.0f, 0.9f, -0.95f, 0.5f, 0.5f);
-	MenuItem wandSizePanel(0.2f, -0.25f, -0.12f, 0.10f, 0.03f);
+	MenuItem title(0.0f, 0.8f, -1.0f, 0.5f, 0.5f);
 
 	// 2.7.2 - Wand variables >--------------------------------------------------------------------------------------------------------------
 	Box boxWand(0.0f, 0.0f, 0.0f, 0.007f, 0.007f, 0.2f);
-	Box boxPointer(0.0f, 0.0f, 0.0f, 0.0005f, 0.0005f, 0.6f);
-	Line brushPointer(0.0f, 0.0f, 0.0f, 1.0f);
-	LineSphere brush(0.0f, 0.0f, 0.0f, 1.0f);
 	// Initilise passive wand
 	Passive3D* wand = new Passive3D();
 	// Size of the wand tool
@@ -565,7 +564,7 @@ int Oculus::runOvr() {
 				// 3.1 - modellingstates \_____________________________________________________________________________________________________
 				//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
 			
-			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
+			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_UP)) {
 				if (modellingState[0] == 2) {
 					//currentTool->deSelect();
 					//modellingMesh->select(wand, wandRadius);
@@ -607,7 +606,7 @@ int Oculus::runOvr() {
 				modellingMesh->updateOGLData();
 				//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
 				
-				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
+				if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
 					if (modellingState[1] == 0) {
 						modellingState[1] = 1;
 						wand->getPosition(lastPos);
@@ -761,6 +760,8 @@ int Oculus::runOvr() {
 					}
 				}
 				
+				glfwSetKeyCallback(l_Window, keycallback);
+
 				//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 					glfwSetWindowShouldClose(l_Window, GL_TRUE);
@@ -819,8 +820,8 @@ int Oculus::runOvr() {
 
 									previewMesh = placeHolder;
 
-									loadButton[0] = new MenuItem(0.05f, -0.2599f, -0.15f, 0.1, 0.05);
-									loadButton[1] = new MenuItem(-0.05f, -0.2599f, -0.15f, 0.1, 0.05);
+									loadButton[0] = new menuBox(boardPos[0] - 0.03f, boardPos[1] + 0.03f, boardPos[2] + 0.05f, 0.02f, 0.02f, 0.02f, 0, 1, 1, 1);
+									loadButton[1] = new menuBox(boardPos[0] - 0.03f, boardPos[1] + 0.03f, boardPos[2] + 0.05f, 0.02f, 0.02f, 0.02f, 0, 1, 1, 1);
 
 									// Call thread to load the mesh preview
 									th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
@@ -1293,6 +1294,7 @@ int Oculus::runOvr() {
 					continue;
 				}
 
+				
 
 				// Begin the frame...
 				ovrHmd_BeginFrame(hmd, l_FrameIndex);
@@ -1680,14 +1682,14 @@ void GLRenderCallsOculus(){
 }
 
 //! checks if a menu item is choosen and sets the appropriate state 
-int handleMenu(float* wandPosition, MenuItem** menuItem, const int nrOfModellingUIButtons, int* state) {
+int handleMenu(float* wandPosition, menuBox** menuItem, const int nrOfModellingUIButtons, int* state) {
 	for (int i = 0; i < nrOfModellingUIButtons; i++) {
-		if (wandPosition[1] < menuItem[i]->getPosition()[1] + 0.02f
-			&& wandPosition[1] > menuItem[i]->getPosition()[1] - 0.02f
-			&& wandPosition[0] > menuItem[i]->getPosition()[0] - menuItem[i]->getDim()[0] / 4.f
-			&& wandPosition[0] < menuItem[i]->getPosition()[0] + menuItem[i]->getDim()[0] / 4.f
-			&& wandPosition[2] > menuItem[i]->getPosition()[2] - menuItem[i]->getDim()[1] / 4.f
-			&& wandPosition[2] < menuItem[i]->getPosition()[2] + menuItem[i]->getDim()[1] / 4.f) {									// check the item on left side
+		if (wandPosition[0] < menuItem[i]->getPosition()[0] + menuItem[i]->getDim()[0] /2.0f
+			&& wandPosition[0] > menuItem[i]->getPosition()[0] - menuItem[i]->getDim()[0] / 2.0f
+			&& wandPosition[1] > menuItem[i]->getPosition()[1] - menuItem[i]->getDim()[1] / 2.0f
+			&& wandPosition[1] < menuItem[i]->getPosition()[1] + menuItem[i]->getDim()[1] / 2.0f
+			&& wandPosition[2] > menuItem[i]->getPosition()[2] - menuItem[i]->getDim()[2] / 2.0f
+			&& wandPosition[2] < menuItem[i]->getPosition()[2] + menuItem[i]->getDim()[2] / 2.0f) {									// check the item on left side
 
 			// set state
 			if (state[i] == 0) {
