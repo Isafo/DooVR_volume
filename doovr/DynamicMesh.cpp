@@ -565,7 +565,6 @@ void DynamicMesh::load(std::string fileName) {
 	{
 		e[i].nextEdge = -(i + 1);
 	}
-
 }
 
 void DynamicMesh::save() {

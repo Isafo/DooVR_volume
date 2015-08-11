@@ -1,7 +1,7 @@
 #include "menuBox.h"
 
 
-menuBox::menuBox(float x, float y, float z, float dX, float dY, float dZ, int tX, int tY, int tXLength, int tYLength) {
+menuBox::menuBox(float x, float y, float z, float dX, float dY, float dZ, int tX, int tY, int tXLength, int tYLength, int sideX, int sideY) {
 	oType = 'B';
 	position[0] = x;
 	position[1] = y;
@@ -12,35 +12,35 @@ menuBox::menuBox(float x, float y, float z, float dX, float dY, float dZ, int tX
 
 	GLfloat vertex_array_data[] = {
 		//		Vertex									Normals					Texture  
-		-dX / 2.0f,	-dY / 2.0f,  dZ / 2.0f,				0.0f, 0.0f, 1.0f,		0.8333f, 1.0f,		//1 - 0
-		dX / 2.0f,  -dY / 2.0f,  dZ / 2.0f,				0.0f, 0.0f, 1.0f,		0.8333f, 0.8333f,	//2 - 1
-		dX / 2.0f,   dY / 2.0f,  dZ / 2.0f,				0.0f, 0.0f, 1.0f,		1.0f, 0.8333f,		//3 - 2
-		-dX / 2.0f,  dY / 2.0f,  dZ / 2.0f,				0.0f, 0.0f, 1.0f,		1.0f, 1.0f,			//4 - 3 
+		-dX / 2.0f,	-dY / 2.0f,  dZ / 2.0f,				0.0f, 0.0f, 1.0f,		(sideX*256.0f)/1536, (sideY*256.0f + 256.0f)/1536.0f,		//1 - 0
+		dX / 2.0f,  -dY / 2.0f,  dZ / 2.0f,				0.0f, 0.0f, 1.0f,		(sideX*256.0f)/1536, (sideY*256.0f)/1536,	//2 - 1
+		dX / 2.0f,   dY / 2.0f,  dZ / 2.0f,				0.0f, 0.0f, 1.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f)/1536,		//3 - 2
+		-dX / 2.0f,  dY / 2.0f,  dZ / 2.0f,				0.0f, 0.0f, 1.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f + 256.0f)/1536.0f,			//4 - 3 
 
-		-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,				0.0f, 0.0f, -1.0f,		0.8333f, 1.0f,		//5 - 4 
-		dX / 2.0f,  -dY / 2.0f, -dZ / 2.0f,				0.0f, 0.0f, -1.0f,		0.8333f, 0.8333f,	//6 - 5
-		dX / 2.0f,   dY / 2.0f, -dZ / 2.0f,				0.0f, 0.0f, -1.0f,		1.0f, 0.8333f,		//7 - 6 
-		-dX / 2.0f,  dY / 2.0f, -dZ / 2.0f,				0.0f, 0.0f, -1.0f,		1.0f, 1.0f,			//8 - 7
+		-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,				0.0f, 0.0f, -1.0f,		(sideX*256.0f)/1536, (sideY*256.0f + 256.0f)/1536.0f,		//5 - 4 
+		dX / 2.0f,  -dY / 2.0f, -dZ / 2.0f,				0.0f, 0.0f, -1.0f,		(sideX*256.0f)/1536, (sideY*256.0f)/1536,	//6 - 5
+		dX / 2.0f,   dY / 2.0f, -dZ / 2.0f,				0.0f, 0.0f, -1.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f)/1536,		//7 - 6 
+		-dX / 2.0f,  dY / 2.0f, -dZ / 2.0f,				0.0f, 0.0f, -1.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f + 256.0f)/1536.0f,			//8 - 7
 
-		-dX / 2.0f, -dY / 2.0f, dZ / 2.0f,				0.0f, -1.0f, 0.0f,		0.8333f, 0.8333f,	//1 - 8
-		dX / 2.0f, -dY / 2.0f, dZ / 2.0f,				0.0f, -1.0f, 0.0f,		1.0f, 0.8333f,		//2 - 9
-		-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,				0.0f, -1.0f, 0.0f,		0.8333f, 1.0f,		//5 - 10
-		dX / 2.0f,  -dY / 2.0f, -dZ / 2.0f,				0.0f, -1.0f, 0.0f,		1.0f, 1.0f,			//6 - 11
+		-dX / 2.0f, -dY / 2.0f, dZ / 2.0f,				0.0f, -1.0f, 0.0f,		(sideX*256.0f)/1536, (sideY*256.0f)/1536,	//1 - 8
+		dX / 2.0f, -dY / 2.0f, dZ / 2.0f,				0.0f, -1.0f, 0.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f)/1536,		//2 - 9
+		-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,				0.0f, -1.0f, 0.0f,		(sideX*256.0f)/1536, (sideY*256.0f + 256.0f)/1536.0f,		//5 - 10
+		dX / 2.0f,  -dY / 2.0f, -dZ / 2.0f,				0.0f, -1.0f, 0.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f + 256.0f)/1536.0f,			//6 - 11
 
 		dX / 2.0f,  dY / 2.0f,  dZ / 2.0f,				0.0f, 1.0f, 0.0f,		(tX * 256.0f + tXLength * 256.0f) / 1536.0f, (tY * 256.0f) / 1536.0f,						//3 - 12
 		-dX / 2.0f, dY / 2.0f,  dZ / 2.0f,				0.0f, 1.0f, 0.0f,		(tX * 256.0f ) / 1536.0f, (tY*256.0f )/1536.0f,												//4 - 13
 		dX / 2.0f,  dY / 2.0f, -dZ / 2.0f,				0.0f, 1.0f, 0.0f,		(tX * 256.0f + tXLength * 256.0f) / 1536.0f, (tY * 256.0f + tYLength*256.0f) / 1536.0f,		//7 - 14
 		-dX / 2.0f, dY / 2.0f, -dZ / 2.0f,				0.0f, 1.0f, 0.0f,		(tX * 256.0f) / 1536.0f, (tY * 256.0f + tYLength * 256.0f) / 1536.0f,						//8 - 15
 
-		-dX / 2.0f, -dY / 2.0f,  dZ / 2.0f,				-1.0f, 0.0f, 0.0f,		1.0f, 1.0f,			//1 - 16
-		-dX / 2.0f,  dY / 2.0f,  dZ / 2.0f,				-1.0f, 0.0f, 0.0f,		0.8333f, 1.0f,		//4 - 17
-		-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,				-1.0f, 0.0f, 0.0f,		1.0f, 0.8333f,		//5 - 18
-		-dX / 2.0f,  dY / 2.0f, -dZ / 2.0f,				-1.0f, 0.0f, 0.0f,		0.8333f, 0.8333f,	//8 - 19
+		-dX / 2.0f, -dY / 2.0f,  dZ / 2.0f,				-1.0f, 0.0f, 0.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f + 256.0f)/1536.0f,			//1 - 16
+		-dX / 2.0f,  dY / 2.0f,  dZ / 2.0f,				-1.0f, 0.0f, 0.0f,		(sideX*256.0f)/1536, (sideY*256.0f + 256.0f)/1536.0f,		//4 - 17
+		-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,				-1.0f, 0.0f, 0.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f)/1536,		//5 - 18
+		-dX / 2.0f,  dY / 2.0f, -dZ / 2.0f,				-1.0f, 0.0f, 0.0f,		(sideX*256.0f)/1536, (sideY*256.0f)/1536,	//8 - 19
 
-		dX / 2.0f, -dY / 2.0f,  dZ / 2.0f,				1.0f, 0.0f, 0.0f,		0.8333f, 0.8333f,	//2 - 20
-		dX / 2.0f,  dY / 2.0f,  dZ / 2.0f,				1.0f, 0.0f, 0.0f,		1.0f, 0.8333f,		//3 - 21
-		dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,				1.0f, 0.0f, 0.0f,		0.8333f, 1.0f,		//6 - 22
-		dX / 2.0f,  dY / 2.0f, -dZ / 2.0f,				1.0f, 0.0f, 0.0f,		1.0f, 1.0f			//7 - 23
+		dX / 2.0f, -dY / 2.0f,  dZ / 2.0f,				1.0f, 0.0f, 0.0f,		(sideX*256.0f)/1536, (sideY*256.0f)/1536,	//2 - 20
+		dX / 2.0f,  dY / 2.0f,  dZ / 2.0f,				1.0f, 0.0f, 0.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f)/1536,		//3 - 21
+		dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,				1.0f, 0.0f, 0.0f,		(sideX*256.0f)/1536, (sideY*256.0f + 256.0f)/1536.0f,		//6 - 22
+		dX / 2.0f,  dY / 2.0f, -dZ / 2.0f,				1.0f, 0.0f, 0.0f,		(sideX*256.0f + 256.0f)/1536.0f, (sideY*256.0f + 256.0f)/1536.0f			//7 - 23
 	};
 
 	static const GLuint index_array_data[] = {
@@ -118,18 +118,18 @@ menuBox::~menuBox(void) {
 }
 
 void menuBox::setDim(float x, float y, float z) {
-	vertexarray[4 * 8 + 2] = z;
-	vertexarray[5 * 8 + 2] = z;
-	vertexarray[6 * 8 + 2] = z;
-	vertexarray[7 * 8 + 2] = z;
-	vertexarray[10 * 8 + 2] = z;
-	vertexarray[11 * 8 + 2] = z;
-	vertexarray[14 * 8 + 2] = z;
-	vertexarray[15 * 8 + 2] = z;
-	vertexarray[18 * 8 + 2] = z;
-	vertexarray[19 * 8 + 2] = z;
-	vertexarray[22 * 8 + 2] = z;
-	vertexarray[23 * 8 + 2] = z;
+	vertexarray[2 * 8 + 1] = y;
+	vertexarray[3 * 8 + 1] = y;
+	vertexarray[6 * 8 + 1] = y;
+	vertexarray[7 * 8 + 1] = y;
+	vertexarray[12 * 8 + 1] = y;
+	vertexarray[13 * 8 + 1] = y;
+	vertexarray[14 * 8 + 1] = y;
+	vertexarray[15 * 8 + 1] = y;
+	vertexarray[17 * 8 + 1] = y;
+	vertexarray[19 * 8 + 1] = y;
+	vertexarray[21 * 8 + 1] = y;
+	vertexarray[23 * 8 + 1] = y;
 
 	// Activate the vertex buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);

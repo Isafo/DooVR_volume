@@ -305,7 +305,7 @@ void Draw::firstSelect(DynamicMesh* mesh, Wand* wand)
 }
 
 
-void Draw::moveVertices(DynamicMesh* mesh, Wand* wand)
+void Draw::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 {
 	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
 	float eVec1[3]; float eVec2[3];

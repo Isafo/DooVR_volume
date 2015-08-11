@@ -15,7 +15,7 @@ public:
 	virtual void renderIntersection(MatrixStack* MVstack, GLint locationMV) = 0;
 
 	virtual void firstSelect(DynamicMesh* mesh, Wand* wand) = 0;
-	virtual void moveVertices(DynamicMesh* mesh, Wand* wand) = 0;
+	virtual void moveVertices(DynamicMesh* mesh, Wand* wand, float dT) = 0;
 	virtual void deSelect() = 0;
 
 	virtual void setRadius(float rad) = 0;
