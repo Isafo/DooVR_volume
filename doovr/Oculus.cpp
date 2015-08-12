@@ -1223,8 +1223,13 @@ int Oculus::runOvr() {
 				}
 
 				// check if the preview mesh has left the tracking range area and increment fileIndex accordingly
-				if (tempMoveVec[0] > 0.25 || tempMoveVec[2] > 0) {
+				if (tempMoveVec[0] > 0.25) {
 					previewMesh = placeHolder;
+
+					tempVec[0] = -0.25f;
+					tempVec[1] = previewMesh->getPosition()[1];
+					tempVec[2] = previewMesh->getPosition()[2];
+					placeHolder->setPosition(tempVec);
 					fileIndex--;
 					modellingState[1] = -1;
 					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
@@ -1234,8 +1239,14 @@ int Oculus::runOvr() {
 					}
 				}
 
-				else if (tempMoveVec[0] < -0.25 || tempMoveVec[2] < -0.5) {
+				else if (tempMoveVec[0] < -0.25) {
 					previewMesh = placeHolder;
+
+					tempVec[0] = 0.25f;
+					tempVec[1] = previewMesh->getPosition()[1];
+					tempVec[2] = previewMesh->getPosition()[2];
+					placeHolder->setPosition(tempVec);
+
 					fileIndex++;
 					modellingState[1] = -1;
 					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
@@ -1248,6 +1259,7 @@ int Oculus::runOvr() {
 				// check if the thread is ready with a new mesh
 				if (th1.joinable()) {
 					th1.join();
+					loaderMesh->setPosition(previewMesh->getPosition());
 					previewMesh = loaderMesh;
 					previewMesh->createBuffers();
 				}
@@ -1266,7 +1278,6 @@ int Oculus::runOvr() {
 									th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
 								}
 							}
-
 							break;
 						}
 						case 1: {
@@ -1278,7 +1289,7 @@ int Oculus::runOvr() {
 							mode = 0;
 							continue;
 						}
-						default:{
+						default: {
 							break;
 						}
 					}
@@ -1405,6 +1416,30 @@ int Oculus::runOvr() {
 							MVstack.push();
 								MVstack.translate(previewMesh->getPosition());
 								MVstack.multiply(previewMesh->getOrientation());
+								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								glUniform4fv(locationMeshLP, 1, LP);
+								glUniform4fv(locationMeshLP2, 1, lPosTemp);
+								previewMesh->render();
+							MVstack.pop();
+
+							MVstack.push();
+								translateVector[0] = previewMesh->getPosition()[0] + 0.5f;
+								translateVector[1] = placeHolder->getPosition()[1];
+								translateVector[2] = placeHolder->getPosition()[2];
+								MVstack.translate(translateVector);
+								MVstack.multiply(placeHolder->getOrientation());
+								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								glUniform4fv(locationMeshLP, 1, LP);
+								glUniform4fv(locationMeshLP2, 1, lPosTemp);
+								previewMesh->render();
+							MVstack.pop();
+
+							MVstack.push();
+								translateVector[0] = previewMesh->getPosition()[0] - 0.5f;
+								translateVector[1] = placeHolder->getPosition()[1];
+								translateVector[2] = placeHolder->getPosition()[2];
+								MVstack.translate(translateVector);
+								MVstack.multiply(placeHolder->getOrientation());
 								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								glUniform4fv(locationMeshLP, 1, LP);
 								glUniform4fv(locationMeshLP2, 1, lPosTemp);
@@ -1739,18 +1774,18 @@ std::vector<std::string> getSavedFileNames() {
 
 void loadStaticMesh(StaticMesh* item, std::string fileName) {
 	loaderMeshLock.lock();
-	item->load(fileName);
+		item->load(fileName);
 	loaderMeshLock.unlock();
 }
 
 void loadMesh(DynamicMesh* item, std::string fileName) {
 	meshLock.lock();
-	item->load(fileName);
+		item->load(fileName);
 	meshLock.unlock();
 }
 
 void saveFile(DynamicMesh* item) {
 	meshLock.lock();
-	item->save();
+		item->save();
 	meshLock.unlock();
 }
