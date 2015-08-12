@@ -3,8 +3,7 @@
 
 using namespace wand3d;
 
-Passive3D::Passive3D()
-{
+Passive3D::Passive3D() {
 	//variables------------------------
 	lastPosition[0] = Position[0] = 0.0; lastPosition[1] = Position[1] = 0.0; lastPosition[2] = Position[2] = 0.0;
 	Velocity[0] = Fposition[0] = 0.0f; Velocity[1] = Fposition[1] = 0.0f; Velocity[2] = Fposition[2] = 0.0f;

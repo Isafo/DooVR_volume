@@ -1466,7 +1466,7 @@ int Oculus::runOvr() {
 								MVstack.pop();
 							}
 
-							// 4.4.5 - RENDER mesh >--------------------------------------------------------------------------------------------------
+							// 4.4.5 - RENDER meshes >--------------------------------------------------------------------------------------------------
 							glUseProgram(meshShader.programID);
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
@@ -1488,7 +1488,7 @@ int Oculus::runOvr() {
 								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								glUniform4fv(locationMeshLP, 1, LP);
 								glUniform4fv(locationMeshLP2, 1, lPosTemp);
-								previewMesh->render();
+								placeHolder->render();
 							MVstack.pop();
 
 							MVstack.push();
@@ -1500,7 +1500,7 @@ int Oculus::runOvr() {
 								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								glUniform4fv(locationMeshLP, 1, LP);
 								glUniform4fv(locationMeshLP2, 1, lPosTemp);
-								previewMesh->render();
+								placeHolder->render();
 							MVstack.pop();
 
 							glUseProgram(sceneShader.programID);

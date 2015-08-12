@@ -14,16 +14,14 @@ StaticMesh::~StaticMesh()
 }
 
 
-void StaticMesh::render()
-{
+void StaticMesh::render() {
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, (nrofTris)* sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_TRIANGLES, (nrofTris) * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex uN, type, element array buffer offset)
 	glBindVertexArray(0);
 }
 
-void StaticMesh::createBuffers()
-{
+void StaticMesh::createBuffers() {
 	triangle* indexP;
 	sBufferData * vertexP;
 	texCoords tempTex;
@@ -119,11 +117,12 @@ void StaticMesh::load(std::string fileName) {
 		file.seekg(0);
 		file.read((char*)&nrofVerts, sizeof(int));
 		bitCount += sizeof(int);
-		
+		nrofVerts++;
 
 		file.seekg(bitCount);
 		file.read((char*)&nrofTris, sizeof(int));
 		bitCount += sizeof(int);
+		nrofTris++;
 
 		vertexArray = new vertex[nrofVerts];
 		triangleArray = new triangle[nrofTris];

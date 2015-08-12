@@ -138,8 +138,7 @@ void DynamicMesh::createBuffers() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void DynamicMesh::updateOGLData()
-{
+void DynamicMesh::updateOGLData() {
 	triangle* indexP;
 	dBufferData* vertexP;
 
@@ -148,7 +147,7 @@ void DynamicMesh::updateOGLData()
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 
-	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData)*(vertexCap),
+	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData)*(vertexCap + 1),
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	for (int i = 0; i <= vertexCap; i++) {
@@ -185,7 +184,7 @@ void DynamicMesh::updateOGLData()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 
 	// Present our vertex <indices to OpenGL
-	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * (triangleCap),
+	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * (triangleCap + 1),
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	for (int i = 0; i <= triangleCap; i++) {
@@ -207,7 +206,7 @@ void DynamicMesh::updateOGLData()
 void DynamicMesh::render() {
 	glBindVertexArray(vao);
 
-	glDrawElements(GL_TRIANGLES, (triangleCap)* sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_TRIANGLES, (triangleCap + 1) * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex uN, type, element array buffer offset)
 	glBindVertexArray(0);
 }
@@ -234,20 +233,17 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	nrofEdges = 24; edgeCap = 23;
 
 	//create queue for vertices
-	for (int i = 0; i < MAX_NR_OF_VERTICES; i++)
-	{
+	for (int i = 0; i < MAX_NR_OF_VERTICES; i++) {
 		vInfoArray[i].edgePtr = -(i + 1);
 	}
 	emptyV = -6;
 	//create queue for Triangles
-	for (int i = 0; i < MAX_NR_OF_TRIANGLES; i++)
-	{
+	for (int i = 0; i < MAX_NR_OF_TRIANGLES; i++) {
 		triEPtr[i] = -(i + 1);
 	}
 	emptyT = -8;
 	//create queue for Edges
-	for (int i = 0; i < MAX_NR_OF_EDGES; i++)
-	{
+	for (int i = 0; i < MAX_NR_OF_EDGES; i++) {
 		e[i].nextEdge = -(i + 1);
 	}
 	emptyE = -24;
@@ -393,13 +389,10 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	e[e[triEPtr[3]].nextEdge].sibling = e[triEPtr[7]].nextEdge;
 	e[e[triEPtr[7]].nextEdge].sibling = e[triEPtr[3]].nextEdge;
 
-	while (stepRad < rad)
-	{
-		for (int j = 0; j < vertexCap + 1; j++)
-		{
+	while (stepRad < rad) {
+		for (int j = 0; j < vertexCap + 1; j++) {
 			//tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
-			if (vInfoArray[j].edgePtr > 0)
-			{
+			if (vInfoArray[j].edgePtr > 0) {
 				linAlg::normVec(vertexArray[j].xyz);
 
 				vertexArray[j].xyz[0] = vertexArray[j].xyz[0] * stepRad;
@@ -417,13 +410,10 @@ void DynamicMesh::sphereSubdivide(float rad) {
 		stepRad += MIN_LENGTH;
 	}
 	stepRad = rad;
-	for (int i = 0; i < 60; i++)
-	{
-		for (int j = 0; j < vertexCap + 1; j++)
-		{
+	for (int i = 0; i < 60; i++) {
+		for (int j = 0; j < vertexCap + 1; j++) {
 			//tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
-			if (vInfoArray[j].edgePtr > 0)
-			{
+			if (vInfoArray[j].edgePtr > 0) {
 				linAlg::normVec(vertexArray[j].xyz);
 
 				vertexArray[j].xyz[0] = vertexArray[j].xyz[0] * stepRad;
@@ -439,9 +429,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 		changedVertices.clear();
 	}
 
-
-	for (int i = 0; i < vertexCap; i++)
-	{
+	for (int i = 0; i < vertexCap; i++) {
 		vInfoArray[i].selected = 0.0f;
 	}
 
