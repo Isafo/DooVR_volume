@@ -768,7 +768,7 @@ int Oculus::runOvr() {
 							if (reset) {
 								if (th2.joinable()) {
 									th2.join();
-									modellingMesh->updateOGLData();
+									//modellingMesh->updateOGLData();
 									reset = false;
 								}
 							}
@@ -1270,8 +1270,8 @@ int Oculus::runOvr() {
 					previewMesh = placeHolder;
 
 					tempVec[0] = -0.25f + (tempMoveVec[0] - 0.25);
-					tempVec[1] = previewMesh->getPosition()[1];
-					tempVec[2] = previewMesh->getPosition()[2];
+					tempVec[1] = placeHolder->getPosition()[1];
+					tempVec[2] = placeHolder->getPosition()[2];
 					previewMesh->setPosition(tempVec);
 					fileIndex--;
 					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
@@ -1290,8 +1290,8 @@ int Oculus::runOvr() {
 					previewMesh = placeHolder;
 
 					tempVec[0] = 0.25f + (tempMoveVec[0] + 0.25);
-					tempVec[1] = previewMesh->getPosition()[1];
-					tempVec[2] = previewMesh->getPosition()[2];
+					tempVec[1] = placeHolder->getPosition()[1];
+					tempVec[2] = placeHolder->getPosition()[2];
 					previewMesh->setPosition(tempVec);
 
 					fileIndex++;
@@ -1310,7 +1310,7 @@ int Oculus::runOvr() {
 				// check if the thread is ready with a new mesh
 				if (th1.joinable()) {
 					th1.join();
-					loaderMesh->setPosition(previewMesh->getPosition());
+					loaderMesh->setPosition(placeHolder->getPosition());
 					previewMesh = loaderMesh;
 					previewMesh->createBuffers();
 				}
