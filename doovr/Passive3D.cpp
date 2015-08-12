@@ -19,7 +19,7 @@ Passive3D::Passive3D()
 
 	//connection----------------------
 	try {
-		wand = new Wand3d("COM3"); // usb port
+		wand = new Wand3d("COM4"); // usb port
 	}
 	catch (Wand3dSerialException error) {
 		std::cout << error.what() << std::endl;

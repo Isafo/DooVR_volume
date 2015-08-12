@@ -65,11 +65,6 @@ ovrEyeRenderDesc g_EyeRenderDesc[2];
 
 std::mutex loaderMeshLock, meshLock;
 
-void keycallback(GLFWwindow* window, int key, int asd, int fasd, int asdf)
-{
-	std::cout << key << std::endl;
-}
-
 int Oculus::runOvr() {
 
 	//=========================================================================================================================================
@@ -759,8 +754,6 @@ int Oculus::runOvr() {
 						aModellingStateIsActive--;
 					}
 				}
-				
-				glfwSetKeyCallback(l_Window, keycallback);
 
 				//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
@@ -1170,19 +1163,16 @@ int Oculus::runOvr() {
 					if (modellingState[1] == 3) {
 						modellingState[1] = 0;
 					}
-					else if (modellingState[1] == -1){
-						modellingState[1] = 0;
-					}
 					else if (modellingState[1] != 0) {
 						// just released button
 					
-						wand->getVelocity(wandVelocity);
+						/*wand->getVelocity(wandVelocity);
 						if (linAlg::vecLength(wandVelocity) < 0.4) {
 							//changedMesh = true;
 							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 						}
 						modellingState[1] = 3;
-						aModellingStateIsActive--;
+						aModellingStateIsActive--;*/
 					}
 				}
 				// 4.1.1 - Close application >---------------------------------------------------------------------------------------------------
@@ -1226,12 +1216,11 @@ int Oculus::runOvr() {
 				if (tempMoveVec[0] > 0.25) {
 					previewMesh = placeHolder;
 
-					tempVec[0] = -0.25f;
+					tempVec[0] = -0.25f + (tempMoveVec[0] - 0.25);
 					tempVec[1] = previewMesh->getPosition()[1];
 					tempVec[2] = previewMesh->getPosition()[2];
-					placeHolder->setPosition(tempVec);
+					previewMesh->setPosition(tempVec);
 					fileIndex--;
-					modellingState[1] = -1;
 					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 					if (loaderMeshLock.try_lock()) {
 						loaderMeshLock.unlock();
@@ -1242,13 +1231,12 @@ int Oculus::runOvr() {
 				else if (tempMoveVec[0] < -0.25) {
 					previewMesh = placeHolder;
 
-					tempVec[0] = 0.25f;
+					tempVec[0] = 0.25f + (tempMoveVec[0] + 0.25);
 					tempVec[1] = previewMesh->getPosition()[1];
 					tempVec[2] = previewMesh->getPosition()[2];
-					placeHolder->setPosition(tempVec);
+					previewMesh->setPosition(tempVec);
 
 					fileIndex++;
-					modellingState[1] = -1;
 					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 					if (loaderMeshLock.try_lock()) {
 						loaderMeshLock.unlock();
