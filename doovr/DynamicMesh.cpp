@@ -437,6 +437,9 @@ void DynamicMesh::sphereSubdivide(float rad) {
 
 void DynamicMesh::load(std::string fileName) {
 	
+	int prevVertexCap = vertexCap;
+	int prevTriangleCap = triangleCap;
+
 	delete vertexArray;
 	delete vInfoArray;
 
@@ -538,19 +541,22 @@ void DynamicMesh::load(std::string fileName) {
 		std::cout << "could not open file" << std::endl;
 	}
 
+
+	if (vertexCap < prevVertexCap)
+		vertexCap = prevVertexCap;
+	if (triangleCap < prevTriangleCap)
+		triangleCap = prevTriangleCap;
+
 	//create queue for vertices
-	for (int i = vertexCap + 1; i < MAX_NR_OF_VERTICES; i++)
-	{
+	for (int i = vertexCap + 1; i < MAX_NR_OF_VERTICES; i++) {
 		vInfoArray[i].edgePtr = -(i + 1);
 	}
 	//create queue for Triangles
-	for (int i = triangleCap + 1; i < MAX_NR_OF_TRIANGLES; i++)
-	{
+	for (int i = triangleCap + 1; i < MAX_NR_OF_TRIANGLES; i++) {
 		triEPtr[i] = -(i + 1);
 	}
 	//create queue for Edges
-	for (int i = edgeCap + 1; i < MAX_NR_OF_EDGES; i++)
-	{
+	for (int i = edgeCap + 1; i < MAX_NR_OF_EDGES; i++) {
 		e[i].nextEdge = -(i + 1);
 	}
 }
