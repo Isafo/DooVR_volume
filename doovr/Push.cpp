@@ -138,7 +138,7 @@ void Push::firstSelect(DynamicMesh* mesh, Wand* wand)
 	
 
 }
-void Push::moveVertices(DynamicMesh* mesh, Wand* wand){
+void Push::moveVertices(DynamicMesh* mesh, Wand* wand, float dT){
 	float newWPoint[4];
 	float Dirr[4]; float newDirr[4];
 	float tempVec1[3]; float tempVec2[3];
@@ -189,17 +189,10 @@ void Push::moveVertices(DynamicMesh* mesh, Wand* wand){
 			selectedVertices[selectedSize] = i; selectedSize++;
 
 			mVInfoArray[i].selected = 4.0f;
-			dot = linAlg::dotProd(vNorm, tempVec1);
-			l = linAlg::dotProd(tempVec1, tempVec1);
-			if (linAlg::dotProd(tempVec1, vNorm) < 0)
-				d = -dot - sqrt(dot*dot - l + radius*radius);
-			else
-				d = -dot + sqrt(dot*dot - l + radius*radius);
-
-          			linAlg::normVec(tempVec1);
-			mVertexArray[i].xyz[0] += vNorm[0] * d;
-			mVertexArray[i].xyz[1] += vNorm[1] * d;
-			mVertexArray[i].xyz[2] += vNorm[2] * d;
+			linAlg::normVec(tempVec1);
+			mVertexArray[i].xyz[0] = newWPoint[0] + tempVec1[0] * radius;
+			mVertexArray[i].xyz[1] = newWPoint[1] + tempVec1[1] * radius;
+			mVertexArray[i].xyz[2] = newWPoint[2] + tempVec1[2] * radius;
 			break;
 
 		}
@@ -223,17 +216,11 @@ void Push::moveVertices(DynamicMesh* mesh, Wand* wand){
 					mVInfoArray[index].selected = 4.0f;
 
 					vNorm = mVertexArray[index].nxyz;
-					dot = linAlg::dotProd(vNorm, tempVec1);
-					l = linAlg::dotProd(tempVec1, tempVec1);
-					if (linAlg::dotProd(tempVec1, vNorm) < 0)
-						d = -dot - sqrt(dot*dot - l + radius*radius);
-					else
-						d = -dot + sqrt(dot*dot - l + radius*radius);
-
+				
 					linAlg::normVec(tempVec1);
-					mVertexArray[index].xyz[0] += vNorm[0] * d;
-					mVertexArray[index].xyz[1] += vNorm[1] * d;
-					mVertexArray[index].xyz[2] += vNorm[2] * d;
+					mVertexArray[index].xyz[0] = newWPoint[0] + tempVec1[0] * radius;
+					mVertexArray[index].xyz[1] = newWPoint[1] + tempVec1[1] * radius;
+					mVertexArray[index].xyz[2] = newWPoint[2] + tempVec1[2] * radius;
 				}
 			}
 			tempEdge = mEdgeArray[mEdgeArray[tempEdge].nextEdge].sibling;

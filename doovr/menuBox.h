@@ -16,7 +16,7 @@ public:
 		nquads = 0;
 	};
 
-	menuBox(float x, float y, float z, float dX, float dY, float dZ, int tX, int tY, int tXLength, int tYLength);
+	menuBox(float x, float y, float z, float dX, float dY, float dZ, int tX, int tY, int tXLength, int tYLength, int sideX, int sideY);
 	~menuBox(void);
 
 	float* getDim() { return dim; };
