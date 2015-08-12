@@ -374,7 +374,7 @@ int Oculus::runOvr() {
 	Texture menuStrings("../Assets/Textures/menuSTRINGS.DDS");
 	Texture strengthTex("../Assets/Textures/Size.DDS");
 
-	float boardPos[3] = { 0.0f, -0.3f, 0.0f };
+	float boardPos[3] = { 0.0f, -0.29f, 0.0f };
 	Box board(boardPos[0] + 0.3f, boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
@@ -775,6 +775,10 @@ int Oculus::runOvr() {
 								modellingMesh->load("../Assets/Models/resetMesh.bin");
 								modellingMesh->createBuffers();
 								modellingButton[activeButton]->setState(true);
+								currentTool = new Spray(modellingMesh, wand);
+								tool[activeTool].setState(false);
+								activeTool = 2;
+								tool[activeTool].setState(true);
 
 							}
 							else if (modellingButtonState[activeButton] == 3) {
