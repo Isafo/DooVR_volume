@@ -1227,9 +1227,9 @@ int Oculus::runOvr() {
 						if (linAlg::vecLength(wandVelocity) < 0.4) {
 							//changedMesh = true;
 							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
-						}
+						}*/
 						modellingState[1] = 3;
-						aModellingStateIsActive--;*/
+						aModellingStateIsActive--;
 					}
 				}
 				// 4.1.1 - Close application >---------------------------------------------------------------------------------------------------
