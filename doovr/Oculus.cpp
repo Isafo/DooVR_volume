@@ -1232,31 +1232,6 @@ int Oculus::runOvr() {
 						aModellingStateIsActive--;
 					}
 				}
-				// 4.1.1 - Close application >---------------------------------------------------------------------------------------------------
-				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
-					// check if a thread is running, if so wait for it before close
-
-					if (loaderMeshLock.try_lock() && loaderMeshLock.try_lock()) {
-						if (th1.joinable()) {
-							th1.join();
-						}
-						if (th2.joinable()) {
-							th2.join();
-						}
-
-						glfwSetWindowShouldClose(l_Window, GL_TRUE);
-					} else if (!loaderMeshLock.try_lock() && !meshLock.try_lock()) {
-						th1.join();
-						th2.join();
-						glfwSetWindowShouldClose(l_Window, GL_TRUE);
-					} else if (!loaderMeshLock.try_lock()) {
-						th1.join();
-						glfwSetWindowShouldClose(l_Window, GL_TRUE);
-					} else if (!meshLock.try_lock()) {
-						th2.join();
-						glfwSetWindowShouldClose(l_Window, GL_TRUE);
-					}
-				}
 
 				// 4.1.2 - Load next mesh \______________________________________________________________________________________________________
 				// move mesh until it leaves the tracking range then load a new mesh
