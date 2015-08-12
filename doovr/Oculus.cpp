@@ -346,7 +346,10 @@ int Oculus::runOvr() {
 
 	// 2.3 - Threads used for loading and saving meshes \__________________________________________________________________________________
 	std::thread th1; 
-	std::thread th2; 
+	std::thread th2;
+
+	bool reset = false;
+
 	// indicates if something has been loaded by a thread and gl data has not yet been updated
 	bool loadingMesh = false;
 
@@ -593,7 +596,7 @@ int Oculus::runOvr() {
 					currentTool->deSelect();
 					currentTool->firstSelect(modellingMesh, wand);
 				}
-				modellingMesh->updateOGLData();
+				
 				//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
 				
 				if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
@@ -761,22 +764,35 @@ int Oculus::runOvr() {
 					switch (activeButton) {
 						//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
 						case 0: {
+
+							if (reset) {
+								if (th2.joinable()) {
+									th2.join();
+									modellingMesh->updateOGLData();
+									reset = false;
+								}
+							}
+
 							if (modellingButtonState[activeButton] == 1) {
 								// reset mesh
-								delete modellingMesh; // Reset mesh
-								modellingMesh = new DynamicMesh();
-								modellingMesh->load("../Assets/Models/resetMesh.bin");
-								modellingMesh->createBuffers();
+
+								th2 = std::thread(loadMesh, modellingMesh, "../Assets/Models/placeHolder.bin");
+
 								modellingButton[activeButton]->setState(true);
 								currentTool = new Spray(modellingMesh, wand);
 								tool[activeTool].setState(false);
 								activeTool = 2;
 								tool[activeTool].setState(true);
 
+								reset = true;
+
 							}
 							else if (modellingButtonState[activeButton] == 3) {
 								modellingButton[activeButton]->setState(false);
 							}
+
+							
+
 							break;
 						}
 						//3.2.2 - save mesh button >--------------------------------------------------------------------------------------------
@@ -904,6 +920,9 @@ int Oculus::runOvr() {
 						toolStrengthFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
 					}
 				}
+
+				if (!reset)
+					modellingMesh->updateOGLData();
 
 				// Begin the frame...
 				ovrHmd_BeginFrame(hmd, l_FrameIndex);
