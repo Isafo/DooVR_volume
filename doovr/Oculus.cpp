@@ -566,7 +566,7 @@ int Oculus::runOvr() {
 				// 3.1 - modellingstates \_____________________________________________________________________________________________________
 				//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
 			
-			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_UP)) {
+			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				if (modellingState[0] == 2) {
 					
 					currentTool->moveVertices(modellingMesh, wand, deltaTime);
@@ -768,21 +768,19 @@ int Oculus::runOvr() {
 							if (reset) {
 								if (th2.joinable()) {
 									th2.join();
-									//modellingMesh->updateOGLData();
 									reset = false;
 								}
 							}
 
 							if (modellingButtonState[activeButton] == 1) {
 								// reset mesh
-
-								th2 = std::thread(loadMesh, modellingMesh, "../Assets/Models/placeHolder.bin");
-
+								th2 = std::thread(loadMesh, modellingMesh, "../Assets/Models/resetMesh.bin");
 								modellingButton[activeButton]->setState(true);
-								currentTool = new Spray(modellingMesh, wand);
-								tool[activeTool].setState(false);
-								activeTool = 2;
-								tool[activeTool].setState(true);
+
+								//currentTool = new Spray(modellingMesh, wand);
+								//tool[activeTool].setState(false);
+								//activeTool = 2;
+								//tool[activeTool].setState(true);
 
 								reset = true;
 

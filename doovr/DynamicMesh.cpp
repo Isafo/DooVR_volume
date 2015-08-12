@@ -531,7 +531,16 @@ void DynamicMesh::load(std::string fileName) {
 		// read triEdgePtr
 		file.seekg(bitCount);
 		file.read((char*)&triEPtr[0], sizeof(int) * (triangleCap + 1));
+		bitCount += sizeof(int) * (triangleCap + 1);
 
+		// read emptyV
+		file.seekg(bitCount);
+		file.read((char*)&emptyV, sizeof(int));
+		bitCount += sizeof(int);
+
+		// read emptyT
+		file.seekg(bitCount);
+		file.read((char*)&emptyT, sizeof(int));
 
 		file.close();
 
@@ -653,6 +662,16 @@ void DynamicMesh::save() {
 		// write triangle edge pointers
 		file.seekp(bitCount);
 		file.write((char*)&triEPtr[0], sizeof(int) * (triangleCap + 1));
+		bitCount += sizeof(int) * (triangleCap + 1);
+
+		// write emptyV
+		file.seekp(bitCount);
+		file.write((char*)&emptyV, sizeof(int));
+		bitCount += sizeof(int);
+
+		// write emptyT
+		file.seekp(bitCount);
+		file.write((char*)&emptyT, sizeof(int));
 
 		file.close();
 
