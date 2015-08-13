@@ -203,6 +203,79 @@ void DynamicMesh::updateOGLData() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void DynamicMesh::cleanBuffer() {
+
+	if (vertexRange != 0) {
+
+		
+		dBufferData* vertexP;
+
+		//KAN BEHÖVAS VETTE
+		//vertexP = &vertexArray[0];
+
+		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+		vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, vertexCap + 1, sizeof(dBufferData) * (vertexRange),
+			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+		for (int i = 0; i < vertexRange; i++) {
+			vertexP[i].x = 1000;
+			vertexP[i].y = 1000;
+			vertexP[i].z = 1000;
+			vertexP[i].nx = 0;
+			vertexP[i].ny = 0;
+			vertexP[i].nz = -1;
+			vertexP[i].selected = 0;
+		}
+		glUnmapBuffer(GL_ARRAY_BUFFER);
+
+		// Specify how many attribute arrays we have in our VAO
+		glEnableVertexAttribArray(0); // Vertex coordinates
+		glEnableVertexAttribArray(1); // Normals
+		glEnableVertexAttribArray(2); // selected
+
+		// Specify how OpenGL should interpret the vertex buffer data:
+		// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+		// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+		// Type GL_FLOAT
+		// Not normalized (GL_FALSE)
+		// Stride 8 (interleaved array with 8 floats per vertex)
+		// Array buffer offset 0, 3, 6 (offset into first vertex)
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+			sizeof(dBufferData), (void*)0); // xyz coordinates
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+			sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+			sizeof(dBufferData), (void*)(6 * sizeof(GLfloat))); // selected
+	}
+
+	if (triangleRange != 0) {
+		triangle* indexP;
+
+		// Activate the index buffer
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+
+		// Present our vertex <indices to OpenGL
+		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, triangleCap + 1, sizeof(triangle) * (triangleRange),
+			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+		for (int i = 0; i < triangleRange; i++) {
+			indexP[i].index[0] = 0;
+			indexP[i].index[1] = 0;
+			indexP[i].index[2] = 0;
+		}
+
+		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+
+		// Deactivate (unbind) the VAO and the buffers again.
+		// Do NOT unbind the buffers while the VAO is still bound.
+		// The index buffer is an essential part of the VAO state.
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
+}
+
 void DynamicMesh::render() {
 	glBindVertexArray(vao);
 
@@ -550,11 +623,15 @@ void DynamicMesh::load(std::string fileName) {
 		std::cout << "could not open file" << std::endl;
 	}
 
-
+	
 	if (vertexCap < prevVertexCap)
-		vertexCap = prevVertexCap;
+		vertexRange = prevVertexCap;
+	else
+		vertexRange = 0;
 	if (triangleCap < prevTriangleCap)
-		triangleCap = prevTriangleCap;
+		triangleRange = prevTriangleCap;
+	else
+		triangleRange = 0;
 
 	//create queue for vertices
 	for (int i = vertexCap + 1; i < MAX_NR_OF_VERTICES; i++) {
@@ -922,7 +999,7 @@ void DynamicMesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	//vert3 = edge->nextEdge->nextEdge->vertex;
 	//vert4 = edge->sibling->nextEdge->nextEdge->vertex;
 
-	tempV = -emptyV;
+   	tempV = -emptyV;
 	vertexCap = max(vertexCap, tempV);
 
 	emptyV = vInfoArray[tempV].edgePtr;
@@ -939,7 +1016,7 @@ void DynamicMesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	triangleArray[tempT1].index[1] = triangleArray[e[edge].triangle].index[1];
 	triangleArray[tempT1].index[2] = triangleArray[e[edge].triangle].index[2];
 
-	tempT2 = -emptyT;
+    tempT2 = -emptyT;
 	triangleCap = max(triangleCap, tempT2);
 	emptyT = triEPtr[tempT2];
 	triangleArray[tempT2].index[0] = triangleArray[e[e[edge].sibling].triangle].index[0];

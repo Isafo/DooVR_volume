@@ -768,6 +768,7 @@ int Oculus::runOvr() {
 							if (reset) {
 								if (th2.joinable()) {
 									th2.join();
+									modellingMesh->cleanBuffer();
 									reset = false;
 								}
 							}
@@ -919,7 +920,7 @@ int Oculus::runOvr() {
 					}
 				}
 
-				if (!reset)
+				if (!reset) 
 					modellingMesh->updateOGLData();
 
 				// Begin the frame...
@@ -1324,6 +1325,7 @@ int Oculus::runOvr() {
 							if (loadButtonState[activeButton] == 1) {
 								if (meshLock.try_lock()){
 									meshLock.unlock();
+									delete modellingMesh;
 									th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
 								}
 							}
@@ -1346,6 +1348,7 @@ int Oculus::runOvr() {
 				
 				if (th2.joinable()) {
 					th2.join();
+					modellingMesh->cleanBuffer();
 					delete loadButton[0];
 					delete loadButton[1];
 					delete loaderMesh;

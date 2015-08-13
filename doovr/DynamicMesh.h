@@ -80,6 +80,8 @@ class DynamicMesh : public Mesh{
 
 	void updateHVerts();
 
+	void cleanBuffer();
+
   private:
 
 	const int MAX_NR_OF_VERTICES = 1000000;
@@ -95,6 +97,10 @@ class DynamicMesh : public Mesh{
 	int vertexCap;
 	//largest index in the indexArray where values exist 
 	int triangleCap;
+
+	// tells the range that needs to be cleaned in the buffer after loading a smaller mesh
+	int vertexRange = 0;
+	int triangleRange = 0;
 
 	//Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle 
 	vInfo* vInfoArray;
@@ -142,4 +148,5 @@ class DynamicMesh : public Mesh{
 	//! updates the changed vertecies normal 
 	void updateNormals(int* changeList, int listSize);
 
+	
 };
