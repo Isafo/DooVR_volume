@@ -11,10 +11,10 @@ MenuItem::MenuItem(float x, float y, float z, float dX, float dZ, int tX, int tY
 	dim[1] = dZ;
 
 	GLfloat vertex_array_data[] = {
-		//Vertex								 Normals						Texture  
+		//Vertex								 Normals						 Texture  
 		-dX / 2.0f, 0.0f, dZ / 2.0f,		 	 0.0f, 1.0f, 0.0f,				(tX * 256.0f) / 3072.0f, (tY*256.0f) / 3072.0f,
 		dX / 2.0f, 0.0f, dZ / 2.0f,				 0.0f, 1.0f, 0.0f,				(tX * 256.0f + tXLength * 256.0f) / 3072.0f, (tY * 256.0f) / 3072.0f,
-		dX / 2.0f, 0.0f, -dZ / 2.0f,			 0.0f, 1.0f, 0.0f,				(tX * 256.0f + tXLength * 256.0f) / 3072.0f, (tY * 256.0f + tYLength*256.0f) / 3072.0f,
+		dX / 2.0f, 0.0f, -dZ / 2.0f,			 0.0f, 1.0f, 0.0f,				(tX * 256.0f + tXLength * 256.0f) / 3072.0f, (tY * 256.0f + tYLength * 256.0f) / 3072.0f,
 		-dX / 2.0f, 0.0f, -dZ / 2.0f,			 0.0f, 1.0f, 0.0f,				(tX * 256.0f) / 3072.0f, (tY * 256.0f + tYLength * 256.0f) / 3072.0f,
 	};
 
