@@ -1,7 +1,7 @@
 #include "MenuItem.h"
 
 
-MenuItem::MenuItem(float x, float y, float z, float dX, float dZ) {
+MenuItem::MenuItem(float x, float y, float z, float dX, float dZ, int tX, int tY, int tXLength, int tYLength) {
 	
 	oType = 'M';
 	position[0] = x;
@@ -11,11 +11,11 @@ MenuItem::MenuItem(float x, float y, float z, float dX, float dZ) {
 	dim[1] = dZ;
 
 	GLfloat vertex_array_data[] = {
-		//Vertex								Normals						 Texture  
-		-dX / 2.0f, 0.0f, dZ / 2.0f,			 0.0f, 1.0f, 0.0f,			 0.0f, 0.0f,
-		dX / 2.0f, 0.0f, dZ / 2.0f,				 0.0f, 1.0f, 0.0f,			 1.0f, 0.0f,
-		dX / 2.0f, 0.0f, -dZ / 2.0f,			 0.0f, 1.0f, 0.0f,			 1.0f, 1.0f,
-		-dX / 2.0f, 0.0f, -dZ / 2.0f,			 0.0f, 1.0f, 0.0f,			 0.0f, 1.0f
+		//Vertex								 Normals						Texture  
+		-dX / 2.0f, 0.0f, dZ / 2.0f,		 	 0.0f, 1.0f, 0.0f,				(tX * 256.0f) / 3072.0f, (tY*256.0f) / 3072.0f,
+		dX / 2.0f, 0.0f, dZ / 2.0f,				 0.0f, 1.0f, 0.0f,				(tX * 256.0f + tXLength * 256.0f) / 3072.0f, (tY * 256.0f) / 3072.0f,
+		dX / 2.0f, 0.0f, -dZ / 2.0f,			 0.0f, 1.0f, 0.0f,				(tX * 256.0f + tXLength * 256.0f) / 3072.0f, (tY * 256.0f + tYLength*256.0f) / 3072.0f,
+		-dX / 2.0f, 0.0f, -dZ / 2.0f,			 0.0f, 1.0f, 0.0f,				(tX * 256.0f) / 3072.0f, (tY * 256.0f + tYLength * 256.0f) / 3072.0f,
 	};
 
 	static const GLuint index_array_data[] = {

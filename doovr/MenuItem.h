@@ -19,7 +19,7 @@ class MenuItem : public Entity {
 
 	~MenuItem(void);
 
-	MenuItem(float x, float y, float z, float dX, float dZ);
+	MenuItem(float x, float y, float z, float dX, float dZ, int tX, int tY, int tXLength, int tYLength);
 	void render();
 
 	//! returns the width and depth of the menu item
