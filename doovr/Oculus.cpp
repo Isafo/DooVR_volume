@@ -1325,7 +1325,6 @@ int Oculus::runOvr() {
 							if (loadButtonState[activeButton] == 1) {
 								if (meshLock.try_lock()){
 									meshLock.unlock();
-									delete modellingMesh;
 									th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
 								}
 							}
