@@ -526,6 +526,8 @@ int Oculus::runOvr() {
 	DynamicMesh* modellingMesh = new DynamicMesh();
 	//modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
 	modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
+	std::string currentMesh = "../Assets/Models/resetMesh.bin";
+
 	// variables for browsing saved meshes
 	//Mesh* staticMesh;
 	//Mesh* tempStaticMesh = new Mesh();
@@ -775,7 +777,7 @@ int Oculus::runOvr() {
 
 							if (modellingButtonState[activeButton] == 1) {
 								// reset mesh
-								th2 = std::thread(loadMesh, modellingMesh, "../Assets/Models/resetMesh.bin");
+								th2 = std::thread(loadMesh, modellingMesh, currentMesh);
 								modellingButton[activeButton]->setState(true);
 
 								//currentTool = new Spray(modellingMesh, wand);
@@ -1326,6 +1328,7 @@ int Oculus::runOvr() {
 								if (meshLock.try_lock()){
 									meshLock.unlock();
 									th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
+									currentMesh = meshFile[fileIndex % meshFile.size()];
 								}
 							}
 							break;
