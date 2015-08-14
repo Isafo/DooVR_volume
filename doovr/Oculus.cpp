@@ -375,7 +375,7 @@ int Oculus::runOvr() {
 	Texture menuStringsSwe("../Assets/Textures/menuStringsSwe.dds");
 
 	float boardPos[3] = { 0.0f, -0.29f, 0.0f };
-	Box board(boardPos[0] + 0.3f, boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
+	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
@@ -430,15 +430,15 @@ int Oculus::runOvr() {
 		[4] change wand size*/
 	static int modellingButtonState[NR_OF_MODELLING_BUTTONS];
 
-	modellingButton[0] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.03f, boardPos[2] + 0.06, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5); // place reset menuItem on the other side
-	modellingButton[1] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.03f, boardPos[2] + -0.04, 0.025f, 0.025f, 0.025f, 3, 0, 1, 1, 5, 5);
-	modellingButton[2] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.03f, boardPos[2] + -0.08, 0.025f, 0.025f, 0.025f, 4, 0, 1, 1, 5, 5);
-	modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.03f, boardPos[2] + -0.12, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1, 5, 5);
+	modellingButton[0] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + 0.06, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
+	modellingButton[1] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.04, 0.025f, 0.025f, 0.025f, 3, 0, 1, 1, 5, 5);
+	modellingButton[2] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.08, 0.025f, 0.025f, 0.025f, 4, 0, 1, 1, 5, 5);
+	modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.12, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1, 5, 5);
 
-	// place modellingButton Strings
+	// place modellingButton Frame
 	modellingButtonFrame = new MenuItem(0.0f, -0.01245f, 0.0f, 0.04f, 0.04f, 0, 3, 1, 1);
-
-	modellingButtonString[0] = new MenuItem(0.08f, -0.0125f, 0.0f, 0.12f, 0.04f, 1, 3, 3, 1);
+	// place modellingButton Strings
+	modellingButtonString[0] = new MenuItem(-0.08f, -0.0125f, 0.0f, 0.12f, 0.04f, 1, 3, 4, 1);
 	modellingButtonString[1] = new MenuItem(-0.105f, -0.0125f, 0.0f, 0.24f, 0.04f, 0, 1, 7, 1);
 	modellingButtonString[2] = new MenuItem(-0.11f, -0.0125f, 0.0f, 0.24f, 0.04f, 0, 0, 8, 1);
 	//variable used with the button that switches wireframe, TODO: should be replaced by something
@@ -448,19 +448,19 @@ int Oculus::runOvr() {
 	const int NR_OF_TOOLS = 3;
 	bool selectingTool = false;
 	menuBox tool[NR_OF_TOOLS];
-	MenuItem toolFrame(boardPos[0] + 0.2, boardPos[1] + 0.0175f, boardPos[2] - 0.06, 0.04f, 0.12f, 0, 4, 1, 3);
-	MenuItem toolString(boardPos[0] + 0.2f + 0.08f, boardPos[1] + 0.0175f, boardPos[2] - 0.1, 0.12f, 0.04f, 1, 4, 3, 1);
+	MenuItem toolFrame(boardPos[0] + 0.2, boardPos[1] + 0.011f, boardPos[2] - 0.04, 0.04f, 0.12f, 0, 4, 1, 3);
+	MenuItem toolString(boardPos[0] + 0.2f + 0.08f, boardPos[1] + 0.011f, boardPos[2] - 0.04, 0.12f, 0.04f, 1, 4, 3, 1);
 
 	for (int i = 0; i < NR_OF_TOOLS; i++)
-		tool[i] = menuBox(boardPos[0] + 0.2, boardPos[1] + 0.03f, boardPos[2] - 0.03*(i+1), 0.025f, 0.025f, 0.025f, i, 0, 1, 1, 5, 5);
+		tool[i] = menuBox(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.0125f, boardPos[2] - 0.04*(i), 0.025f, 0.025f, 0.025f, i, 0, 1, 1, 5, 5);
 
-	menuBox toolSize(boardPos[0] + 0.23, boardPos[1] + 0.03f + 0.09, boardPos[2] - 0.045, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
-	menuBox toolSizeFill(boardPos[0] + 0.23, boardPos[1] + 0.03f + 0.09 - 0.075, boardPos[2] - 0.045, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolSizeFill.setDim(0.0f, toolRad * 3, 0.0f);
-	menuBox toolStrength(boardPos[0] + 0.23, boardPos[1] + 0.03f + 0.09, boardPos[2] - 0.075, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
-	menuBox toolStrengthFill(boardPos[0] + 0.23, boardPos[1] + 0.03f + 0.09 - 0.075, boardPos[2] - 0.075, 0.015f, 0.0f, 0.015f, 3, 3, 1, 1, 5, 5); toolStrengthFill.setDim(0.0f, toolRad * 3, 0.0f);
+	menuBox toolSize(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
+	menuBox toolSizeFill(boardPos[0] + 0.2, boardPos[1] + 0.09 - 0.075, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolSizeFill.setDim(0.0f, toolRad * 3, 0.0f);
+	menuBox toolStrength(boardPos[0] + 0.2, boardPos[1] + 0.03f + 0.09, boardPos[2] - 0.12, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
+	menuBox toolStrengthFill(boardPos[0] + 0.2, boardPos[1] + 0.03f + 0.09 - 0.075, boardPos[2] - 0.12, 0.015f, 0.0f, 0.015f, 3, 3, 1, 1, 5, 5); toolStrengthFill.setDim(0.0f, toolRad * 3, 0.0f);
 	menuBox toolStrengthText(boardPos[0] + 0.23, boardPos[1] + 0.03f + 0.99, boardPos[2] - 0.075, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1, 5, 5);
 
-	MenuItem strengthString(boardPos[0] + 0.37, boardPos[1] + 0.0105f, boardPos[2] - 0.045, 0.24f, 0.04f, 0, 2, 8, 1);
+	MenuItem sizeString( 0.14f, -0.075f, 0.0f, 0.24f, 0.04f, 0, 2, 8, 1);
 	
 	/*! tool 0 = push/pull
 			 1 = 
@@ -1203,9 +1203,10 @@ int Oculus::runOvr() {
 
 								glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
 								MVstack.push();
-									MVstack.translate(strengthString.getPosition());
+									MVstack.translate(toolSize.getPosition());
+									MVstack.translate(sizeString.getPosition());
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									strengthString.render();
+									sizeString.render();
 								MVstack.pop();
 																
 								glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
@@ -1739,162 +1740,6 @@ int Oculus::runOvr() {
 				}
 				break;
 			}
-
-			// ===================================================================================================================================
-			// 5 - Instruction mode
-			// ===================================================================================================================================
-			case 3: {
-				// Begin the frame...
-				ovrHmd_BeginFrame(hmd, l_FrameIndex);
-				// Get eye poses for both the left and the right eye. g_EyePoses contains all Rift information: orientation, positional tracking and
-				// the IPD in the form of the input variable g_EyeOffsets.
-				ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
-				// Bind the FBO...
-				glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
-				//glModes
-				GLRenderCallsOculus();
-
-				for (int l_EyeIndex = 0; l_EyeIndex<ovrEye_Count; l_EyeIndex++) {
-
-					// 5.2 OCULUS/CAMERA TRANSFORMS \______________________________________________________________________________________________
-					MVstack.push();
-						ovrEyeType l_Eye = hmd->EyeRenderOrder[l_EyeIndex];
-
-						glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
-
-						glUseProgram(sceneShader.programID);
-						// Pass projection matrix on to OpenGL...
-						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-						glUniform1i(locationTex, 0);
-
-						// Multiply with orientation retrieved from sensor...
-						OVR::Quatf l_Orientation = OVR::Quatf(g_EyePoses[l_Eye].Orientation);
-						OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
-						MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
-
-						//!-- Translation due to positional tracking (DK2) and IPD...
-						float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
-						MVstack.translate(eyePoses);
-
-						//POSSABLY DOABLE IN SHADER
-						pmat4 = MVstack.getCurrentMatrix();
-						for (int i = 0; i < 16; i++)
-							mat4[i] = pmat4[i];
-
-						//linAlg::transpose(mat4);
-						linAlg::vectorMatrixMult(mat4, lPos, LP);
-						linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix()); //TODO: check if this uniform is needed
-
-						// 5.3 - Scene Matrix stack \__________________________________________________________________________________________________
-						MVstack.push();
-							// 5.3.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
-							glUniform4fv(locationLP, 1, LP);
-							MVstack.push();
-								MVstack.translate(board.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-								board.render();
-							MVstack.pop();
-
-
-							glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-
-							// 5.3.2 Render tracking range >-------------------------------------------------------------------------------------------
-							MVstack.push();
-								MVstack.translate(trackingRange.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-								glLineWidth(2.0f);
-								trackingRange.render();
-								glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-							MVstack.pop();
-
-							// 5.3.3 Render title >----------------------------------------------------------------------------------------------------
-							/*glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-							MVstack.push();
-								MVstack.translate(title.getPosition());
-								MVstack.rotX(1.57079f);
-								glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								title.render();
-							MVstack.pop();*/
-
-							// 5.3.4 Render modelling buttons >-----------------------------------------------------------------------------------------
-							// info
-							for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
-
-								if (modellingButton[i]->getState()) {
-									glUseProgram(bloomShader.programID);
-									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								}
-								else {
-									glUseProgram(menuShader.programID);
-									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								}
-
-								MVstack.push();
-									glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
-
-									MVstack.translate(modellingButton[i]->getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									modellingButton[i]->render();
-								MVstack.pop();
-							}
-
-							//glBindTexture(GL_TEXTURE_2D, 0);
-							// 5.3.5 Render mesh >------------------------------------------------------------------------------------------------------
-							glUseProgram(meshShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-
-							MVstack.push();
-								MVstack.translate(modellingMesh->getPosition());
-								MVstack.multiply(modellingMesh->getOrientation());
-								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glUniform4fv(locationMeshLP, 1, LP);
-								glUniform4fv(locationMeshLP2, 1, lPosTemp);
-
-								modellingMesh->render();
-							MVstack.pop();
-
-							glUseProgram(sceneShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-							// 5.3.6 Render wand >------------------------------------------------------------------------------------------------------
-							MVstack.push();
-								MVstack.translate(wandPos);
-								MVstack.multiply(wand->getOrientation());
-
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								MVstack.push();
-								translateVector[0] = 0.0f;
-								translateVector[1] = 0.0f;
-								translateVector[2] = -0.1f;
-								MVstack.translate(translateVector);
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-								boxWand.render();
-								MVstack.pop();
-								//render brush------------------------
-									//MVstack.push();
-										/*	MVstack.scale(wandRadius);
-										glUseProgram(sphereShader.programID);
-										glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-										glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-										sphereWand.render();*/
-									//MVstack.pop();
-							MVstack.pop();	
-						MVstack.pop();
-					MVstack.pop();
-				}
-				break;
-			}
-
 		}
 		// Back to the default framebuffer...
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
