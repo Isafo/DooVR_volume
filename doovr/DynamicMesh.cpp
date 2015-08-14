@@ -474,7 +474,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 
 				//tempSV.index = j;
 				changedVertices.push_back(j);
-				vInfoArray[j].selected = 4.0f;
+				vInfoArray[j].selected = 3.0f;
 			}
 		}
 		updateArea(&changedVertices[0], changedVertices.size());
@@ -495,7 +495,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 
 				//tempSV.index = j;
 				changedVertices.push_back(j);
-				vInfoArray[j].selected = 4.0f;
+				vInfoArray[j].selected = 3.0f;
 			}
 		}
 		updateArea(&changedVertices[0], changedVertices.size());
@@ -774,20 +774,16 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 	for (int i = 0; i < listSize; i++)
 	{
 		vert3 = changeList[i];
-		vInfoArray[vert3].selected = vInfoArray[vert3].selected - floor(vInfoArray[vert3].selected);
+		vInfoArray[vert3].selected = 4.0f;
 		
 		if (vInfoArray[vert3].edgePtr < 0)
-		{
-			//sIt = sIt->next;
 			continue;
-		}
 			
-
 		tempEdge = e[e[vInfoArray[vert3].edgePtr].nextEdge].sibling;
 		vPoint1 = vertexArray[vert3].xyz;
 
 		do {
-			if (vInfoArray[e[tempEdge].vertex].selected > 1.0f)
+			if (vInfoArray[e[tempEdge].vertex].selected < 4.0f)
 			{
 				tempE = tempEdge;
 				tempEdge = e[e[tempEdge].nextEdge].sibling;

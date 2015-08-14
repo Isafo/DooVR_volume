@@ -30,7 +30,7 @@
 #include "Push.h"
 #include "Draw.h"
 #include "Drag.h"
-#include "Spray.h"
+#include "BuildUp.h"
 
 #include <thread>
 #include <mutex>
@@ -541,7 +541,7 @@ int Oculus::runOvr() {
 
 	Tool* currentTool;
 	//currentTool = new Push(modellingMesh, wand);
-	currentTool = new Spray(modellingMesh, wand);
+	currentTool = new Drag(modellingMesh, wand);
 
 	//=======================================================================================================================================
 	//Render loop
@@ -568,9 +568,8 @@ int Oculus::runOvr() {
 				// 3.1 - modellingstates \_____________________________________________________________________________________________________
 				//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
 			
-			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
+			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_UP)) {
 				if (modellingState[0] == 2) {
-					
 					currentTool->moveVertices(modellingMesh, wand, deltaTime);
 					
 				}
@@ -651,109 +650,7 @@ int Oculus::runOvr() {
 						aModellingStateIsActive--;
 					}
 				}
-				// select tool >---------------------------------------------------------------------------------------------------------
-				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_CONTROL)) {
-					if (modellingState[2] == 0) {
-						modellingState[2] = 1;
-						aModellingStateIsActive++;
-					}
-					else if (modellingState[2] == 1) {
-						modellingState[2] = 2;
-						wand->getPosition(startWandPos);
-						for (int i = 0; i < NR_OF_TOOLS; i++) {
-							tempVecPtr = tool[i].getPosition();
-							tempVecPtr[0] = startWandPos[0] + (i - NR_OF_TOOLS / 2)*0.035;
-							tempVecPtr[1] = startWandPos[1] - 0.015;
-							tempVecPtr[2] = startWandPos[2] + 0.03f;
-						}
-						
-						tempVecPtr = toolSize.getPosition();
-						tempVecPtr[0] = startWandPos[0] -  0.02 ;
-						tempVecPtr[1] = startWandPos[1] + 0.075;
-						tempVecPtr[2] = startWandPos[2] - 0.04f;
-						tempVecPtr = toolStrength.getPosition();
-						tempVecPtr[0] = startWandPos[0]  + 0.02;
-						tempVecPtr[1] = startWandPos[1] + 0.075;
-						tempVecPtr[2] = startWandPos[2] - 0.04f;
-
-						tempVecPtr = toolSizeFill.getPosition();
-						tempVecPtr[0] = startWandPos[0] - (0.035f*NR_OF_TOOLS / 2) - 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
-						tempVecPtr[2] = startWandPos[2] - 0.04f;
-						tempVecPtr = toolStrengthFill.getPosition();
-						tempVecPtr[0] = startWandPos[0] + (0.035f*NR_OF_TOOLS / 2) + 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
-						tempVecPtr[2] = startWandPos[2] - 0.04f;
-
-						tempVecPtr = toolSizeText.getPosition();
-						tempVecPtr[0] = startWandPos[0] - (0.035f*NR_OF_TOOLS / 2) - 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
-						tempVecPtr[2] = startWandPos[2] - 0.13f;
-						tempVecPtr = toolStrengthText.getPosition();
-						tempVecPtr[0] = startWandPos[0] + (0.035f*NR_OF_TOOLS / 2) + 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
-						tempVecPtr[2] = startWandPos[2] - 0.13f;
-
-
-						selectingTool = true;
-					}
-					else if (modellingState[2] == 2) {
-						// check what direction the wand been 
-						for (int i = 0; i < NR_OF_TOOLS; i++) {
-							if (wandPos[0] < tool[i].getPosition()[0] + tool[i].getDim()[0] / 2.f
-								&& wandPos[0] > tool[i].getPosition()[0] - tool[i].getDim()[0] / 2.f
-								&& wandPos[1] > tool[i].getPosition()[1] - tool[i].getDim()[1] / 2.f
-								&& wandPos[1] < tool[i].getPosition()[1] + tool[i].getDim()[1] / 2.f
-								&& wandPos[2] > tool[i].getPosition()[2] - tool[i].getDim()[2] / 2.f
-								&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {	
-								if (!tool[i].getState()) {	
-									tool[activeTool].setState(false);
-									delete currentTool;
-									tool[i].setState(true);
-									activeTool = i;
-									if (i == 0)
-										currentTool = new Push(modellingMesh, wand);
-									else if (i == 1)
-										currentTool = new Smooth(modellingMesh, wand);
-									else if (i == 2)
-										currentTool = new Draw(modellingMesh, wand);
-									break;
-								}
-							}
-						}
-						if (wandPos[0] < toolSize.getPosition()[0] + toolSize.getDim()[0] / 2.f
-							&& wandPos[0] > toolSize.getPosition()[0] - toolSize.getDim()[0] / 2.f
-							&& wandPos[1] > toolSize.getPosition()[1] - toolSize.getDim()[1] / 2.f
-							&& wandPos[1] < toolSize.getPosition()[1] + toolSize.getDim()[1] / 2.f
-							&& wandPos[2] > toolSize.getPosition()[2] - toolSize.getDim()[2] / 2.f
-							&& wandPos[2] < toolSize.getPosition()[2] + toolSize.getDim()[2] / 2.f) {
-							tempVecPtr = toolSize.getPosition();
-							toolSizeFill.setDim(0.0f, 0.0f, (wandPos[2] - tempVecPtr[2]));
-							currentTool->setRadius((wandPos[2] - tempVecPtr[2]));
-						}
-						else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
-							&& wandPos[0] > toolStrength.getPosition()[0] - toolStrength.getDim()[0] / 2.f
-							&& wandPos[1] > toolStrength.getPosition()[1] - toolStrength.getDim()[1] / 2.f
-							&& wandPos[1] < toolStrength.getPosition()[1] + toolStrength.getDim()[1] / 2.f
-							&& wandPos[2] > toolStrength.getPosition()[2] - toolStrength.getDim()[2] / 2.f
-							&& wandPos[2] < toolStrength.getPosition()[2] + toolStrength.getDim()[2] / 2.f) {
-							tempVecPtr = toolStrength.getPosition();
-							toolStrengthFill.setDim(0.0f, 0.0f, (wandPos[2] - tempVecPtr[2]));
-						}
-
-					}
-				}
-				else {
-					if (modellingState[2] == 3) {
-						modellingState[2] = 0;
-						selectingTool = false;
-					}
-					else if (modellingState[2] != 0) {
-						modellingState[2] = 3;
-
-						aModellingStateIsActive--;
-					}
-				}
+				
 
 				//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
@@ -889,11 +786,11 @@ int Oculus::runOvr() {
 								tool[i].setState(true);
 								activeTool = i;
 								if (i == 0)
-									currentTool = new Push(modellingMesh, wand);
+									currentTool = new Drag(modellingMesh, wand);
 								else if (i == 1)
 									currentTool = new Smooth(modellingMesh, wand);
 								else if (i == 2)
-									currentTool = new Spray(modellingMesh, wand);
+									currentTool = new BuildUp(modellingMesh, wand);
 								
 								currentTool->setRadius(toolRad);
 							}
@@ -955,10 +852,14 @@ int Oculus::runOvr() {
 						OVR::Quatf l_Orientation = OVR::Quatf(g_EyePoses[l_Eye].Orientation);
 						OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
 						MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
+						//MVstack.multiply(wand->getOrientation());
 
 						//!-- Translation due to positional tracking (DK2) and IPD...
 						float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
 						MVstack.translate(eyePoses);
+						//wand->getPosition(tempVec);
+						//tempVec[0] = -tempVec[0]; tempVec[1] = -tempVec[1]; tempVec[2] = -tempVec[2];
+						//MVstack.translate(tempVec);
 
 						//POSSABLY DOABLE IN SHADER
 						pmat4 = MVstack.getCurrentMatrix();
@@ -1076,7 +977,7 @@ int Oculus::runOvr() {
 								}
 								glUseProgram(sceneShader.programID);
 								glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-								currentTool->renderIntersection(MVptr, locationMeshMV);
+							//	currentTool->renderIntersection(MVptr, locationMeshMV);
 
 							MVstack.pop();
 
@@ -1196,7 +1097,7 @@ int Oculus::runOvr() {
 				//===============================================================================================================================
 				// 4.1 - Keyboard events \_______________________________________________________________________________________________________
 				// 4.1.1 - Move mesh >-----------------------------------------------------------------------------------------------------------
-				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
+				if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
 					if (modellingState[1] == 0) {
 						modellingState[1] = 1;
 						wand->getPosition(lastPos);
@@ -1243,11 +1144,11 @@ int Oculus::runOvr() {
 					else if (modellingState[1] != 0) {
 						// just released button
 					
-						/*wand->getVelocity(wandVelocity);
+						wand->getVelocity(wandVelocity);
 						if (linAlg::vecLength(wandVelocity) < 0.4) {
 							//changedMesh = true;
 							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
-						}*/
+						}
 						modellingState[1] = 3;
 						aModellingStateIsActive--;
 					}
@@ -1266,7 +1167,6 @@ int Oculus::runOvr() {
 				//trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f), boardPos[2], 0.50, 0.25, 0.40);
 				// check if the preview mesh has left the tracking range area and increment fileIndex accordingly
 				if (tempMoveVec[0] > 0.25) {
-					
 
 					previewMesh = placeHolder;
 
@@ -1275,7 +1175,7 @@ int Oculus::runOvr() {
 					tempVec[2] = placeHolder->getPosition()[2];
 					previewMesh->setPosition(tempVec);
 					fileIndex--;
-					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+					//wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 					if (loaderMeshLock.try_lock()) {
 						loaderMeshLock.unlock();
 						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
@@ -1284,6 +1184,9 @@ int Oculus::runOvr() {
 					// reset initial starting pos
 					wand->getPosition(lastPos);
 					previewMesh->getPosition(lastPos2);
+					wand->getDirection(prevWandDirection);
+					previewMesh->getOrientation(prevMeshOrientation);
+					linAlg::normVec(prevWandDirection);
 
 				}
 
@@ -1296,7 +1199,7 @@ int Oculus::runOvr() {
 					previewMesh->setPosition(tempVec);
 
 					fileIndex++;
-					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+					//wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 					if (loaderMeshLock.try_lock()) {
 						loaderMeshLock.unlock();
 						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
@@ -1305,7 +1208,9 @@ int Oculus::runOvr() {
 					// reset initial starting pos
 					wand->getPosition(lastPos);
 					previewMesh->getPosition(lastPos2);
-
+					wand->getDirection(prevWandDirection);
+					previewMesh->getOrientation(prevMeshOrientation);
+					linAlg::normVec(prevWandDirection);
 				}
 
 				// check if the thread is ready with a new mesh
