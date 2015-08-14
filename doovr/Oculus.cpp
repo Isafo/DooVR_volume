@@ -1300,7 +1300,7 @@ int Oculus::runOvr() {
 				
 					tempVec[0] = tempMoveVec[0] + wandVelocity[0] * deltaTime;
 					tempVec[1] = tempMoveVec[1] + wandVelocity[1] * deltaTime;
-					tempVec[2] = tempMoveVec[2] + wandVelocity[2] * deltaTime;
+					tempVec[2] = +tempMoveVec[2] + wandVelocity[2] * deltaTime;
 					previewMesh->setPosition(tempVec);
 				}
 				//trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f), boardPos[2], 0.50, 0.25, 0.40);
@@ -1315,7 +1315,7 @@ int Oculus::runOvr() {
 					tempVec[2] = placeHolder->getPosition()[2];
 					previewMesh->setPosition(tempVec);
 					fileIndex--;
-
+					wandVelocity[1] = 0.0f; wandVelocity[2] = 0.0f;
 					if (wandVelocity[0] < 0.1f) {
 						if (loaderMeshLock.try_lock()) {
 						
@@ -1345,7 +1345,7 @@ int Oculus::runOvr() {
 					previewMesh->setPosition(tempVec);
 
 					fileIndex++;
-
+					wandVelocity[1] = 0.0f; wandVelocity[2] = 0.0f;
 					if (abs(wandVelocity[0]) < 1.5f) {
 						if (loaderMeshLock.try_lock()) {
 							loaderMeshLock.unlock();
@@ -1410,6 +1410,7 @@ int Oculus::runOvr() {
 						}
 						case 1: {
 							// quit mode to modelling mode
+							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 							delete loadButton[0];
 							delete loadButton[1];
 							delete loaderMesh;
@@ -1553,8 +1554,8 @@ int Oculus::runOvr() {
 
 							MVstack.push();
 								translateVector[0] = previewMesh->getPosition()[0] + 0.5f;
-								translateVector[1] = placeHolder->getPosition()[1];
-								translateVector[2] = placeHolder->getPosition()[2];
+								translateVector[1] = -0.15f;
+								translateVector[2] = 0.0f;
 								MVstack.translate(translateVector);
 								MVstack.multiply(placeHolder->getOrientation());
 								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -1565,8 +1566,8 @@ int Oculus::runOvr() {
 
 							MVstack.push();
 								translateVector[0] = previewMesh->getPosition()[0] - 0.5f;
-								translateVector[1] = placeHolder->getPosition()[1];
-								translateVector[2] = placeHolder->getPosition()[2];
+								translateVector[1] = -0.15f;
+								translateVector[2] = 0.0f;
 								MVstack.translate(translateVector);
 								MVstack.multiply(placeHolder->getOrientation());
 								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
