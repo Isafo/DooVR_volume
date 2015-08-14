@@ -34,6 +34,7 @@
 
 #include <thread>
 #include <mutex>
+#include <atomic>
 #include <math.h>
 
 // ------- Function declerations --------
@@ -66,6 +67,14 @@ ovrGLConfig g_Cfg;
 ovrEyeRenderDesc g_EyeRenderDesc[2];
 
 std::mutex loaderMeshLock, meshLock;
+
+/*! tells the state of the thread
+	0 = not running
+	1 = running
+	2 = not joined after running */
+std::atomic <int> th1Status(0);
+std::atomic <int> th2Status(0);
+
 
 int Oculus::runOvr() {
 
@@ -345,7 +354,9 @@ int Oculus::runOvr() {
 	float temp1, temp2;
 
 	// 2.3 - Threads used for loading and saving meshes \__________________________________________________________________________________
-	std::thread th1; 
+	//! Thread 1 used to load static meshes
+	std::thread th1;
+	//! Thread 2 used to load and save dynamic meshes
 	std::thread th2;
 
 	bool reset = false;
@@ -586,7 +597,7 @@ int Oculus::runOvr() {
 				// 3.1 - modellingstates \_____________________________________________________________________________________________________
 				//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
 			
-			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
+			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_UP)) {
 				if (modellingState[0] == 2) {
 					
 					currentTool->moveVertices(modellingMesh, wand, deltaTime);
@@ -669,108 +680,6 @@ int Oculus::runOvr() {
 						aModellingStateIsActive--;
 					}
 				}
-				// select tool >---------------------------------------------------------------------------------------------------------
-				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_CONTROL)) {
-					if (modellingState[2] == 0) {
-						modellingState[2] = 1;
-						aModellingStateIsActive++;
-					}
-					else if (modellingState[2] == 1) {
-						modellingState[2] = 2;
-						wand->getPosition(startWandPos);
-						for (int i = 0; i < NR_OF_TOOLS; i++) {
-							tempVecPtr = tool[i].getPosition();
-							tempVecPtr[0] = startWandPos[0] + (i - NR_OF_TOOLS / 2)*0.035;
-							tempVecPtr[1] = startWandPos[1] - 0.015;
-							tempVecPtr[2] = startWandPos[2] + 0.03f;
-						}
-						
-						tempVecPtr = toolSize.getPosition();
-						tempVecPtr[0] = startWandPos[0] -  0.02 ;
-						tempVecPtr[1] = startWandPos[1] + 0.075;
-						tempVecPtr[2] = startWandPos[2] - 0.04f;
-						tempVecPtr = toolStrength.getPosition();
-						tempVecPtr[0] = startWandPos[0]  + 0.02;
-						tempVecPtr[1] = startWandPos[1] + 0.075;
-						tempVecPtr[2] = startWandPos[2] - 0.04f;
-
-						tempVecPtr = toolSizeFill.getPosition();
-						tempVecPtr[0] = startWandPos[0] - (0.035f*NR_OF_TOOLS / 2) - 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
-						tempVecPtr[2] = startWandPos[2] - 0.04f;
-						tempVecPtr = toolStrengthFill.getPosition();
-						tempVecPtr[0] = startWandPos[0] + (0.035f*NR_OF_TOOLS / 2) + 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
-						tempVecPtr[2] = startWandPos[2] - 0.04f;
-
-						tempVecPtr[0] = startWandPos[0] - (0.035f*NR_OF_TOOLS / 2) - 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
-						tempVecPtr[2] = startWandPos[2] - 0.13f;
-						tempVecPtr = toolStrengthText.getPosition();
-						tempVecPtr[0] = startWandPos[0] + (0.035f*NR_OF_TOOLS / 2) + 0.02;
-						tempVecPtr[1] = startWandPos[1] - 0.015;
-						tempVecPtr[2] = startWandPos[2] - 0.13f;
-
-
-						selectingTool = true;
-					}
-					else if (modellingState[2] == 2) {
-						// check what direction the wand been 
-						for (int i = 0; i < NR_OF_TOOLS; i++) {
-							if (wandPos[0] < tool[i].getPosition()[0] + tool[i].getDim()[0] / 2.f
-								&& wandPos[0] > tool[i].getPosition()[0] - tool[i].getDim()[0] / 2.f
-								&& wandPos[1] > tool[i].getPosition()[1] - tool[i].getDim()[1] / 2.f
-								&& wandPos[1] < tool[i].getPosition()[1] + tool[i].getDim()[1] / 2.f
-								&& wandPos[2] > tool[i].getPosition()[2] - tool[i].getDim()[2] / 2.f
-								&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {	
-								if (!tool[i].getState()) {	
-									tool[activeTool].setState(false);
-									delete currentTool;
-									tool[i].setState(true);
-									activeTool = i;
-									if (i == 0)
-										currentTool = new Push(modellingMesh, wand);
-									else if (i == 1)
-										currentTool = new Smooth(modellingMesh, wand);
-									else if (i == 2)
-										currentTool = new Draw(modellingMesh, wand);
-									break;
-								}
-							}
-						}
-						if (wandPos[0] < toolSize.getPosition()[0] + toolSize.getDim()[0] / 2.f
-							&& wandPos[0] > toolSize.getPosition()[0] - toolSize.getDim()[0] / 2.f
-							&& wandPos[1] > toolSize.getPosition()[1] - toolSize.getDim()[1] / 2.f
-							&& wandPos[1] < toolSize.getPosition()[1] + toolSize.getDim()[1] / 2.f
-							&& wandPos[2] > toolSize.getPosition()[2] - toolSize.getDim()[2] / 2.f
-							&& wandPos[2] < toolSize.getPosition()[2] + toolSize.getDim()[2] / 2.f) {
-							tempVecPtr = toolSize.getPosition();
-							toolSizeFill.setDim(0.0f, 0.0f, (wandPos[2] - tempVecPtr[2]));
-							currentTool->setRadius((wandPos[2] - tempVecPtr[2]));
-						}
-						else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
-							&& wandPos[0] > toolStrength.getPosition()[0] - toolStrength.getDim()[0] / 2.f
-							&& wandPos[1] > toolStrength.getPosition()[1] - toolStrength.getDim()[1] / 2.f
-							&& wandPos[1] < toolStrength.getPosition()[1] + toolStrength.getDim()[1] / 2.f
-							&& wandPos[2] > toolStrength.getPosition()[2] - toolStrength.getDim()[2] / 2.f
-							&& wandPos[2] < toolStrength.getPosition()[2] + toolStrength.getDim()[2] / 2.f) {
-							tempVecPtr = toolStrength.getPosition();
-							toolStrengthFill.setDim(0.0f, 0.0f, (wandPos[2] - tempVecPtr[2]));
-						}
-
-					}
-				}
-				else {
-					if (modellingState[2] == 3) {
-						modellingState[2] = 0;
-						selectingTool = false;
-					}
-					else if (modellingState[2] != 0) {
-						modellingState[2] = 3;
-
-						aModellingStateIsActive--;
-					}
-				}
 
 				//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
@@ -783,24 +692,14 @@ int Oculus::runOvr() {
 					switch (activeButton) {
 						//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
 						case 0: {
-
-							if (reset) {
-								if (th2.joinable()) {
-									th2.join();
-									modellingMesh->cleanBuffer();
-									reset = false;
-								}
-							}
-
 							if (modellingButtonState[activeButton] == 1) {
 								// reset mesh
-								th2 = std::thread(loadMesh, modellingMesh, currentMesh);
+								if (th2Status == 0) {
+									th2Status = 1;
+									th2 = std::thread(loadMesh, modellingMesh, currentMesh);
+								}
+								
 								modellingButton[activeButton]->setState(true);
-
-								//currentTool = new Spray(modellingMesh, wand);
-								//tool[activeTool].setState(false);
-								//activeTool = 2;
-								//tool[activeTool].setState(true);
 
 								reset = true;
 
@@ -808,9 +707,6 @@ int Oculus::runOvr() {
 							else if (modellingButtonState[activeButton] == 3) {
 								modellingButton[activeButton]->setState(false);
 							}
-
-							
-
 							break;
 						}
 						//3.2.2 - save mesh button >--------------------------------------------------------------------------------------------
@@ -818,9 +714,11 @@ int Oculus::runOvr() {
 							// save mesh
 							if (modellingButtonState[activeButton] == 1) {
 								modellingButton[activeButton]->setState(true);
-							
-								th2 = std::thread(saveFile, modellingMesh);
-								mode = 2; // enter save mode
+								if (th2Status == 0) {
+									th2Status = 1;
+									th2 = std::thread(saveFile, modellingMesh);
+									mode = 2; // enter save mode
+								}
 							}
 							break;
 						}
@@ -855,8 +753,11 @@ int Oculus::runOvr() {
 									loadButton[0] = new menuBox(boardPos[0] + 0.03f, boardPos[1] + 0.03f, boardPos[2] + 0.05f, 0.04f, 0.01f, 0.02f, 0, 3, 2, 1, 5, 5);
 
 									// Call thread to load the mesh preview
-									th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-									mode = 1; // activate load mode
+									if (th1Status == 0) {
+										th1Status = 1;
+										th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+										mode = 1; // activate load mode
+									}
 								}
 							}
 							break;
@@ -939,8 +840,17 @@ int Oculus::runOvr() {
 					}
 				}
 
-				if (!reset) 
+				if (reset) {
+					if (th2.joinable()) {
+						th2.join();
+						th2Status = 0;
+					}
+					modellingMesh->cleanBuffer();
+					reset = false;
+				} else if (meshLock.try_lock()) {
 					modellingMesh->updateOGLData();
+					meshLock.unlock();
+				}	
 
 				// Begin the frame...
 				ovrHmd_BeginFrame(hmd, l_FrameIndex);
@@ -1233,7 +1143,7 @@ int Oculus::runOvr() {
 				//===============================================================================================================================
 				// 4.1 - Keyboard events \_______________________________________________________________________________________________________
 				// 4.1.1 - Move mesh >-----------------------------------------------------------------------------------------------------------
-				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
+				if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
 					if (modellingState[1] == 0) {
 
 						wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
@@ -1293,6 +1203,10 @@ int Oculus::runOvr() {
 					}
 				}
 
+				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
+					glfwSetWindowShouldClose(l_Window, GL_TRUE);
+				}
+
 				// 4.1.2 - Load next mesh \______________________________________________________________________________________________________
 				// move mesh until it leaves the tracking range then load a new mesh
 				tempMoveVec = previewMesh->getPosition();
@@ -1317,9 +1231,8 @@ int Oculus::runOvr() {
 					fileIndex--;
 					wandVelocity[1] = 0.0f; wandVelocity[2] = 0.0f;
 					if (wandVelocity[0] < 0.1f) {
-						if (loaderMeshLock.try_lock()) {
-						
-							loaderMeshLock.unlock();
+						if (th1Status == 0) {
+							th1Status = 1;
 							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 						} else {
 							failedToStartLoading = true;
@@ -1347,8 +1260,8 @@ int Oculus::runOvr() {
 					fileIndex++;
 					wandVelocity[1] = 0.0f; wandVelocity[2] = 0.0f;
 					if (abs(wandVelocity[0]) < 1.5f) {
-						if (loaderMeshLock.try_lock()) {
-							loaderMeshLock.unlock();
+						if (th1Status == 0) {
+							th1Status = 1;
 							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 						} else {
 							failedToStartLoading = true;
@@ -1368,23 +1281,23 @@ int Oculus::runOvr() {
 				// check if the thread is ready with a new mesh
 				if (th1.joinable()) {
 					th1.join();
+					th1Status = 0;
 
 					// check if the loaded mesh was changed before it was loaded by the thread
 					if (failedToStartLoading) {
-						if (loaderMeshLock.try_lock()) {
-							loaderMeshLock.unlock();
-							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-						}
+						th1Status = 1;
+						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 					} else {
 						loaderMesh->setPosition(placeHolder->getPosition());
 						previewMesh = loaderMesh;
 						previewMesh->createBuffers();
-					}
+						th1Status = 0;
+					}	
 				}
 
 				if (abs(wandVelocity[0]) < 1.5f && maxVelocityNotLoaded) {
-					if (loaderMeshLock.try_lock()) {
-						loaderMeshLock.unlock();
+					if (th1Status == 0) {
+						th1Status = 1;
 						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
 						maxVelocityNotLoaded = false;
 					}
@@ -1399,8 +1312,8 @@ int Oculus::runOvr() {
 						case 0: {
 							// load mesh button
 							if (loadButtonState[activeButton] == 1) {
-								if (meshLock.try_lock()){
-									meshLock.unlock();
+								if (th2Status == 0){
+									th2Status = 1;
 									th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
 									currentMesh = meshFile[fileIndex % meshFile.size()];
 									wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
@@ -1410,12 +1323,23 @@ int Oculus::runOvr() {
 						}
 						case 1: {
 							// quit mode to modelling mode
+
+							if (th1Status != 0) {
+								th1.join();
+								th1Status = 0;
+							}
+							if (th2Status != 0) {
+								th2.join();
+								th2Status = 0;
+							}
+
 							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 							delete loadButton[0];
 							delete loadButton[1];
 							delete loaderMesh;
 							delete placeHolder;
 							mode = 0;
+
 							continue;
 						}
 						default: {
@@ -1426,12 +1350,19 @@ int Oculus::runOvr() {
 				
 				if (th2.joinable()) {
 					th2.join();
+					th2Status = 0;
+
 					modellingMesh->cleanBuffer();
 					delete loadButton[0];
 					delete loadButton[1];
 					delete loaderMesh;
 					delete placeHolder;
 					mode = 0;
+
+					if (th1Status != 0) {
+						th1.join();
+						th1Status = 0;
+					}
 					continue;
 				}
 
@@ -1617,6 +1548,7 @@ int Oculus::runOvr() {
 				// 5.1 CHECK THREAD \_____________________________________________________________________________________________________________
 				if (th2.joinable()) {
 					th2.join();
+					th2Status = 0;
 					mode = 0; // return to modelling mode
 					modellingButton[activeButton]->setState(false);
 				}
@@ -1792,6 +1724,16 @@ int Oculus::runOvr() {
 
 	}
 
+	// join threads
+	if (th1Status != 0) {
+		th1.join();
+		th1Status = 0;
+	}
+	if (th2Status != 0) {
+		th2.join();
+		th2Status = 0;
+	}
+
 	// Clean up FBO...
 	glDeleteRenderbuffers(1, &l_DepthBufferId);
 	glDeleteTextures(1, &l_TextureId);
@@ -1906,16 +1848,19 @@ void loadStaticMesh(StaticMesh* item, std::string fileName) {
 	loaderMeshLock.lock();
 		item->load(fileName);
 	loaderMeshLock.unlock();
+	th1Status = 2;
 }
 
 void loadMesh(DynamicMesh* item, std::string fileName) {
 	meshLock.lock();
 		item->load(fileName);
 	meshLock.unlock();
+	th2Status = 2;
 }
 
 void saveFile(DynamicMesh* item) {
 	meshLock.lock();
 		item->save();
 	meshLock.unlock();
+	th2Status = 2;
 }
