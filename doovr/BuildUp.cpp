@@ -1,9 +1,9 @@
-#include "Drag.h"
+#include "BuildUp.h"
 
 
 #define EPSILON 0.000001
 
-Drag::Drag(DynamicMesh* mesh, Wand* wand)
+BuildUp::BuildUp(DynamicMesh* mesh, Wand* wand)
 {
 	selectedVertices = new int[MAX_SELECTED]; selectedSize = 0;
 	previouslySelectedVertices = new int[MAX_SELECTED]; previouslySelectedSize = 0;
@@ -24,27 +24,11 @@ Drag::Drag(DynamicMesh* mesh, Wand* wand)
 	mOrientation = mesh->orientation;
 	mMAX_LENGTH = mesh->MAX_LENGTH;
 
-	linAlg::transpose(mOrientation);
-	//--< 1.0 | calculated the position and direction of the wand
-	wand->getPosition(wPoint);
-	wPoint[0] = wPoint[0] - mPosition[0];
-	wPoint[1] = wPoint[1] - mPosition[1];
-	wPoint[2] = wPoint[2] - mPosition[2];
-	wPoint[3] = 1.0f;
-	linAlg::vectorMatrixMult(mOrientation, wPoint, newWPoint);
-
-	wand->getDirection(Dirr);
-	linAlg::normVec(Dirr);
-	Dirr[3] = 1.0f;
-	linAlg::vectorMatrixMult(mOrientation, Dirr, newDirr);
-	linAlg::transpose(mOrientation);
-	mIndex = -1;
-
 	zVec[0] = 0.0f;  zVec[1] = 0.0f; zVec[2] = 1.0f;
 }
 
 
-Drag::~Drag()
+BuildUp::~BuildUp()
 {
 	delete selectedVertices;
 	delete previouslySelectedVertices;
@@ -53,7 +37,7 @@ Drag::~Drag()
 	delete iCircle;
 }
 
-void Drag::renderIntersection(MatrixStack* MVstack, GLint locationMV)
+void BuildUp::renderIntersection(MatrixStack* MVstack, GLint locationMV)
 {
 
 	linAlg::crossProd(tempVec, intersection.nxyz, zVec);
@@ -73,7 +57,7 @@ void Drag::renderIntersection(MatrixStack* MVstack, GLint locationMV)
 	MVstack->pop();
 }
 
-void Drag::render(MatrixStack* MVstack, GLint locationMV)
+void BuildUp::render(MatrixStack* MVstack, GLint locationMV)
 {
 
 	MVstack->push();
@@ -91,7 +75,7 @@ void Drag::render(MatrixStack* MVstack, GLint locationMV)
 }
 
 
-void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
+void BuildUp::firstSelect(DynamicMesh* mesh, Wand* wand)
 {
 	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
 	float eVec1[3]; float eVec2[3];
@@ -107,10 +91,10 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 	float pLength = 0.0f; float invP = 0.0f; float u = 0.0f; float v = 0.0f; float t = 0.0f;
 	float oLength = 0.0f;
 
-	float mLength;
+	int mIndex; float mLength;
 
 	intersection.nxyz[0] = 100.f; intersection.nxyz[1] = 100.f; intersection.nxyz[2] = 100.f;
-
+	//sIt = sHead->next;
 
 	linAlg::transpose(mOrientation);
 	//--< 1.0 | calculated the position and direction of the wand
@@ -152,12 +136,11 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 	}
 	// 2.0 >----------------------
 
-	if (!success) 
+	if (!success)
 		return;
 
-	success = false;
-	//===========================================================================================
-	//sIt = sHead;
+	success = false;	
+	//=======================================================
 	for (int i = 0; i < selectedSize; i++) {
 		index2 = selectedVertices[i];
 		tempEdge = mVInfoArray[index2].edgePtr;
@@ -216,26 +199,19 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 		} while (tempEdge != mVInfoArray[index2].edgePtr);
 
 		mVInfoArray[index2].selected = 1.0f;
-	}
 
+	}
 
 	if (!success)
 		return;
-	
-	success = false;
-	//================================================================
-	//for (int i = 0; i < selectedSize; i++)
-	//{
-	//	mVInfoArray[selectedVertices[i]].selected = 0.0f;
-	//}
+
+	for (int i = 0; i < selectedSize; i++)
+	{
+		mVInfoArray[selectedVertices[i]].selected = 0.0f;
+	}
 	selectedVertices[0] = mIndex;
 	selectedSize = 1;
-	mVInfoArray[mIndex].selected = 3.0f;
-
-	midLength = linAlg::vecLength(intersection.nxyz);
-	midPoint[0] = intersection.xyz[0];
-	midPoint[1] = intersection.xyz[1];
-	midPoint[2] = intersection.xyz[2];
+	mVInfoArray[mIndex].selected = 4.0f;
 
 	intersection.nxyz[0] = mVertexArray[mIndex].nxyz[0];
 	intersection.nxyz[1] = mVertexArray[mIndex].nxyz[1];
@@ -244,13 +220,6 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 	vPoint = intersection.xyz;
 	//vNorm = intersection.nxyz;
 
-	spherePos[0] = vPoint[0] - vNorm[0] * radius;
-	spherePos[1] = vPoint[1] - vNorm[1] * radius;
-	spherePos[2] = vPoint[2] - vNorm[2] * radius;
-
-	// --< 2.something
-	// 2.3 >-----------------------
-	//--< 2.4 | a first vertex has been found, the rest of the search is done through the surface 
 	for (int i = 0; i < selectedSize; i++) {
 		index2 = selectedVertices[i];
 		tempEdge = mVInfoArray[index2].edgePtr;
@@ -269,7 +238,8 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 				linAlg::calculateVec(eVec1, Dirr, eVec2);
 				oLength = linAlg::vecLength(eVec2);
 
-				if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius) {
+				if ( oLength < radius) {
+
 					selectedVertices[selectedSize] = index; selectedSize++;
 
 					mVInfoArray[index].selected = 4.0f;
@@ -280,23 +250,18 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 		} while (tempEdge != mVInfoArray[index2].edgePtr);
 
 	}
-/*		for (int i = 0; i < selectedSize; i++)
-	{
-		mVInfoArray[selectedVertices[i]].selected = 0.0f;
-	}*/
 	
 	
 	mesh->updateOGLData();
 }
 
 
-void Drag::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
+void BuildUp::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 {
-	deSelect();
-
+	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
 	float eVec1[3]; float eVec2[3];
 	float P[3]; float Q[3]; float T[3]; float lengthVec[3];
-	float* vPoint; float* vPoint2; float* vPoint1; float* vNorm; float* vNorm2;
+	float* vPoint; float* vPoint2; float* vPoint1; float vNorm[3]; float* vNorm2;
 	int index; int index2;
 	float* ptrVec;
 
@@ -310,7 +275,7 @@ void Drag::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 	float pLength = 0.0f; float invP = 0.0f; float u = 0.0f; float v = 0.0f; float t = 0.0f;
 	float oLength = 0.0f;
 
-	float mLength;
+	int mIndex; float mLength;
 
 	int* usedList; int* emptyList;
 	int usedSize; int emptySize;
@@ -333,100 +298,165 @@ void Drag::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 	linAlg::vectorMatrixMult(mOrientation, Dirr, newDirr);
 	linAlg::transpose(mOrientation);
 
-	vPoint = mVertexArray[mIndex].xyz;
-	vNorm = mVertexArray[mIndex].nxyz;
-	//vNorm = newDirr;
+	for (int i = 0; i < selectedSize; i++) {
+		index2 = selectedVertices[i];
 
-	P[0] = newWPoint[0] + newDirr[0] * midLength;
-	P[1] = newWPoint[1] + newDirr[1] * midLength;
-	P[2] = newWPoint[2] + newDirr[2] * midLength;
+		mVInfoArray[index2].selected = 1.0f;
 
-	linAlg::calculateVec(P, spherePos, T);
-	linAlg::normVec(T);
-	linAlg::calculateVec(P, midPoint, Q);
+		if (mVInfoArray[index2].edgePtr > 0)
+			tempEdge = mVInfoArray[index2].edgePtr;
+		else
+			continue;
 
-	u = linAlg::dotProd(T, Q) / linAlg::vecLength(T);
-	T[0] = T[0] * u;
-	T[1] = T[1] * u;
-	T[2] = T[2] * u;
+		do {
+			tempE = mEdgeArray[mEdgeArray[tempEdge].nextEdge].sibling;
+			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected != 1.0f)
+			{
+				linAlg::calculateVec(mVertexArray[mEdgeArray[tempEdge].vertex].xyz, mVertexArray[index2].xyz, eVec1);
+				linAlg::calculateVec(mVertexArray[mEdgeArray[tempE].vertex].xyz, mVertexArray[index2].xyz, eVec2);
+				linAlg::crossProd(P, newDirr, eVec2);
 
-	spherePos[0] += T[0];
-	spherePos[1] += T[1];
-	spherePos[2] += T[2];
-	//T[0] = Q[0]; T[1] = Q[1]; T[2] = Q[2];
-	//linAlg::normVec(T);
-	//vNorm = T;
+				pLength = linAlg::dotProd(eVec1, P);
+				if (pLength < -EPSILON || pLength > EPSILON)
+				{
+					invP = 1.f / pLength;
+					linAlg::calculateVec(newWPoint, mVertexArray[index2].xyz, T);
 
-	//u = linAlg::dotProd(vNorm, Q);
-	midPoint[0] = P[0];
-	midPoint[1] = P[1];
-	midPoint[2] = P[2];
+					u = linAlg::dotProd(T, P) * invP;
+					if (u > 0.0f && u < 1.0f)
+					{
+						linAlg::crossProd(Q, T, eVec1);
 
+						v = linAlg::dotProd(newDirr, Q)*invP;
+
+						if (v > 0.0f && u + v < 1.0f)
+						{
+							t = linAlg::dotProd(eVec2, Q)*invP;
+							if (t > EPSILON)
+							{
+								//sIt->next->index = e[tempEdge].triangle;
+								lengthVec[0] = newDirr[0] * t;
+								lengthVec[1] = newDirr[1] * t;
+								lengthVec[2] = newDirr[2] * t;
+								tempE = mVInfoArray[index2].edgePtr;
+								success = true;
+								if (linAlg::vecLength(lengthVec) < linAlg::vecLength(intersection.nxyz)){
+									mIndex = index2;
+									intersection.xyz[0] = newWPoint[0] + lengthVec[0];
+									intersection.xyz[1] = newWPoint[1] + lengthVec[1];
+									intersection.xyz[2] = newWPoint[2] + lengthVec[2];
+									intersection.nxyz[0] = lengthVec[0];
+									intersection.nxyz[1] = lengthVec[1];
+									intersection.nxyz[2] = lengthVec[2];
+									linAlg::crossProd(vNorm, eVec2, eVec1);
+									linAlg::normVec(vNorm);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			tempEdge = tempE;
+		} while (tempEdge != mVInfoArray[index2].edgePtr);
+
+	}
+
+	if (!success){
+		deSelect();
+		firstSelect(mesh, wand);
+		return;
+	}
+	vPoint = intersection.xyz;
+
+	intersection.nxyz[0] = vNorm[0];
+	intersection.nxyz[1] = vNorm[1];
+	intersection.nxyz[2] = vNorm[2];
+
+	// --< 2.something
 	tempSize = selectedSize;
 	selectedSize = 0;
 	// 2.3 >-----------------------
 	//sIt = sHead;
 	//--< 2.4 | a first vertex has been found, the rest of the search is done through the surface 
-	for (int i = 0; i <= mesh->vertexCap; i++) {
+	for (int i = 0; i < tempSize; i++) {
+		index2 = selectedVertices[i];
 
-		vPoint = mVertexArray[i].xyz;
-		linAlg::calculateVec(vPoint, spherePos, tempVec1);
+		linAlg::calculateVec(mVertexArray[index2].xyz, vPoint, eVec1);
 
-		mLength = linAlg::vecLength(tempVec1);
+		pLength = linAlg::dotProd(vNorm, eVec1);
+		Dirr[0] = vNorm[0] * pLength;
+		Dirr[1] = vNorm[1] * pLength;
+		Dirr[2] = vNorm[2] * pLength;
 
-		if (mLength <  radius)
-		{
-			vNorm = mVertexArray[i].nxyz;
-			selectedVertices[selectedSize] = i; selectedSize++;
+		linAlg::calculateVec(eVec1, Dirr, eVec2);
+		oLength = linAlg::vecLength(eVec2);
 
-			mVInfoArray[i].selected = 3.0f;
-			linAlg::normVec(tempVec1);
-			mVertexArray[i].xyz[0] = spherePos[0] + tempVec1[0] * radius;
-			mVertexArray[i].xyz[1] = spherePos[1] + tempVec1[1] * radius;
-			mVertexArray[i].xyz[2] = spherePos[2] + tempVec1[2] * radius;
-			break;
+		if ( oLength < radius) {
+			selectedVertices[selectedSize] = index2; selectedSize++;
 
+			u = ((pow(radius, 2) - pow(oLength, 2)) / pow(radius, 2));
+			vNorm2 = mVertexArray[index2].nxyz;
+				
+			vPoint1 = mVertexArray[index2].xyz;
+			vPoint1[0] += vNorm[0] * u*0.0002;
+			vPoint1[1] += vNorm[1] * u*0.0002;
+			vPoint1[2] += vNorm[2] * u*0.0002;
+			mVInfoArray[index2].selected = u;
+
+			mVInfoArray[index2].selected = 2.0f;
+
+		}
+		else{
+			mVInfoArray[index2].selected = 0.0f;
 		}
 	}
 
-	for (int j = 0; j < selectedSize; j++) {
-		index2 = selectedVertices[j];
+
+	for (int i = 0; i < selectedSize; i++)
+	{
+		index2 = selectedVertices[i];
+		//vPoint = mVertexArray[index2].xyz;
+
 		tempEdge = mVInfoArray[index2].edgePtr;
-
 		do {
-			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected < 3.0f){
-				index = mEdgeArray[tempEdge].vertex;
+			index = mEdgeArray[tempEdge].vertex;
 
-				vPoint2 = mVertexArray[index].xyz;
-				linAlg::calculateVec(vPoint2, spherePos, tempVec1);
+			if (mVInfoArray[index].selected == 0.0f){
 
-				mLength = linAlg::vecLength(tempVec1);
+				linAlg::calculateVec(mVertexArray[index].xyz, vPoint, eVec1);
 
-				if (mLength < radius) {
+				pLength = linAlg::dotProd(vNorm, eVec1);// / linAlg::vecLength(newDirr);
+				Dirr[0] = vNorm[0] * pLength;
+				Dirr[1] = vNorm[1] * pLength;
+				Dirr[2] = vNorm[2] * pLength;
+
+				linAlg::calculateVec(eVec1, Dirr, eVec2);
+				oLength = linAlg::vecLength(eVec2);
+
+				if ( oLength < radius) {
+
+					u = ((pow(radius, 2) - pow(oLength, 2)) / pow(radius, 2));
+					vNorm2 = mVertexArray[index2].nxyz;
+
+					vPoint1 = mVertexArray[index2].xyz;
+					vPoint1[0] += vNorm[0] * u*0.0002;
+					vPoint1[1] += vNorm[1] * u*0.0002;
+					vPoint1[2] += vNorm[2] * u*0.0002;
+
 					selectedVertices[selectedSize] = index; selectedSize++;
-					mVInfoArray[index].selected = 3.0f;
-
-					vNorm = mVertexArray[index].nxyz;
-
-					linAlg::normVec(tempVec1);
-					mVertexArray[index].xyz[0] = spherePos[0] + tempVec1[0] * radius;
-					mVertexArray[index].xyz[1] = spherePos[1] + tempVec1[1] * radius;
-					mVertexArray[index].xyz[2] = spherePos[2] + tempVec1[2] * radius;
+					mVInfoArray[index].selected = 2;
 				}
 			}
+
 			tempEdge = mEdgeArray[mEdgeArray[tempEdge].nextEdge].sibling;
-
 		} while (tempEdge != mVInfoArray[index2].edgePtr);
-
 	}
 
 	mesh->updateArea(selectedVertices, selectedSize);
-	//mesh->updateArea(previouslySelectedVertices, previouslySelectedSize);
-	//previouslySelectedSize = 0;
 	mesh->updateOGLData();
-
 }
-void Drag::deSelect()
+void BuildUp::deSelect()
 {
 	for (int i = 0; i < previouslySelectedSize; i++)
 	{

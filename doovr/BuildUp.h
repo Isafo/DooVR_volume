@@ -3,11 +3,11 @@
 #include "Line.h"
 #include "Circle.h"
 
-class Drag : public Tool
+class BuildUp : public Tool
 {
 public:
-	Drag(DynamicMesh* mesh, Wand* wand);
-	~Drag();
+	BuildUp(DynamicMesh* mesh, Wand* wand);
+	~BuildUp();
 
 	void render(MatrixStack* MVstack, GLint locationMV);
 	void renderIntersection(MatrixStack* MVstack, GLint locationMV);
@@ -46,11 +46,5 @@ private:
 	float tempVec[3];
 	float zVec[3];
 	float iTransform[16];
-
-	float midPoint[3];
-	float midLength;
-	int mIndex;
-
-	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4]; float vel[4];
-	float spherePos[4];
 };
+

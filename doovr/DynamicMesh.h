@@ -47,7 +47,7 @@ class DynamicMesh : public Mesh{
 	friend class Push;
 	friend class Draw;
 	friend class Drag;
-	friend class Spray;
+	friend class BuildUp;
 
   public:
 	DynamicMesh();

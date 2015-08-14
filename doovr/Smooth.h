@@ -46,5 +46,7 @@ private:
 	float tempVec[3];
 	float zVec[3];
 	float iTransform[16];
+
+	float counter = 0.0f;
 };
 

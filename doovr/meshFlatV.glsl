@@ -17,10 +17,10 @@ void main () {
 	//vec3 LightIntensity = vec3(0.58039f,0.423529f, 0.282352f);
 	if(Selected > 3.0f) {
 		//LightIntensity = vec3(0.125f, 0.230468f, 0.69921f);
-		LightIntensity = vec3(0.69921f + abs(Selected), 0.230468f ,0.125f);
+		LightIntensity = vec3(0.6f +0.3f, 0.1294117f,0.0f);
 	} 
 	else {
-		LightIntensity = vec3(0.69921f, 0.230468f, 0.125f);
+		LightIntensity = vec3(0.6f, 0.1294117f,0.0f);
 	}
 
 	//! Convert position to clip coordinates and pass along to fragment shader
