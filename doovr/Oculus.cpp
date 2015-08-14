@@ -30,7 +30,6 @@
 #include "Push.h"
 #include "Draw.h"
 #include "Drag.h"
-#include "Spray.h"
 
 #include <thread>
 #include <mutex>
@@ -457,7 +456,6 @@ int Oculus::runOvr() {
 
 	// MenuItems representing a tool
 	const int NR_OF_TOOLS = 3;
-	bool selectingTool = false;
 	menuBox tool[NR_OF_TOOLS];
 	MenuItem toolFrame(boardPos[0] + 0.2, boardPos[1] + 0.011f, boardPos[2] - 0.04, 0.04f, 0.12f, 0, 4, 1, 3);
 	MenuItem toolString(boardPos[0] + 0.2f + 0.08f, boardPos[1] + 0.011f, boardPos[2] - 0.04, 0.12f, 0.04f, 1, 4, 3, 1);
@@ -1083,7 +1081,7 @@ int Oculus::runOvr() {
 							glUseProgram(bloomShader.programID);
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
-							//if (selectingTool) {
+							
 								
 								// render tool select GUI
 								for (int i = 0; i < NR_OF_TOOLS; i++) {
