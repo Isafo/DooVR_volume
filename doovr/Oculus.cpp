@@ -489,6 +489,8 @@ int Oculus::runOvr() {
 
 	float* tempMoveVec;
 	bool changedMesh = false;
+	bool failedToStartLoading = false;
+	bool maxVelocityNotLoaded = false;
 
 	// 2.6 - Shader variables \_____________________________________________________________________________________________________________
 	Shader sceneShader;
@@ -1233,6 +1235,9 @@ int Oculus::runOvr() {
 				// 4.1.1 - Move mesh >-----------------------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_LEFT_ALT)) {
 					if (modellingState[1] == 0) {
+
+						wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+
 						modellingState[1] = 1;
 						wand->getPosition(lastPos);
 						previewMesh->getPosition(lastPos2);
@@ -1278,11 +1283,11 @@ int Oculus::runOvr() {
 					else if (modellingState[1] != 0) {
 						// just released button
 					
-						/*wand->getVelocity(wandVelocity);
+						wand->getVelocity(wandVelocity);
 						if (linAlg::vecLength(wandVelocity) < 0.4) {
 							//changedMesh = true;
 							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
-						}*/
+						}
 						modellingState[1] = 3;
 						aModellingStateIsActive--;
 					}
@@ -1310,16 +1315,25 @@ int Oculus::runOvr() {
 					tempVec[2] = placeHolder->getPosition()[2];
 					previewMesh->setPosition(tempVec);
 					fileIndex--;
-					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
-					if (loaderMeshLock.try_lock()) {
-						loaderMeshLock.unlock();
-						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+
+					if (wandVelocity[0] < 0.1f) {
+						if (loaderMeshLock.try_lock()) {
+						
+							loaderMeshLock.unlock();
+							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+						} else {
+							failedToStartLoading = true;
+						}
+					} else {
+						maxVelocityNotLoaded = true;
 					}
 
 					// reset initial starting pos
 					wand->getPosition(lastPos);
 					previewMesh->getPosition(lastPos2);
-
+					wand->getDirection(prevWandDirection);
+					previewMesh->getOrientation(prevMeshOrientation);
+					linAlg::normVec(prevWandDirection);
 				}
 
 				else if (tempMoveVec[0] < -0.25) {
@@ -1331,24 +1345,49 @@ int Oculus::runOvr() {
 					previewMesh->setPosition(tempVec);
 
 					fileIndex++;
-					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
-					if (loaderMeshLock.try_lock()) {
-						loaderMeshLock.unlock();
-						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+
+					if (abs(wandVelocity[0]) < 1.5f) {
+						if (loaderMeshLock.try_lock()) {
+							loaderMeshLock.unlock();
+							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+						} else {
+							failedToStartLoading = true;
+						}
+					} else {
+						maxVelocityNotLoaded = true;
 					}
 
 					// reset initial starting pos
 					wand->getPosition(lastPos);
 					previewMesh->getPosition(lastPos2);
-
+					wand->getDirection(prevWandDirection);
+					previewMesh->getOrientation(prevMeshOrientation);
+					linAlg::normVec(prevWandDirection);
 				}
 
 				// check if the thread is ready with a new mesh
 				if (th1.joinable()) {
 					th1.join();
-					loaderMesh->setPosition(placeHolder->getPosition());
-					previewMesh = loaderMesh;
-					previewMesh->createBuffers();
+
+					// check if the loaded mesh was changed before it was loaded by the thread
+					if (failedToStartLoading) {
+						if (loaderMeshLock.try_lock()) {
+							loaderMeshLock.unlock();
+							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+						}
+					} else {
+						loaderMesh->setPosition(placeHolder->getPosition());
+						previewMesh = loaderMesh;
+						previewMesh->createBuffers();
+					}
+				}
+
+				if (abs(wandVelocity[0]) < 1.5f && maxVelocityNotLoaded) {
+					if (loaderMeshLock.try_lock()) {
+						loaderMeshLock.unlock();
+						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+						maxVelocityNotLoaded = false;
+					}
 				}
 
 
@@ -1364,6 +1403,7 @@ int Oculus::runOvr() {
 									meshLock.unlock();
 									th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
 									currentMesh = meshFile[fileIndex % meshFile.size()];
+									wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
 								}
 							}
 							break;
