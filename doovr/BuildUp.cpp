@@ -137,7 +137,12 @@ void BuildUp::firstSelect(DynamicMesh* mesh, Wand* wand)
 	// 2.0 >----------------------
 
 	if (!success)
+	{
+		deSelect();
+		mesh->updateOGLData();
 		return;
+	}
+		
 
 	success = false;	
 	//=======================================================
@@ -238,7 +243,7 @@ void BuildUp::firstSelect(DynamicMesh* mesh, Wand* wand)
 				linAlg::calculateVec(eVec1, Dirr, eVec2);
 				oLength = linAlg::vecLength(eVec2);
 
-				if ( oLength < radius) {
+				if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius) {
 
 					selectedVertices[selectedSize] = index; selectedSize++;
 
@@ -392,7 +397,7 @@ void BuildUp::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 		linAlg::calculateVec(eVec1, Dirr, eVec2);
 		oLength = linAlg::vecLength(eVec2);
 
-		if ( oLength < radius) {
+		if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius) {
 			selectedVertices[selectedSize] = index2; selectedSize++;
 
 			u = ((pow(radius, 2) - pow(oLength, 2)) / pow(radius, 2));
@@ -434,7 +439,7 @@ void BuildUp::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 				linAlg::calculateVec(eVec1, Dirr, eVec2);
 				oLength = linAlg::vecLength(eVec2);
 
-				if ( oLength < radius) {
+				if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius) {
 
 					u = ((pow(radius, 2) - pow(oLength, 2)) / pow(radius, 2));
 					vNorm2 = mVertexArray[index2].nxyz;

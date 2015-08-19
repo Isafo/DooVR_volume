@@ -153,7 +153,11 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 	// 2.0 >----------------------
 
 	if (!success) 
+	{
+		deSelect();
+		mesh->updateOGLData();
 		return;
+	}
 
 	success = false;
 	//===========================================================================================
