@@ -337,6 +337,7 @@ int Oculus::runOvr() {
 	float vMat[16] = { 0.0f };
 	float transform[16];
 	float toolRad = 0.01;
+	float toolStr = 0.01;
 
 	float unitMat[16] = { 0.0f }; unitMat[0] = 1; unitMat[5] = 1; unitMat[10] = 1; unitMat[15] = 1;
 
@@ -385,7 +386,7 @@ int Oculus::runOvr() {
 
 	Texture menuStringsSwe("../Assets/Textures/menuStringsSwe.dds");
 
-	float boardPos[3] = { 0.0f, -0.29f, 0.0f };
+	float boardPos[3] = { 0.0f, 0.09f, 0.0f };
 	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
@@ -466,8 +467,8 @@ int Oculus::runOvr() {
 
 	menuBox toolSize(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
 	menuBox toolSizeFill(boardPos[0] + 0.2, boardPos[1] + 0.09 - 0.075, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolSizeFill.setDim(0.0f, toolRad * 3, 0.0f);
-	menuBox toolStrength(boardPos[0] + 0.2, boardPos[1] + 0.03f + 0.09, boardPos[2] - 0.12, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
-	menuBox toolStrengthFill(boardPos[0] + 0.2, boardPos[1] + 0.03f + 0.09 - 0.075, boardPos[2] - 0.12, 0.015f, 0.0f, 0.015f, 3, 3, 1, 1, 5, 5); toolStrengthFill.setDim(0.0f, toolRad * 3, 0.0f);
+	menuBox toolStrength(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.2, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
+	menuBox toolStrengthFill(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.2, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolStrengthFill.setDim(0.0f, toolStr, 0.0f);
 	menuBox toolStrengthText(boardPos[0] + 0.23, boardPos[1] + 0.03f + 0.99, boardPos[2] - 0.075, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1, 5, 5);
 
 	MenuItem sizeString( 0.14f, -0.075f, 0.0f, 0.24f, 0.04f, 0, 2, 8, 1);
@@ -552,6 +553,8 @@ int Oculus::runOvr() {
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
+	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[0] + 0.15f; tempVec[2] = boardPos[2];
+	modellingMesh->setPosition(tempVec);
 	//modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
 	modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
 	std::string currentMesh = "../Assets/Models/resetMesh.bin";
@@ -569,7 +572,7 @@ int Oculus::runOvr() {
 
 	Tool* currentTool;
 	//currentTool = new Push(modellingMesh, wand);
-	currentTool = new Drag(modellingMesh, wand);
+	currentTool = new BuildUp(modellingMesh, wand);
 
 	//=======================================================================================================================================
 	//Render loop
@@ -682,6 +685,12 @@ int Oculus::runOvr() {
 				//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 					glfwSetWindowShouldClose(l_Window, GL_TRUE);
+				}
+				if (glfwGetKey(l_Window, GLFW_KEY_LEFT)) {
+					currentTool->setStrength(0.01f*deltaTime);
+				}
+				if (glfwGetKey(l_Window, GLFW_KEY_RIGHT)) {
+					currentTool->setStrength(-0.01f*deltaTime);
 				}
 
 				// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
@@ -812,6 +821,7 @@ int Oculus::runOvr() {
 									currentTool = new BuildUp(modellingMesh, wand);
 								
 								currentTool->setRadius(toolRad);
+								currentTool->setStrength(toolStr);
 							}
 
 							break;
@@ -835,6 +845,7 @@ int Oculus::runOvr() {
 						&& wandPos[2] < toolStrength.getPosition()[2] + toolStrength.getDim()[2] / 2.f) {
 						tempVecPtr = toolStrengthFill.getPosition();
 						toolStrengthFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
+						currentTool->setStrength((wandPos[1] - tempVecPtr[1])); toolStr = (wandPos[1] - tempVecPtr[1]) ;
 					}
 				}
 
@@ -844,6 +855,8 @@ int Oculus::runOvr() {
 						th2Status = 0;
 						modellingMesh->cleanBuffer();
 						modellingMesh->updateOGLData();
+						tempVec[0] = boardPos[0]; tempVec[1] = boardPos[0] + 0.15f; tempVec[2] = boardPos[2];
+						modellingMesh->setPosition(tempVec);
 						reset = false;
 					}
 				}	
@@ -1004,8 +1017,6 @@ int Oculus::runOvr() {
 								toolString.render();
 							MVstack.pop();
 
-							
-
 							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
 							
 
@@ -1019,7 +1030,6 @@ int Oculus::runOvr() {
 									glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 									glUniform4fv(locationFlatLP, 1, LP);
 									glUniform4fv(locationFlatLP2, 1, lPosTemp);
-
 
 									modellingMesh->render();
 
@@ -1114,6 +1124,12 @@ int Oculus::runOvr() {
 									toolSizeFill.render();
 								MVstack.pop();
 
+								MVstack.push();
+								MVstack.translate(toolStrengthFill.getPosition());
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								toolStrengthFill.render();
+								MVstack.pop();
+
 								glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
 								MVstack.push();
 									MVstack.translate(toolSize.getPosition());
@@ -1121,13 +1137,21 @@ int Oculus::runOvr() {
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 									sizeString.render();
 								MVstack.pop();
+
 																
 								glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
 								glUseProgram(bloomShader.programID);
+								
 								MVstack.push();
 									MVstack.translate(toolSize.getPosition());
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 									toolSize.render();
+								MVstack.pop();
+
+								MVstack.push();
+									MVstack.translate(toolStrength.getPosition());
+									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+									toolStrength.render();
 								MVstack.pop();
 								
 						//	}
@@ -1360,6 +1384,8 @@ int Oculus::runOvr() {
 					delete loaderMesh;
 					delete placeHolder;
 					mode = 0;
+					tempVec[0] = boardPos[0]; tempVec[1] = boardPos[0] + 0.15f; tempVec[2] = boardPos[2];
+					modellingMesh->setPosition(tempVec);
 
 					if (th1Status != 0) {
 						th1.join();
@@ -1487,8 +1513,8 @@ int Oculus::runOvr() {
 
 							MVstack.push();
 								translateVector[0] = previewMesh->getPosition()[0] + 0.5f;
-								translateVector[1] = -0.15f;
-								translateVector[2] = 0.0f;
+								translateVector[1] = boardPos[1] + 0.1;
+								translateVector[2] = boardPos[2];
 								MVstack.translate(translateVector);
 								MVstack.multiply(placeHolder->getOrientation());
 								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -1499,8 +1525,8 @@ int Oculus::runOvr() {
 
 							MVstack.push();
 								translateVector[0] = previewMesh->getPosition()[0] - 0.5f;
-								translateVector[1] = -0.15f;
-								translateVector[2] = 0.0f;
+								translateVector[1] = boardPos[1] + 0.1;
+								translateVector[2] = boardPos[2];
 								MVstack.translate(translateVector);
 								MVstack.multiply(placeHolder->getOrientation());
 								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());

@@ -10,12 +10,12 @@ Drag::Drag(DynamicMesh* mesh, Wand* wand)
 
 	radius = 0.01f;
 	toolBrush = new Circle(0.0f, 0.0f, 0.0f, 1.0f);
-	pointer = new Line(0.0f, 0.0f, 0.0f, 1.0f);
+	pointer = new Line(0.0f, 0.0f, 0.0f, 0.1f);
 	iCircle = new Circle(0.0f, 0.0f, 0.0f, 1.0f);
 
 	lineOffset[0] = 0.0f;
 	lineOffset[1] = 0.0f;
-	lineOffset[2] = 1.0f;
+	lineOffset[2] = 0.1f;
 
 	mVertexArray = mesh->vertexArray;
 	mVInfoArray = mesh->vInfoArray;
@@ -191,7 +191,7 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 						if (v > 0.0f && u + v < 1.0f)
 						{
 							t = linAlg::dotProd(eVec2, Q)*invP;
-							if (t > EPSILON)
+							if (t > EPSILON && t < 0.1f )
 							{
 								//sIt->next->index = e[tempEdge].triangle;
 								tempVec[0] = newDirr[0] * t;
@@ -224,7 +224,11 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 
 
 	if (!success)
+	{
+		deSelect();
+		mesh->updateOGLData();
 		return;
+	}
 	
 	success = false;
 	//================================================================

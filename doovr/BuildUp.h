@@ -17,9 +17,10 @@ public:
 	void deSelect();
 
 	void setRadius(float rad) { radius = rad; };
-
+	void setStrength(float str) { strength = str; };
 private:
 	float radius;
+	float strength;
 
 	Line* pointer;
 	float lineOffset[3];

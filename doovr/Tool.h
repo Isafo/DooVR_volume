@@ -19,7 +19,7 @@ public:
 	virtual void deSelect() = 0;
 
 	virtual void setRadius(float rad) = 0;
-
+	virtual void setStrength(float str) = 0;
 	//virtual void changeToolSize(bool sign) = 0;
 protected:
 
@@ -28,6 +28,6 @@ protected:
 	int* selectedVertices;
 	int selectedSize;
 
-	const int MAX_SELECTED = 10000;
+	const int MAX_SELECTED = 100000;
 };
 

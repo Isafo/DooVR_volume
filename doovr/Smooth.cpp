@@ -10,12 +10,12 @@ Smooth::Smooth(DynamicMesh* mesh, Wand* wand)
 
 	radius = 0.01f;
 	toolBrush = new Circle(0.0f, 0.0f, 0.0f, 1.0f);
-	pointer = new Line(0.0f, 0.0f, 0.0f, 1.0f);
+	pointer = new Line(0.0f, 0.0f, 0.0f, 0.1f);
 	iCircle = new Circle(0.0f, 0.0f, 0.0f, 1.0f);
 
 	lineOffset[0] = 0.0f;
 	lineOffset[1] = 0.0f;
-	lineOffset[2] = 1.0f;
+	lineOffset[2] = 0.1f;
 
 	mVertexArray = mesh->vertexArray;
 	mVInfoArray = mesh->vInfoArray;
@@ -174,7 +174,7 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 						if (v > 0.0f && u + v < 1.0f)
 						{
 							t = linAlg::dotProd(eVec2, Q)*invP;
-							if (t > EPSILON)
+							if (t > EPSILON && t < 0.1f)
 							{
 								//sIt->next->index = e[tempEdge].triangle;
 								tempVec[0] = newDirr[0] * t;
@@ -204,8 +204,11 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 	}
 
 	if (!success)
+	{
+		deSelect();
+		mesh->updateOGLData();
 		return;
-
+	}
 	success = false;
 	//==============================================================
 	for (int i = 0; i < selectedSize; i++)
@@ -335,7 +338,7 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 						if (v > 0.0f && u + v < 1.0f)
 						{
 							t = linAlg::dotProd(eVec2, Q)*invP;
-							if (t > EPSILON)
+							if (t > EPSILON && t < 0.1f)
 							{
 								//sIt->next->index = e[tempEdge].triangle;
 								lengthVec[0] = newDirr[0] * t;
@@ -408,7 +411,8 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 	}
 
 	counter += dT;
-	if (counter < 0.2f){
+	//if (counter < strength){
+	if (false){
 		for (int i = 0; i < selectedSize; i++)
 		{
 			index2 = selectedVertices[i];
@@ -484,7 +488,7 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 			} while (tempEdge != mVInfoArray[index2].edgePtr);
 
 			vPoint2 = mVertexArray[index2].xyz;
-			vPoint2[0] = nPos[0] / nNR; vPoint2[1] = nPos[1] / nNR; vPoint2[2] = nPos[2] / nNR;
+			vPoint2[0] = vPoint2[0] * (1 - strength) + strength*(nPos[0] / nNR); vPoint2[1] = vPoint2[1] * (1 - strength) + strength*(nPos[1] / nNR); vPoint2[2] = vPoint2[2] * (1 - strength) + strength*(nPos[2] / nNR);
 		}
 	}
 

@@ -74,7 +74,7 @@ void Passive3D::wand3dCallback(WandData data) {
 	Position[1] = data.position[2] - 0.27f;
 	Position[2] = data.position[1] - 0.25f;*/
 	Position[0] = data.position[0];
-	Position[1] = data.position[1] - 0.3f;
+	Position[1] = data.position[1] + 0.08f;
 	Position[2] = data.position[2];
 
 	//utils::getGLRotMatrix(data, Orient);

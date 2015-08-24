@@ -9,13 +9,14 @@ BuildUp::BuildUp(DynamicMesh* mesh, Wand* wand)
 	previouslySelectedVertices = new int[MAX_SELECTED]; previouslySelectedSize = 0;
 
 	radius = 0.01f;
+	strength = 0.01;
 	toolBrush = new Circle(0.0f, 0.0f, 0.0f, 1.0f);
-	pointer = new Line(0.0f, 0.0f, 0.0f, 1.0f);
+	pointer = new Line(0.0f, 0.0f, 0.0f, 0.1f);
 	iCircle = new Circle(0.0f, 0.0f, 0.0f, 1.0f);
 
 	lineOffset[0] = 0.0f;
 	lineOffset[1] = 0.0f;
-	lineOffset[2] = 1.0f;
+	lineOffset[2] = 0.1f;
 
 	mVertexArray = mesh->vertexArray;
 	mVInfoArray = mesh->vInfoArray;
@@ -175,7 +176,7 @@ void BuildUp::firstSelect(DynamicMesh* mesh, Wand* wand)
 						if (v > 0.0f && u + v < 1.0f)
 						{
 							t = linAlg::dotProd(eVec2, Q)*invP;
-							if (t > EPSILON)
+							if (t > EPSILON && t < 0.1f)
 							{
 								//sIt->next->index = e[tempEdge].triangle;
 								tempVec[0] = newDirr[0] * t;
@@ -208,7 +209,11 @@ void BuildUp::firstSelect(DynamicMesh* mesh, Wand* wand)
 	}
 
 	if (!success)
+	{
+		deSelect();
+		mesh->updateOGLData();
 		return;
+	}
 
 	for (int i = 0; i < selectedSize; i++)
 	{
@@ -337,7 +342,7 @@ void BuildUp::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 						if (v > 0.0f && u + v < 1.0f)
 						{
 							t = linAlg::dotProd(eVec2, Q)*invP;
-							if (t > EPSILON)
+							if (t > EPSILON && t < 0.1f)
 							{
 								//sIt->next->index = e[tempEdge].triangle;
 								lengthVec[0] = newDirr[0] * t;
@@ -400,13 +405,18 @@ void BuildUp::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 		if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius) {
 			selectedVertices[selectedSize] = index2; selectedSize++;
 
-			u = ((pow(radius, 2) - pow(oLength, 2)) / pow(radius, 2));
+			u = ((pow(radius, 2) - pow(oLength, 2)) / pow(radius, 2))*strength*dT;
 			vNorm2 = mVertexArray[index2].nxyz;
 				
 			vPoint1 = mVertexArray[index2].xyz;
-			vPoint1[0] += vNorm[0] * u*0.0002;
-			vPoint1[1] += vNorm[1] * u*0.0002;
-			vPoint1[2] += vNorm[2] * u*0.0002;
+
+			//tempVec1[0] = vNorm[0] + vNorm2[0];
+			//tempVec1[1] = vNorm[1] + vNorm2[1];
+			//tempVec1[2] = vNorm[2] + vNorm2[2];
+			//linAlg::normVec(tempVec1);
+			vPoint1[0] += vNorm[0] * u;
+			vPoint1[1] += vNorm[1] * u;
+			vPoint1[2] += vNorm[2] * u;
 			mVInfoArray[index2].selected = u;
 
 			mVInfoArray[index2].selected = 2.0f;
@@ -441,16 +451,21 @@ void BuildUp::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 
 				if (pLength < radius / 2.0f && pLength > -radius / 2.0f && oLength < radius) {
 
-					u = ((pow(radius, 2) - pow(oLength, 2)) / pow(radius, 2));
+					u = ((pow(radius, 2) - pow(oLength, 2)) / pow(radius, 2))*strength*dT;
+					//u = strength*dT;
 					vNorm2 = mVertexArray[index2].nxyz;
 
 					vPoint1 = mVertexArray[index2].xyz;
-					vPoint1[0] += vNorm[0] * u*0.0002;
-					vPoint1[1] += vNorm[1] * u*0.0002;
-					vPoint1[2] += vNorm[2] * u*0.0002;
+					//tempVec1[0] = vNorm[0] + vNorm2[0];
+					//tempVec1[1] = vNorm[1] + vNorm2[1];
+					//tempVec1[2] = vNorm[2] + vNorm2[2];
+					//linAlg::normVec(tempVec1);
+					vPoint1[0] += vNorm[0] * u;
+					vPoint1[1] += vNorm[1] * u;
+					vPoint1[2] += vNorm[2] * u;
 
 					selectedVertices[selectedSize] = index; selectedSize++;
-					mVInfoArray[index].selected = 2;
+					mVInfoArray[index].selected = 2.0f;
 				}
 			}
 

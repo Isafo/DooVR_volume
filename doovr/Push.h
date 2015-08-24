@@ -15,6 +15,7 @@ public:
 	void deSelect();
 
 	void setRadius(float rad) { radius = rad; };
+	void setStrength(float str){};
 
 private:
 	float radius;

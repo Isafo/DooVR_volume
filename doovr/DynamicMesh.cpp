@@ -32,7 +32,7 @@ DynamicMesh::DynamicMesh() {
 	*///sMid = sHead;
 	//sNR = 0;
 
-	position[0] = 0.0f; position[1] = -0.20f; position[2] = 0.0f;
+	position[0] = 0.0f; position[1] = 0.15f; position[2] = 0.0f;
 
 	orientation[0] = 1.0f; orientation[1] = 0.0f; orientation[2] = 0.0f; orientation[3] = 0.0f;
 	orientation[4] = 0.0f; orientation[5] = 1.0f; orientation[6] = 0.0f; orientation[7] = 0.0f;
@@ -903,13 +903,13 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 			tempEdge = e[e[tempEdge].nextEdge].sibling;
 		} while (tempEdge != vInfoArray[vert3].edgePtr);
 
-		edgeLength = linAlg::vecLength(tempNorm2);
+		//edgeLength = linAlg::vecLength(tempNorm2);
 
-		tempNorm2[0] = tempNorm2[0] / edgeLength;
-		tempNorm2[1] = tempNorm2[1] / edgeLength;
-		tempNorm2[2] = tempNorm2[2] / edgeLength;
+		//tempNorm2[0] = tempNorm2[0] / edgeLength;
+		//tempNorm2[1] = tempNorm2[1] / edgeLength;
+		//tempNorm2[2] = tempNorm2[2] / edgeLength;
 
-		//linAlg::normVec(tempNorm2);
+		linAlg::normVec(tempNorm2);
 
         vertexArray[vert3].nxyz[0] = tempNorm2[0];
 		vertexArray[vert3].nxyz[1] = tempNorm2[1];
@@ -1125,11 +1125,12 @@ void DynamicMesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 		tempE = e[e[tempE].nextEdge].sibling;
 	} while (tempE != vInfoArray[tempV].edgePtr);
 
-	static float vecLenght = linAlg::vecLength(tempNorm2);
+	//static float vecLenght = linAlg::vecLength(tempNorm2);
 
-	tempNorm2[0] = tempNorm2[0] / vecLenght;
-	tempNorm2[1] = tempNorm2[1] / vecLenght;
-	tempNorm2[2] = tempNorm2[2] / vecLenght;
+	//tempNorm2[0] = tempNorm2[0] / vecLenght;
+	//tempNorm2[1] = tempNorm2[1] / vecLenght;
+	//tempNorm2[2] = tempNorm2[2] / vecLenght;
+	linAlg::normVec(tempNorm2);
 
 	//linAlg::normVec(tempNorm2);
 	vertexArray[tempV].nxyz[0] = tempNorm2[0];
