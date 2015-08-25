@@ -776,7 +776,7 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 		vert3 = changeList[i];
 		vInfoArray[vert3].selected = 4.0f;
 		
-		if (vInfoArray[vert3].edgePtr < 0)
+		if (vInfoArray[vert3].edgePtr <= 0)
 			continue;
 			
 		tempEdge = e[e[vInfoArray[vert3].edgePtr].nextEdge].sibling;
