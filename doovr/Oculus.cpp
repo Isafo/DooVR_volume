@@ -469,12 +469,12 @@ int Oculus::runOvr() {
 
 	menuBox toolSize(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
 	menuBox toolSizeFill(boardPos[0] + 0.2, boardPos[1] + 0.09 - 0.075, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolSizeFill.setDim(0.0f, toolRad * 3, 0.0f);
+	MenuItem sizeString(0.14f, -0.075f, 0.0f, 0.24f, 0.04f, 0, 2, 8, 1);
+
 
 	menuBox toolStrength(boardPos[0] + 0.16f, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
 	menuBox toolStrengthFill(boardPos[0] + 0.16f, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolStrengthFill.setDim(0.0f, toolStr, 0.0f);
-
-	MenuItem sizeString( 0.14f, -0.075f, 0.0f, 0.24f, 0.04f, 0, 2, 8, 1);
-	MenuItem strengthString(0.14f, -0.075f, -0.03f, 0.24f, 0.04f, 1, 6, 6, 1);
+	MenuItem strengthString(0.08f, -0.075f, 0.03f, 0.24f, 0.03f, 1, 5, 9, 1);
 
 	MenuItem trackingInfo(boardPos[0], boardPos[1] + 0.0125f, boardPos[2] - 0.22f, 0.24f, 0.08f, 1, 6, 9, 2);
 
@@ -1152,10 +1152,20 @@ int Oculus::runOvr() {
 								glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
 								MVstack.push();
 									MVstack.translate(toolSize.getPosition());
-									MVstack.translate(sizeString.getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									sizeString.render();
+									MVstack.push();
+										MVstack.translate(sizeString.getPosition());
+										glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+										sizeString.render();
+									MVstack.pop();
+
+									MVstack.push();
+										MVstack.translate(strengthString.getPosition());
+										glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+										strengthString.render();
+									MVstack.pop();
+
 								MVstack.pop();
+								
 
 																
 								glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
