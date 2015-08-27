@@ -7,9 +7,13 @@ out vec3 Position;
 out vec3 Normal;
 out vec3 resultLight;
 out vec4 uv;
+out vec4 shadowUV;
 
 uniform mat4 MV;
 uniform mat4 P;
+
+uniform mat4 LMVP;
+uniform mat4 PP;
 
 uniform mat4 modelMatrix;
 
@@ -33,8 +37,10 @@ void main ()
 	float cos = dot(orthogonal,up)/(length(orthogonal)*length(up));
 	float sin = sqrt(1-cos*cos);
 	
-	uv = vec4(cos*length(orthogonal), sin*length(orthogonal),length(orthogonal), 1.0);
+	uv = vec4(cos*length(orthogonal), sin*length(orthogonal),length(orthogonal), dotProd);
 	
+	shadowUV = ( LMVP) * vec4(VertexPosition, 1.0f);
+
 	gl_Position =  (P * MV) * vec4(VertexPosition, 1.0);
 
 }

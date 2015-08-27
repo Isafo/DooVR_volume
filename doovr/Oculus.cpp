@@ -37,6 +37,9 @@
 #include <atomic>
 #include <math.h>
 
+#include "glm\glm\glm.hpp"
+#include "glm\glm\gtc\matrix_transform.hpp"
+
 // ------- Function declerations --------
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
 static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
@@ -259,14 +262,23 @@ int Oculus::runOvr() {
 	glGenFramebuffers(1, &wandViewFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, wandViewFBO);
 
+	//GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+
 	GLuint wandShadowMap;
 	glGenTextures(1, &wandShadowMap);
 	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, l_ClientSize.w, l_ClientSize.h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1000, 1000, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);*/
 
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
 	glDrawBuffer(GL_NONE);
@@ -278,6 +290,7 @@ int Oculus::runOvr() {
 		printf("FB error, status: 0x%x\n", Status);
 		return false;
 	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// SETUP TEXTURES FOR EACH EYE /////////////////////////////////////////////////////////////////////
 	// Left eye...
@@ -364,9 +377,16 @@ int Oculus::runOvr() {
 		0.0f, 1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f };
+
+	float biasMatrix[16] = { 0.5f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.5f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.5f, 0.5f, 0.5f, 1.0f };
+
 	float transform[16];
 	float toolRad = 0.01;
 	float toolStr = 0.01;
+	float LMVP[16];
 
 	float unitMat[16] = { 0.0f }; unitMat[0] = 1; unitMat[5] = 1; unitMat[10] = 1; unitMat[15] = 1;
 
@@ -413,7 +433,7 @@ int Oculus::runOvr() {
 	Texture menuStringsSwe("../Assets/Textures/menuStringsSwe.dds");
 
 	float boardPos[3] = { 0.0f, 0.09f, 0.0f };
-	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
+	Box board(boardPos[0], boardPos[1], boardPos[2], /*1.4*/0.7f, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
@@ -560,6 +580,8 @@ int Oculus::runOvr() {
 	GLint locationMeshWD = glGetUniformLocation(meshShader.programID, "wandDirr");
 	GLint locationMeshTex = glGetUniformLocation(meshShader.programID, "tex"); //texture sampler
 	GLint locationMeshDTex = glGetUniformLocation(meshShader.programID, "dTex"); //texture sampler
+	GLint locationMeshLMVP = glGetUniformLocation(meshShader.programID, "LMVP");
+	GLint locationMeshPP = glGetUniformLocation(meshShader.programID, "PP");
 
 	GLint locationFlatMV = glGetUniformLocation(flatShader.programID, "MV"); //modelview matrix
 	GLint locationFlatP = glGetUniformLocation(flatShader.programID, "P"); //perspective matrix
@@ -908,18 +930,38 @@ int Oculus::runOvr() {
 				glClear(GL_DEPTH_BUFFER_BIT);
 				glUseProgram(projectionShader.programID);
 
-				glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
+				glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
+				glm::transpose(projP);
+				glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
+				//glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
 				MVstack.push();
-					MVstack.multiply(wand->getOrientation());
 
-					wand->getPosition(tempVec);
+					//pmat4 = wand->getOrientation();
+					//linAlg::invertMatrix(pmat4, unitMat);
+					//linAlg::transpose(unitMat);
+					//MVstack.multiply(pmat4);
+
+					//wand->getPosition(wandPos);
+					glm::vec3 gWandPos = glm::vec3(wandPos[0], wandPos[1], wandPos[2]);
+					wand->getDirection(tempVec);
+					glm::vec3 gWandDirr = glm::vec3(tempVec[0], tempVec[1], tempVec[2]);
+					
 					//tempVec[0] = -tempVec[0]; tempVec[1] = -tempVec[1]; tempVec[2] = -tempVec[2];
-					MVstack.translate(tempVec);
+					//MVstack.translate(tempVec);
+					
+					glm::normalize(gWandDirr);
 
+					glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 1.0f, 0.0f));
+					
+					MVstack.multiply(&camTrans[0][0]);
 					MVstack.push();
 						MVstack.translate(modellingMesh->getPosition());
 						MVstack.multiply(modellingMesh->getOrientation());
-						glUniformMatrix4fv(locationProjMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+						//MVstack.multiply(&projP[0][0]);
+						linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
+						glUniformMatrix4fv(locationProjMV, 1, GL_FALSE, LMVP);
+						linAlg::matrixMult(biasMatrix, LMVP, LMVP);
+						
 						modellingMesh->render();
 					MVstack.pop();
 				MVstack.pop();
@@ -950,6 +992,7 @@ int Oculus::runOvr() {
 						glUseProgram(sceneShader.programID);
 						// Pass projection matrix on to OpenGL...
 						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+						//glUniformMatrix4fv(locationP, 1, GL_FALSE, &projP[0][0]);
 						glUniform1i(locationTex, 0);
 
 						// Multiply with orientation retrieved from sensor...
@@ -964,6 +1007,7 @@ int Oculus::runOvr() {
 						//wand->getPosition(tempVec);
 						//tempVec[0] = -tempVec[0]; tempVec[1] = -tempVec[1]; tempVec[2] = -tempVec[2];
 						//MVstack.translate(tempVec);
+						//MVstack.multiply(&camTrans[0][0]);
 
 						//POSSABLY DOABLE IN SHADER
 						pmat4 = MVstack.getCurrentMatrix();
@@ -985,7 +1029,8 @@ int Oculus::runOvr() {
 							MVstack.push();
 								MVstack.translate(board.getPosition());
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+								//glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+								glBindTexture(GL_TEXTURE_2D, wandShadowMap);
 								board.render();
 							MVstack.pop();
 
@@ -1100,6 +1145,10 @@ int Oculus::runOvr() {
 							} else {
 								glUseProgram(meshShader.programID);
 
+								glUniformMatrix4fv(locationMeshPP, 1, GL_FALSE, &projP[0][0]);
+								glUniformMatrix4fv(locationMeshLMVP, 1, GL_FALSE, LMVP);
+								
+
 								wand->getPosition(tempVec);
 								glUniform3fv(locationMeshWP, 1, tempVec);
 
@@ -1120,6 +1169,7 @@ int Oculus::runOvr() {
 								glUniform1i(locationMeshTex, 0);
 
 								glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+								//glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &projP[0][0]);
 
 								glBindTexture(GL_TEXTURE_2D, wandShadowMap);
 								glUniform1i(locationMeshDTex, 0);

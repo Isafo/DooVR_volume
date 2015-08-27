@@ -17,5 +17,5 @@ void main ()
 	//UV = vertexUV;
 
 	//! Convert position to clip coordinates and pass along to fragment shader
-	gl_Position =  (P * MV) * vec4(VertexPosition, 1.0);
+	gl_Position =  MV * vec4(VertexPosition, 1.0);
 }
