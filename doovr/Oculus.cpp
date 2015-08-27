@@ -257,32 +257,36 @@ int Oculus::runOvr() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	//WandView
-
-	GLuint wandViewFBO;
-	glGenFramebuffers(1, &wandViewFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, wandViewFBO);
-
-	//GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+	GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
 
 	GLuint wandShadowMap;
 	glGenTextures(1, &wandShadowMap);
 	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1000, 1000, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	/*glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);*/
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);*/
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+
+	//Assign the shadow map to texture channel 0 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+
+	// create and set up the FBO
+	GLuint wandViewFBO;
+	glGenFramebuffers(1, &wandViewFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, wandViewFBO);
 
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
 	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
+	//glReadBuffer(GL_NONE);
 
 	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
@@ -433,7 +437,7 @@ int Oculus::runOvr() {
 	Texture menuStringsSwe("../Assets/Textures/menuStringsSwe.dds");
 
 	float boardPos[3] = { 0.0f, 0.09f, 0.0f };
-	Box board(boardPos[0], boardPos[1], boardPos[2], /*1.4*/0.7f, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
+	Box board(boardPos[0], boardPos[1], boardPos[2], /*1.4*/0.2f, 0.02f, 0.2f); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
@@ -931,6 +935,7 @@ int Oculus::runOvr() {
 				glUseProgram(projectionShader.programID);
 
 				glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
+				//glm::mat4 projP = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
 				glm::transpose(projP);
 				glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
 				//glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
@@ -951,9 +956,10 @@ int Oculus::runOvr() {
 					
 					glm::normalize(gWandDirr);
 
-					glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 1.0f, 0.0f));
-					
+					glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
+					//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
 					MVstack.multiply(&camTrans[0][0]);
+
 					MVstack.push();
 						MVstack.translate(modellingMesh->getPosition());
 						MVstack.multiply(modellingMesh->getOrientation());

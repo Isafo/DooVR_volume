@@ -13,49 +13,48 @@ Box::~Box(void) {
 	std::cout << "A box has died." << std::endl;
 }
 
-void Box::createBox(float xSize, float ySize, float zSize) {
+void Box::createBox(float dX, float dY, float dZ) {
 
 	GLfloat vertex_array_data[] = {
-		//		Vertex										 Normals					 Texture  
-		-xSize / 2.0f, -ySize / 2.0f, zSize / 2.0f,			 0.0f, 0.0f, 1.0f,			 0.0f, 1.0f, //1 - 0
-		xSize / 2.0f, -ySize / 2.0f, zSize / 2.0f,			 0.0f, 0.0f, 1.0f,			 0.0f, 0.0f, //2 - 1
-		xSize / 2.0f, ySize / 2.0f,	zSize / 2.0f,			 0.0f, 0.0f, 1.0f,			 1.0f, 0.0f, //3 - 2
-		-xSize / 2.0f, ySize / 2.0f, zSize / 2.0f,			 0.0f, 0.0f, 1.0f,			 1.0f, 1.0f, //4 - 3 
+		//		Vertex										 Normals					 Texture  						Normals					Texture  
+			-dX / 2.0f, -dY / 2.0f, dZ / 2.0f,			0.0f, 0.0f, 1.0f,				0, 1,	//1 - 0
+			dX / 2.0f, -dY / 2.0f, dZ / 2.0f,			0.0f, 0.0f, 1.0f,				0, 0,							//2 - 1
+			dX / 2.0f, dY / 2.0f, dZ / 2.0f,			0.0f, 0.0f, 1.0f,				1 , 0,	//3 - 2
+			-dX / 2.0f, dY / 2.0f, dZ / 2.0f,			0.0f, 0.0f, 1.0f,				1 , 1,	//4 - 3 
 
-		-xSize / 2.0f, -ySize / 2.0f, -zSize / 2.0f,		 0.0f, 0.0f, -1.0f,			 0.0f, 1.0f, //5 - 4 
-		xSize / 2.0f, -ySize / 2.0f, -zSize / 2.0f,			 0.0f, 0.0f, -1.0f,			 0.0f, 0.0f, //6 - 5
-		xSize / 2.0f, ySize / 2.0f,	-zSize / 2.0f,			 0.0f, 0.0f, -1.0f,			 1.0f, 0.0f, //7 - 6 
-		-xSize / 2.0f, ySize / 2.0f, -zSize / 2.0f,			 0.0f, 0.0f, -1.0f,			 1.0f, 1.0f, //8 - 7
+			-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,			0.0f, 0.0f, -1.0f,				0, 1,	//5 - 4 
+			dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,			0.0f, 0.0f, -1.0f,				0, 0,	//6 - 5
+			dX / 2.0f, dY / 2.0f, -dZ / 2.0f,			0.0f, 0.0f, -1.0f,				1, 0,	//7 - 6 
+			-dX / 2.0f, dY / 2.0f, -dZ / 2.0f,			0.0f, 0.0f, -1.0f,				1, 1,	//8 - 7
 
-		-xSize / 2.0f, -ySize / 2.0f, zSize / 2.0f,			 0.0f, -1.0f, 0.0f,			 0.0f, 1.0f, //1 - 8
-		xSize / 2.0f, -ySize / 2.0f, zSize / 2.0f,			 0.0f, -1.0f, 0.0f,			 0.0f, 0.0f, //2 - 9
-		xSize / 2.0f, ySize / 2.0f,	zSize / 2.0f,			 0.0f, 1.0f, 0.0f,			 1.0f, 0.0f, //3 - 10
-		-xSize / 2.0f, ySize / 2.0f, zSize / 2.0f,			 0.0f, 1.0f, 0.0f,			 1.0f, 1.0f, //4 - 11
+			-dX / 2.0f, -dY / 2.0f, dZ / 2.0f,			0.0f, -1.0f, 0.0f,				0, 0,							//1 - 8
+			dX / 2.0f, -dY / 2.0f, dZ / 2.0f,			0.0f, -1.0f, 0.0f,				1, 0,	//2 - 9
+			-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,			0.0f, -1.0f, 0.0f,				0, 1,	//5 - 10
+			dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,			0.0f, -1.0f, 0.0f,				1, 1,	//6 - 11
 
-		-xSize / 2.0f, -ySize / 2.0f, -zSize / 2.0f,		 0.0f, -1.0f, 0.0f,			 1.0f, 0.0f, //5 - 12
-		xSize / 2.0f, -ySize / 2.0f, -zSize / 2.0f,			 0.0f, -1.0f, 0.0f,			 1.0f, 1.0f, //6 - 13
-		xSize / 2.0f, ySize / 2.0f,	-zSize / 2.0f,			 0.0f, 1.0f, 0.0f,			 0.0f, 0.0f, //7 - 14
-		-xSize / 2.0f, ySize / 2.0f, -zSize / 2.0f,			 0.0f, 1.0f, 0.0f,			 0.0f, 1.0f, //8 - 15
+			dX / 2.0f, dY / 2.0f, dZ / 2.0f,			0.0f, 1.0f, 0.0f,				1, 0,	//3 - 12
+			-dX / 2.0f, dY / 2.0f, dZ / 2.0f,			0.0f, 1.0f, 0.0f,				0, 0,	//4 - 13
+			dX / 2.0f, dY / 2.0f, -dZ / 2.0f,			0.0f, 1.0f, 0.0f,				1, 1,	//7 - 14
+			-dX / 2.0f, dY / 2.0f, -dZ / 2.0f,			0.0f, 1.0f, 0.0f,				0, 1,	//8 - 15
 
+			-dX / 2.0f, -dY / 2.0f, dZ / 2.0f,			-1.0f, 0.0f, 0.0f,				1, 1,	//1 - 16
+			-dX / 2.0f, dY / 2.0f, dZ / 2.0f,			-1.0f, 0.0f, 0.0f,				0, 1,	//4 - 17
+			-dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,			-1.0f, 0.0f, 0.0f,				1, 0,	//5 - 18
+			-dX / 2.0f, dY / 2.0f, -dZ / 2.0f,			-1.0f, 0.0f, 0.0f,				0, 0,	//8 - 19
 
-		-xSize / 2.0f, -ySize / 2.0f, zSize / 2.0f,			 -1.0f, 0.0f, 0.0f,			 1.0f, 1.0f, //1 - 16
-		xSize / 2.0f, -ySize / 2.0f, zSize / 2.0f,			 1.0f, 0.0f, 0.0f,			 0.0f, 0.0f, //2 - 17
-		xSize / 2.0f, ySize / 2.0f,	zSize / 2.0f,			 1.0f, 0.0f, 0.0f,			 1.0f, 0.0f,  //3 - 18
-		-xSize / 2.0f, ySize / 2.0f, zSize / 2.0f,			 -1.0f, 0.0f, 0.0f,			 0.0f, 1.0f,  //4 - 19
-
-		-xSize / 2.0f, -ySize / 2.0f, -zSize / 2.0f,		 -1.0f, 0.0f, 0.0f,			 1.0f, 0.0f, //5 - 20
-		xSize / 2.0f, -ySize / 2.0f, -zSize / 2.0f,			 1.0f, 0.0f, 0.0f,			 0.0f, 1.0f, //6 - 21
-		xSize / 2.0f, ySize / 2.0f,	-zSize / 2.0f,			 1.0f, 0.0f, 0.0f,			 1.0f, 1.0f, //7 - 22
-		-xSize / 2.0f, ySize / 2.0f, -zSize / 2.0f,			 -1.0f, 0.0f, 0.0f,			 0.0f, 0.0f  //8 - 23
-	};
+			dX / 2.0f, -dY / 2.0f, dZ / 2.0f,			1.0f, 0.0f, 0.0f,				0, 0,	//2 - 20
+			dX / 2.0f, dY / 2.0f, dZ / 2.0f,			1.0f, 0.0f, 0.0f,				1,0,	//3 - 21
+			dX / 2.0f, -dY / 2.0f, -dZ / 2.0f,			1.0f, 0.0f, 0.0f,				0, 1,	//6 - 22
+			dX / 2.0f, dY / 2.0f, -dZ / 2.0f,			1.0f, 0.0f, 0.0f,				1, 1	//7 - 23
+		};
 
 	static const GLuint index_array_data[] = {
 		0, 1, 2, 3,			// Front
 		7, 6, 5, 4,			// Back
-		12, 13, 9, 8,		// Bottom 
-		10, 14, 15, 11,		// Top
-		17, 21, 22, 18,		// Right
-		16, 19, 23, 20		// Left
+		10, 11, 9, 8,		// Bottom 
+		12, 14, 15, 13,		// Top
+		20, 22, 23, 21,		// Right
+		16, 17, 19, 18		// Left
 	};
 
 	nverts = 24;
