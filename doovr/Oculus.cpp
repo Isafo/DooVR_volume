@@ -371,7 +371,7 @@ int Oculus::runOvr() {
 
 	Texture whiteTex("../Assets/Textures/light.DDS");
 	Texture groundTex("../Assets/Textures/Gbord.DDS");
-	Texture titleTex("../Assets/Textures/Title2by1.DDS");
+	Texture titleTex("../Assets/Textures/Titel2by1.DDS");
 	Texture resetTex("../Assets/Textures/reset.DDS");
 	Texture saveTex("../Assets/Textures/save.DDS");
 	Texture loadTex("../Assets/Textures/load.DDS");
@@ -469,12 +469,15 @@ int Oculus::runOvr() {
 
 	menuBox toolSize(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
 	menuBox toolSizeFill(boardPos[0] + 0.2, boardPos[1] + 0.09 - 0.075, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolSizeFill.setDim(0.0f, toolRad * 3, 0.0f);
-	menuBox toolStrength(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.2, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
-	menuBox toolStrengthFill(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.2, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolStrengthFill.setDim(0.0f, toolStr, 0.0f);
-	menuBox toolStrengthText(boardPos[0] + 0.23, boardPos[1] + 0.03f + 0.99, boardPos[2] - 0.075, 0.04f, 0.005f, 0.02f, 0, 0, 2, 1, 5, 5);
+
+	menuBox toolStrength(boardPos[0] + 0.16f, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
+	menuBox toolStrengthFill(boardPos[0] + 0.16f, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolStrengthFill.setDim(0.0f, toolStr, 0.0f);
 
 	MenuItem sizeString( 0.14f, -0.075f, 0.0f, 0.24f, 0.04f, 0, 2, 8, 1);
-	
+	MenuItem strengthString(0.14f, -0.075f, -0.03f, 0.24f, 0.04f, 1, 6, 6, 1);
+
+	MenuItem trackingInfo(boardPos[0], boardPos[1] + 0.0125f, boardPos[2] - 0.22f, 0.24f, 0.08f, 1, 6, 9, 2);
+
 	/*! tool 0 = push/pull
 			 1 = 
 	*/
@@ -548,7 +551,7 @@ int Oculus::runOvr() {
 	MatrixStack MVstack; MVstack.init();
 	MatrixStack* MVptr = &MVstack;
 
-	MenuItem title(0.0f, 0.8f, -1.0f, 0.5f, 0.5f);
+	MenuItem title(0.0f, 0.8f, -1.0f, 0.6f, 0.3f);
 	//MenuItem menuInfoPanel(boardPos[0] + 0.8f, boardPos[1] + 0.02, boardPos[2] , 0.3f, 0.4f);
 
 	// 2.7.2 - Wand variables >--------------------------------------------------------------------------------------------------------------
@@ -1027,6 +1030,14 @@ int Oculus::runOvr() {
 								toolString.render();
 							MVstack.pop();
 
+							MVstack.push();
+								MVstack.translate(trackingInfo.getPosition());
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								trackingInfo.render();
+							MVstack.pop();
+
+
+
 							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
 							
 
@@ -1133,9 +1144,9 @@ int Oculus::runOvr() {
 								MVstack.pop();
 
 								MVstack.push();
-								MVstack.translate(toolStrengthFill.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								toolStrengthFill.render();
+									MVstack.translate(toolStrengthFill.getPosition());
+									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+									toolStrengthFill.render();
 								MVstack.pop();
 
 								glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
