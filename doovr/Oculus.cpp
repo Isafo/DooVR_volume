@@ -371,7 +371,7 @@ int Oculus::runOvr() {
 
 	Texture whiteTex("../Assets/Textures/light.DDS");
 	Texture groundTex("../Assets/Textures/Gbord.DDS");
-	Texture titleTex("../Assets/Textures/Title.DDS");
+	Texture titleTex("../Assets/Textures/Title2by1.DDS");
 	Texture resetTex("../Assets/Textures/reset.DDS");
 	Texture saveTex("../Assets/Textures/save.DDS");
 	Texture loadTex("../Assets/Textures/load.DDS");
@@ -385,6 +385,8 @@ int Oculus::runOvr() {
 	Texture strengthTex("../Assets/Textures/Size.DDS");
 
 	Texture menuStringsSwe("../Assets/Textures/menuStringsSwe.dds");
+	Texture savedFeedbackTex("../Assets/Textures/sparad4by1.dds");
+	Texture loadModeInfoTex("../Assets/Textures/loadMode2by1.dds");
 
 	float boardPos[3] = { 0.0f, 0.09f, 0.0f };
 	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
@@ -503,6 +505,13 @@ int Oculus::runOvr() {
 	bool failedToStartLoading = false;
 	bool maxVelocityNotLoaded = false;
 
+	time_t finishedTime;
+
+	MenuItem loadModeInfo(boardPos[0], boardPos[1] + 0.15f, boardPos[2] - 0.2f, 0.4f, 0.2f);
+
+	// 2.5.2 - variables used in save Mode >------------------------------------------------------------------------------------------------
+	MenuItem savedFeedback(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f + 0.04f, boardPos[2] + -0.04, 0.08f, 0.04f);
+
 	// 2.6 - Shader variables \_____________________________________________________________________________________________________________
 	Shader sceneShader;
 	sceneShader.createShader("sceneV.glsl", "sceneF.glsl");
@@ -539,7 +548,7 @@ int Oculus::runOvr() {
 	MatrixStack MVstack; MVstack.init();
 	MatrixStack* MVptr = &MVstack;
 
-	//MenuItem title(0.0f, 0.8f, -1.0f, 0.5f, 0.5f);
+	MenuItem title(0.0f, 0.8f, -1.0f, 0.5f, 0.5f);
 	//MenuItem menuInfoPanel(boardPos[0] + 0.8f, boardPos[1] + 0.02, boardPos[2] , 0.3f, 0.4f);
 
 	// 2.7.2 - Wand variables >--------------------------------------------------------------------------------------------------------------
@@ -727,6 +736,10 @@ int Oculus::runOvr() {
 									mode = 2; // enter save mode
 								}
 							}
+							else if (modellingButtonState[activeButton] == 3) {
+								modellingButton[activeButton]->setState(false);
+							}
+
 							break;
 						}
 						//3.2.3 - load mesh button >--------------------------------------------------------------------------------------------
@@ -914,9 +927,6 @@ int Oculus::runOvr() {
 						// 3.4 - Scene Matrix stack \__________________________________________________________________________________________________
 						MVstack.push();
 							// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
-						
-						
-						
 							glUniform4fv(locationLP, 1, LP);
 							MVstack.push();
 								MVstack.translate(board.getPosition());
@@ -939,7 +949,7 @@ int Oculus::runOvr() {
 
 							// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
 
-							/*glUseProgram(bloomShader.programID);
+							glUseProgram(bloomShader.programID);
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							MVstack.push();
@@ -949,7 +959,7 @@ int Oculus::runOvr() {
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								title.render();
 							MVstack.pop();
-
+							/*
 							//glUseProgram(menuShader.programID);
 							//glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 							MVstack.push();
@@ -1093,9 +1103,7 @@ int Oculus::runOvr() {
 							// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
 							glUseProgram(bloomShader.programID);
 							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-							
-								
+	
 								// render tool select GUI
 								for (int i = 0; i < NR_OF_TOOLS; i++) {
 
@@ -1165,7 +1173,10 @@ int Oculus::runOvr() {
 			case 1: {
 				//===============================================================================================================================
 				// 4 - LOAD Mode
-				//===============================================================================================================================
+				//===============================================================================================================================if (th2Status = 0) {
+				
+			
+				
 				// 4.1 - Keyboard events \_______________________________________________________________________________________________________
 				// 4.1.1 - Move mesh >-----------------------------------------------------------------------------------------------------------
 				if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
@@ -1329,7 +1340,6 @@ int Oculus::runOvr() {
 					}
 				}
 
-
 				// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
 				if (aModellingStateIsActive == 0) {
 					activeButton = handleMenu(wandPos, loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
@@ -1465,7 +1475,7 @@ int Oculus::runOvr() {
 							MVstack.pop();
 
 							// 4.4.3 - RENDER title >---------------------------------------------------------------------------------------------------
-							/*glUseProgram(menuShader.programID);
+							glUseProgram(menuShader.programID);
 							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
 							MVstack.push();
@@ -1474,7 +1484,7 @@ int Oculus::runOvr() {
 								glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								title.render();
-							MVstack.pop();*/
+							MVstack.pop();
 
 
 							// 4.4.4 - RENDER Load buttons >--------------------------------------------------------------------------------------------
@@ -1497,6 +1507,17 @@ int Oculus::runOvr() {
 									loadButton[i]->render();
 								MVstack.pop();
 							}
+
+							// render menuinfo during limited time
+							glUseProgram(menuShader.programID);
+							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+							MVstack.push();
+								glBindTexture(GL_TEXTURE_2D, loadModeInfoTex.getTextureID());
+								MVstack.translate(loadModeInfo.getPosition());
+								MVstack.rotX(1.57079f);
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								loadModeInfo.render();
+							MVstack.pop();
 
 							// 4.4.5 - RENDER meshes >--------------------------------------------------------------------------------------------------
 							glUseProgram(meshShader.programID);
@@ -1577,8 +1598,13 @@ int Oculus::runOvr() {
 				if (th2.joinable()) {
 					th2.join();
 					th2Status = 0;
-					mode = 0; // return to modelling mode
-					modellingButton[activeButton]->setState(false);
+					finishedTime = time(NULL) + 3; // set timer to wait 5 secounds before leaving save to give user feedback
+				}
+
+				if (th2Status == 0) {
+					if (time(NULL) >= finishedTime) { // exit save mode when timer reached
+						mode = 0; // return to modelling mode
+					}
 				}
 
 				// Begin the frame...
@@ -1651,7 +1677,7 @@ int Oculus::runOvr() {
 							MVstack.pop();
 
 							// 5.3.3 Render title >----------------------------------------------------------------------------------------------------
-							/*glUseProgram(menuShader.programID);
+							glUseProgram(menuShader.programID);
 							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 							
 							MVstack.push();
@@ -1660,7 +1686,7 @@ int Oculus::runOvr() {
 								glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								title.render();
-							MVstack.pop();*/
+							MVstack.pop();
 
 							// 5.3.4 Render modelling buttons >-----------------------------------------------------------------------------------------
 							// info
@@ -1684,6 +1710,19 @@ int Oculus::runOvr() {
 								MVstack.pop();
 							}
 
+							if (th2Status == 0) {
+								glUseProgram(menuShader.programID);
+								glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+								MVstack.push();
+								glBindTexture(GL_TEXTURE_2D, savedFeedbackTex.getTextureID());
+								MVstack.translate(savedFeedback.getPosition());
+								MVstack.rotX(1.57079f);
+								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+								savedFeedback.render();
+								MVstack.pop();
+							}
+
+
 							//glBindTexture(GL_TEXTURE_2D, 0);
 							// 5.3.5 Render mesh >------------------------------------------------------------------------------------------------------
 							glUseProgram(meshShader.programID);
@@ -1705,8 +1744,6 @@ int Oculus::runOvr() {
 								else {
 									modellingMesh->render();
 								}
-
-
 
 							MVstack.pop();
 
