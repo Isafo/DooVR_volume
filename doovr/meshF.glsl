@@ -15,34 +15,35 @@ uniform sampler2D dTex;
 
 void main () {
 	vec3 LightIntensity;
-	vec2 finaluv = vec2(((uv.x/0.02) + 1.0f)/2.0f, ((uv.y/0.02) + 1.0f)/2.0f);
+	//vec2 finaluv = vec2(((uv.x/0.02) + 1.0f)/2.0f, ((uv.y/0.02) + 1.0f)/2.0f);
 	
-	vec3 ProjCoords = shadowUV.xyz / shadowUV.w;
-    vec2 UVCoords;
+	//vec3 ProjCoords = shadowUV.xyz / shadowUV.w;
+    //vec2 UVCoords;
     //UVCoords.x = 0.5 * ProjCoords.x + 0.5;
     //UVCoords.y = 0.5 * ProjCoords.y + 0.5;
     //float z = 0.5 * ProjCoords.z + 0.5;
-	UVCoords.x = ProjCoords.x;
-    UVCoords.y = ProjCoords.y;
-    float z = ProjCoords.z;
+	//UVCoords.x = ProjCoords.x;
+    //UVCoords.y = ProjCoords.y;
+    //float z = ProjCoords.z;
 
-	float Depth = texture(dTex, UVCoords).x;
+	//float Depth = texture(dTex, UVCoords).x;
 	
-	if(Depth > z + 0.00001f)
-	{
-	LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
-	}
-	else
-	{
-	LightIntensity = vec3(0.0f, 0.1294117f, 0.0f);
-	}
-
-	//if( (uv.z < 0.02) && (uv.z > 0.019) && Depth > (z + 0.000001)  ){	
-	//	LightIntensity = vec3(texture(tex, finaluv ));
-	//} 
-	//else {
-	//	LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
+	//if(texture( dTex, shadowUV.xy ).z  >  shadowUV.z)
+	//{
+	//LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
 	//}
+	//else
+	//{
+	//LightIntensity = vec3(0.0f, 0.1294117f, 0.0f);
+	//}
+
+	if( (uv.z < 0.02) && (uv.z > 0.019) && texture( dTex, shadowUV.xy ).z  >  shadowUV.z - 0.001){	
+		//LightIntensity = vec3(texture(tex, finaluv ));
+		LightIntensity = vec3(1.0f, 1.0f, 1.0f);
+	} 
+	else {
+		LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
+	}
 	
 	vec3 Kd = vec3(0.8f, 0.8f, 0.8f);                // Diffuse reflectivity
 	vec3 Ka = vec3(0.1f, 0.1f, 0.1f);                // Ambient reflectivity

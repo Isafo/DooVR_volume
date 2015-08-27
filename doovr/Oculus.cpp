@@ -257,34 +257,47 @@ int Oculus::runOvr() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	//WandView
-	GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
-
-	GLuint wandShadowMap;
-	glGenTextures(1, &wandShadowMap);
-	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	/*glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);*/
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-
-	//Assign the shadow map to texture channel 0 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
 
 	// create and set up the FBO
 	GLuint wandViewFBO;
 	glGenFramebuffers(1, &wandViewFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, wandViewFBO);
 
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
+	GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+	GLuint wandShadowMap;
+	glGenTextures(1, &wandShadowMap);
+	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	//glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+*/
+	//Assign the shadow map to texture channel 0 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, wandShadowMap, 0);
+	
+	GLuint pickingTexture;
+	glGenTextures(1, &pickingTexture);
+	glBindTexture(GL_TEXTURE_2D, pickingTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 1024, 1024,
+		0, GL_RGB, GL_FLOAT, NULL);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+		pickingTexture, 0);
+	
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
 	glDrawBuffer(GL_NONE);
 	//glReadBuffer(GL_NONE);
 
@@ -428,6 +441,7 @@ int Oculus::runOvr() {
 	Texture plusTex("../Assets/Textures/plus.DDS");
 	Texture minusTex("../Assets/Textures/minus.DDS");
 	Texture meshTex("../Assets/Textures/carrots.DDS");
+	Texture midTest("../Assets/Textures/midTest.DDS");
 
 	Texture menuIcons("../Assets/Textures/menuICONS.DDS");
 	Texture menuInfo("../Assets/Textures/menyInfo.DDS");
@@ -930,12 +944,13 @@ int Oculus::runOvr() {
 				}	
 
 				//wandViewMAP -------------------------------------------
+				glViewport(0, 0, 1024, 1024);
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wandViewFBO);
 				glClear(GL_DEPTH_BUFFER_BIT);
 				glUseProgram(projectionShader.programID);
 
-				glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
-				//glm::mat4 projP = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+				//glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
+				glm::mat4 projP = glm::ortho(-0.1f, 0.1f, -0.1f, 0.1f, 0.0f, 1.0f);
 				glm::transpose(projP);
 				glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
 				//glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
@@ -950,8 +965,7 @@ int Oculus::runOvr() {
 					glm::vec3 gWandPos = glm::vec3(wandPos[0], wandPos[1], wandPos[2]);
 					wand->getDirection(tempVec);
 					glm::vec3 gWandDirr = glm::vec3(tempVec[0], tempVec[1], tempVec[2]);
-					
-					//tempVec[0] = -tempVec[0]; tempVec[1] = -tempVec[1]; tempVec[2] = -tempVec[2];
+					//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
 					//MVstack.translate(tempVec);
 					
 					glm::normalize(gWandDirr);
@@ -1029,8 +1043,6 @@ int Oculus::runOvr() {
 						MVstack.push();
 							// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
 						
-						
-						
 							glUniform4fv(locationLP, 1, LP);
 							MVstack.push();
 								MVstack.translate(board.getPosition());
@@ -1075,7 +1087,6 @@ int Oculus::runOvr() {
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								menuInfoPanel.render();
 							MVstack.pop();*/
-
 
 							// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
 							for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
@@ -1134,7 +1145,6 @@ int Oculus::runOvr() {
 
 							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
 							
-
 							if (lines) {
 								glUseProgram(flatShader.programID);
 								glUniformMatrix4fv(locationFlatP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
@@ -1202,6 +1212,7 @@ int Oculus::runOvr() {
 							MVstack.push();
 								MVstack.translate(wandPos);
 								MVstack.multiply(wand->getOrientation());
+
 
 								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 								MVstack.push();

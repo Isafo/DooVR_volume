@@ -1,6 +1,11 @@
 #version 400
-layout( location = 0 ) out vec4 FragColor;
+// Ouput data
+//layout(location = 0) out float fragmentdepth;
+ 
+out float FragColor;
 
-void main () {
-
+void main(){
+    // Not really needed, OpenGL does it anyway
+   //fragmentdepth = gl_FragCoord.z;
+   FragColor = float(gl_PrimitiveID + 1);
 }
