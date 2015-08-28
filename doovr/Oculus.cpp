@@ -474,7 +474,7 @@ int Oculus::runOvr() {
 
 	menuBox toolStrength(boardPos[0] + 0.16f, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
 	menuBox toolStrengthFill(boardPos[0] + 0.16f, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolStrengthFill.setDim(0.0f, toolStr, 0.0f);
-	MenuItem strengthString(0.08f, -0.075f, 0.03f, 0.24f, 0.03f, 1, 5, 9, 1);
+	MenuItem strengthString(0.095f, -0.075f, 0.035f, 0.24f, 0.04f, 1, 5, 9, 1);
 
 	MenuItem trackingInfo(boardPos[0], boardPos[1] + 0.0125f, boardPos[2] - 0.22f, 0.24f, 0.08f, 1, 6, 9, 2);
 
