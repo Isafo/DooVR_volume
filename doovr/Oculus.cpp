@@ -268,12 +268,11 @@ int Oculus::runOvr() {
 	GLuint wandShadowMap;
 	glGenTextures(1, &wandShadowMap);
 	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 2048, 2048, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
 	//glDrawBuffer(GL_NONE); // No color buffer is drawn to.
 	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -292,14 +291,15 @@ int Oculus::runOvr() {
 	GLuint pickingTexture;
 	glGenTextures(1, &pickingTexture);
 	glBindTexture(GL_TEXTURE_2D, pickingTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 1024, 1024,
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB_FLOAT32_ATI, 2048, 2048,
 		0, GL_RGB, GL_FLOAT, NULL);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
 		pickingTexture, 0);
 	
 	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
-	glDrawBuffer(GL_NONE);
+	//glDrawBuffer(GL_NONE);
 	//glReadBuffer(GL_NONE);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
 	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
@@ -413,6 +413,11 @@ int Oculus::runOvr() {
 	float currTime = 0;
 	float lastTime;
 	float deltaTime;
+
+	float Pixel;
+
+	float intersectionP[3];
+	float intersectionN[3];
 
 	float* tempVecPtr;
 
@@ -600,6 +605,10 @@ int Oculus::runOvr() {
 	GLint locationMeshDTex = glGetUniformLocation(meshShader.programID, "dTex"); //texture sampler
 	GLint locationMeshLMVP = glGetUniformLocation(meshShader.programID, "LMVP");
 	GLint locationMeshPP = glGetUniformLocation(meshShader.programID, "PP");
+	GLint locationMeshIntersectionP = glGetUniformLocation(meshShader.programID, "IntersectionP");
+	GLint locationMeshIntersectionN = glGetUniformLocation(meshShader.programID, "IntersectionN");
+	GLint locationMeshRad = glGetUniformLocation(meshShader.programID, "Radius");
+
 
 	GLint locationFlatMV = glGetUniformLocation(flatShader.programID, "MV"); //modelview matrix
 	GLint locationFlatP = glGetUniformLocation(flatShader.programID, "P"); //perspective matrix
@@ -944,7 +953,7 @@ int Oculus::runOvr() {
 				}	
 
 				//wandViewMAP -------------------------------------------
-				glViewport(0, 0, 1024, 1024);
+				glViewport(0, 0, 2048, 2048);
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wandViewFBO);
 				glClear(GL_DEPTH_BUFFER_BIT);
 				glUseProgram(projectionShader.programID);
@@ -986,7 +995,37 @@ int Oculus::runOvr() {
 					MVstack.pop();
 				MVstack.pop();
 
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+				//glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
+				glReadBuffer(GL_COLOR_ATTACHMENT0);
+				
+				glReadPixels(1024, 1024, 1, 1, GL_RGB, GL_FLOAT, &Pixel);
+
+				//std::cout << Pixel << std::endl;
+				glReadBuffer(GL_NONE);
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+				currentTool->findIntersection(modellingMesh, wand, Pixel);
+				currentTool->getIntersection(intersectionP, intersectionN);
+				//linAlg::normVec(intersectionN);
+
+				glm::vec3 interP = glm::vec3(intersectionP[0], intersectionP[1], intersectionP[2]);
+				wand->getDirection(tempVec);
+				glm::vec3 interN = glm::vec3(intersectionN[0], intersectionN[1], intersectionN[2]);
+				//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
+				//MVstack.translate(tempVec);
+
+				glm::mat4 interTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
+				//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
+			
+				MVstack.push();
+					MVstack.multiply(&interTrans[0][0]);
+					MVstack.translate(modellingMesh->getPosition());
+					MVstack.multiply(modellingMesh->getOrientation());
+				//MVstack.multiply(&projP[0][0]);
+					linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
+					linAlg::matrixMult(biasMatrix, LMVP, LMVP);
+				MVstack.pop();
 
 				// Begin the frame...
 				ovrHmd_BeginFrame(hmd, l_FrameIndex);
@@ -1163,8 +1202,9 @@ int Oculus::runOvr() {
 
 								glUniformMatrix4fv(locationMeshPP, 1, GL_FALSE, &projP[0][0]);
 								glUniformMatrix4fv(locationMeshLMVP, 1, GL_FALSE, LMVP);
-								
-
+								glUniform3fv(locationMeshIntersectionP, 1, intersectionP);
+								glUniform3fv(locationMeshIntersectionN, 1, intersectionN);
+								glUniform1f(locationMeshRad, toolRad);
 								wand->getPosition(tempVec);
 								glUniform3fv(locationMeshWP, 1, tempVec);
 

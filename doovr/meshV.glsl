@@ -14,6 +14,9 @@ uniform mat4 P;
 
 uniform mat4 LMVP;
 uniform mat4 PP;
+uniform vec3 IntersectionP;
+uniform vec3 IntersectionN;
+//uniform float Radius;
 
 uniform mat4 modelMatrix;
 
@@ -25,19 +28,60 @@ void main ()
 	Position =  vec3( MV * vec4(VertexPosition, 1.0));
 	Normal = normalize(mat3(MV) * VertexNormal);	
 
-	vec4 posWorld = modelMatrix * vec4(VertexPosition, 1.0);
-	vec3 posVec = vec3(posWorld) - wandPos;
+	//vec4 posWorld = modelMatrix * vec4(VertexPosition, 1.0);
+	//vec3 posVec = vec3(posWorld) - wandPos;
 	
-	float dotProd = dot(posVec, wandDirr);
-	vec3 nWandDirr = dotProd*wandDirr;
+	//float dotProd = dot(posVec, wandDirr);
+	//vec3 nWandDirr = dotProd*wandDirr;
 	
-	vec3 orthogonal = posVec - nWandDirr;
+	//vec3 orthogonal = posVec - nWandDirr;
+	//float oLength = length(orthogonal);
 	
-	vec3 up = cross(vec3(0.0, 1.0, 0.0), wandDirr);
+	//vec3 up = cross(vec3(0.0, 1.0, 0.0), wandDirr);
+	//float cos = dot(orthogonal,up)/(length(orthogonal)*length(up));
+	//float sin = sqrt(1-cos*cos);
+	//if (dotProd < 0.02f && dotProd > -0.02f ) {
+	//	uv = vec4(cos*oLength, sin*oLength,oLength, dotProd);
+	//}
+	//else {
+	//	//vec3 sphereLength = vec3(VertexPosition) - Intersection;
+	//	if(oLength < 0.02)
+	//	{
+	//		uv = vec4(cos*oLength, sin*oLength,-1.0f,dotProd);
+	//	}
+	//	else {
+	//	uv = vec4(cos*oLength, sin*oLength,-1.0f,-1.0f);
+	//	}
+		
+	//}
+
+	//vec4 posWorld = modelMatrix * vec4(VertexPosition, 1.0);
+	vec3 posVec = vec3(VertexPosition) - IntersectionP;
+	
+	float dotProd = dot(posVec, IntersectionN);
+	vec3 nIntersectionN = dotProd*IntersectionN;
+	
+	vec3 orthogonal = posVec - nIntersectionN;
+	float oLength = length(orthogonal);
+	
+	vec3 up = cross(vec3(0.0, 1.0, 0.0), IntersectionN);
 	float cos = dot(orthogonal,up)/(length(orthogonal)*length(up));
 	float sin = sqrt(1-cos*cos);
-	
-	uv = vec4(cos*length(orthogonal), sin*length(orthogonal),length(orthogonal), dotProd);
+	//if (dotProd < 0.02f && dotProd > -0.02f ) {
+	vec3 sphereLength = vec3(VertexPosition) - IntersectionP;
+		uv = vec4(cos*oLength, sin*oLength, oLength, length(sphereLength));
+	//}
+	//else {
+	//	//vec3 sphereLength = vec3(VertexPosition) - Intersection;
+	//	if(oLength < 0.02)
+	//	{
+	//		uv = vec4(cos*oLength, sin*oLength,-1.0f,dotProd);
+	//	}
+	//	else {
+	//	uv = vec4(cos*oLength, sin*oLength,-1.0f,-1.0f);
+	//	}
+		
+	//}
 	
 	shadowUV = ( LMVP) * vec4(VertexPosition, 1.0f);
 

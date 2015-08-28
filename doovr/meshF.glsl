@@ -12,6 +12,8 @@ uniform vec4 lightPos2;
 uniform sampler2D tex;
 uniform sampler2D dTex;
 
+uniform float Radius;
+
 
 void main () {
 	vec3 LightIntensity;
@@ -37,10 +39,15 @@ void main () {
 	//LightIntensity = vec3(0.0f, 0.1294117f, 0.0f);
 	//}
 
-	if( (uv.z < 0.02) && (uv.z > 0.019) && texture( dTex, shadowUV.xy ).z  >  shadowUV.z - 0.001){	
+	//if( ( (uv.w < 0.05f) && (uv.w > 0.0) ) ){	
+	if( ( (uv.z > Radius) && (uv.z < Radius + 0.001f) && texture( dTex, shadowUV.xy ).z  >  shadowUV.z - 0.001) && (uv.w < Radius + 0.001f) && (uv.w > -(Radius + 0.001f)) ){	
 		//LightIntensity = vec3(texture(tex, finaluv ));
 		LightIntensity = vec3(1.0f, 1.0f, 1.0f);
 	} 
+	else if ( ( (uv.w < -Radius) && (uv.w > -(Radius + 0.001f)) || (uv.w > Radius) && (uv.w < Radius + 0.001f) ) && (uv.z < Radius))  {
+		LightIntensity = vec3(1.0f, 1.0f, 1.0f);
+		//LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
+	}
 	else {
 		LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
 	}

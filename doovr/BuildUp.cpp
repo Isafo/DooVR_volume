@@ -75,6 +75,94 @@ void BuildUp::render(MatrixStack* MVstack, GLint locationMV)
 	MVstack->pop();
 }
 
+void BuildUp::findIntersection(DynamicMesh* mesh, Wand* wand, int triIndex)
+{
+	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
+	float eVec1[3]; float eVec2[3];
+	float P[3]; float Q[3]; float T[3];
+	float pLength;
+	float invP;
+	float u; float v; float t;
+	int index2; int tempEdge; int tempE;
+
+	linAlg::transpose(mOrientation);
+	//--< 1.0 | calculated the position and direction of the wand
+	wand->getPosition(wPoint);
+	wPoint[0] = wPoint[0] - mPosition[0];
+	wPoint[1] = wPoint[1] - mPosition[1];
+	wPoint[2] = wPoint[2] - mPosition[2];
+	wPoint[3] = 1.0f;
+	linAlg::vectorMatrixMult(mOrientation, wPoint, newWPoint);
+
+	wand->getDirection(Dirr);
+	linAlg::normVec(Dirr);
+	Dirr[3] = 1.0f;
+	linAlg::vectorMatrixMult(mOrientation, Dirr, newDirr);
+	linAlg::transpose(mOrientation);
+
+	for (int i = 0; i < 3; i++)
+	{
+		index2 = mesh->triangleArray[max(triIndex - 1, 0)].index[i];
+		tempEdge = mVInfoArray[index2].edgePtr;
+
+		do {
+			tempE = mEdgeArray[mEdgeArray[tempEdge].nextEdge].sibling;
+
+			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected != 1.0f)
+			{
+				linAlg::calculateVec(mVertexArray[mEdgeArray[tempEdge].vertex].xyz, mVertexArray[index2].xyz, eVec1);
+				linAlg::calculateVec(mVertexArray[mEdgeArray[tempE].vertex].xyz, mVertexArray[index2].xyz, eVec2);
+				linAlg::crossProd(P, newDirr, eVec2);
+
+				pLength = linAlg::dotProd(eVec1, P);
+				if (pLength < -EPSILON || pLength > EPSILON)
+				{
+					invP = 1.f / pLength;
+					linAlg::calculateVec(newWPoint, mVertexArray[index2].xyz, T);
+
+					u = linAlg::dotProd(T, P) * invP;
+					if (u > 0.0f && u < 1.0f)
+					{
+						linAlg::crossProd(Q, T, eVec1);
+
+						v = linAlg::dotProd(newDirr, Q)*invP;
+
+						if (v > 0.0f && u + v < 1.0f)
+						{
+							t = linAlg::dotProd(eVec2, Q)*invP;
+							if (t > EPSILON && t < 0.1f)
+							{
+								//sIt->next->index = e[tempEdge].triangle;
+								tempVec[0] = newDirr[0] * t;
+								tempVec[1] = newDirr[1] * t;
+								tempVec[2] = newDirr[2] * t;
+								tempE = mVInfoArray[index2].edgePtr;
+								//success = true;
+								//if (linAlg::vecLength(tempVec) < linAlg::vecLength(intersection.nxyz)){
+								//	mIndex = index2;
+									intersection.xyz[0] = newWPoint[0] + tempVec[0];
+									intersection.xyz[1] = newWPoint[1] + tempVec[1];
+									intersection.xyz[2] = newWPoint[2] + tempVec[2];
+									intersection.nxyz[0] = tempVec[0];
+									intersection.nxyz[1] = tempVec[1];
+									intersection.nxyz[2] = tempVec[2];
+									linAlg::crossProd(intersection.nxyz, eVec2, eVec1);
+									linAlg::normVec(intersection.nxyz);
+								//}
+									std::cout << "success!" << std::endl;
+							}
+						}
+					}
+				}
+			}
+			tempEdge = tempE;
+
+		} while (tempEdge != mVInfoArray[index2].edgePtr);
+
+	}
+
+	
+}
 
 void BuildUp::firstSelect(DynamicMesh* mesh, Wand* wand)
 {
