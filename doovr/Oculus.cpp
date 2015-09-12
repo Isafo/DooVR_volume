@@ -1017,11 +1017,11 @@ int Oculus::runOvr() {
 				glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
 				glReadBuffer(GL_COLOR_ATTACHMENT0);
 				
-				glReadPixels(1024, 1024, 1, 1, GL_RGB, GL_FLOAT, &pixel);
+				glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
 
 				std::cout << pixel << std::endl;
 				glReadBuffer(GL_NONE);
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 				//currentTool->findIntersection(modellingMesh, wand, Pixel);
 				currentTool->getIntersection(intersectionP, intersectionN);
 				//linAlg::normVec(intersectionN);
@@ -1241,6 +1241,14 @@ int Oculus::runOvr() {
 								vMat[12] = tempVecPtr[0]; vMat[13] = tempVecPtr[1]; vMat[14] = tempVecPtr[2];
 								linAlg::matrixMult(vMat, modellingMesh->getOrientation(), transform);
 								glUniformMatrix4fv(locationMeshM, 1, GL_FALSE, transform);
+
+								glBindTexture(GL_TEXTURE_2D, meshTex.getTextureID());
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+								glUniform1i(locationMeshTex, 0);
+								
 
 								glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
 
