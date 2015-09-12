@@ -32,7 +32,7 @@ DynamicMesh::DynamicMesh() {
 	*///sMid = sHead;
 	//sNR = 0;
 
-	position[0] = 0.0f; position[1] = -0.15f; position[2] = 0.0f;
+	position[0] = 0.0f; position[1] = -0.3f; position[2] = 0.0f;
 
 	orientation[0] = 1.0f; orientation[1] = 0.0f; orientation[2] = 0.0f; orientation[3] = 0.0f;
 	orientation[4] = 0.0f; orientation[5] = 1.0f; orientation[6] = 0.0f; orientation[7] = 0.0f;

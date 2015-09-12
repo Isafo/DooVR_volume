@@ -481,7 +481,7 @@ int Oculus::runOvr() {
 	/*! tool 0 = push/pull
 			 1 = 
 	*/
-	int activeTool = 2;
+	int activeTool = 0;
 	tool[activeTool].setState(true);
 	// 2.5.2 - variables used in Load Mode >------------------------------------------------------------------------------------------------
 	const int NR_OF_LOAD_BUTTONS = 2;
@@ -565,7 +565,7 @@ int Oculus::runOvr() {
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
-	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[0] + 0.15f; tempVec[2] = boardPos[2];
+	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
 	modellingMesh->setPosition(tempVec);
 	//modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
 	modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
@@ -584,7 +584,7 @@ int Oculus::runOvr() {
 
 	Tool* currentTool;
 	//currentTool = new Push(modellingMesh, wand);
-	currentTool = new BuildUp(modellingMesh, wand);
+	currentTool = new Drag(modellingMesh, wand);
 
 	//=======================================================================================================================================
 	//Render loop
@@ -871,7 +871,7 @@ int Oculus::runOvr() {
 						th2Status = 0;
 						modellingMesh->cleanBuffer();
 						modellingMesh->updateOGLData();
-						tempVec[0] = boardPos[0]; tempVec[1] = boardPos[0] + 0.15f; tempVec[2] = boardPos[2];
+						tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
 						modellingMesh->setPosition(tempVec);
 						reset = false;
 					}
@@ -1415,7 +1415,7 @@ int Oculus::runOvr() {
 					delete loaderMesh;
 					delete placeHolder;
 					mode = 0;
-					tempVec[0] = boardPos[0]; tempVec[1] = boardPos[0] + 0.15f; tempVec[2] = boardPos[2];
+					tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
 					modellingMesh->setPosition(tempVec);
 
 					if (th1Status != 0) {
