@@ -20,7 +20,12 @@ public:
 	void setRadius(float rad) { radius = rad; };
 	void setStrength(float str){};
 
-	void getIntersection(float* intersectionP, float* intersectionN){};
+	void getIntersection(float* intersectionP, float* intersectionN){ intersectionP[0] = intersection.xyz[0]; 
+																	intersectionP[1] = intersection.xyz[1]; 
+																	intersectionP[2] = intersection.xyz[2];
+																	intersectionN[0] = intersection.nxyz[0];
+																	intersectionN[1] = intersection.nxyz[1];
+																	intersectionN[2] = intersection.nxyz[2]; };
 
 private:
 	float radius;

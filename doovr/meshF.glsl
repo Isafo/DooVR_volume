@@ -9,7 +9,6 @@ in vec4 shadowUV;
 uniform vec4 lightPos;
 uniform vec4 lightPos2;
 
-uniform sampler2D tex;
 uniform sampler2D dTex;
 
 uniform float Radius;

@@ -149,7 +149,6 @@ void BuildUp::findIntersection(DynamicMesh* mesh, Wand* wand, int triIndex)
 									linAlg::crossProd(intersection.nxyz, eVec2, eVec1);
 									linAlg::normVec(intersection.nxyz);
 								//}
-									std::cout << "success!" << std::endl;
 							}
 						}
 					}
@@ -311,9 +310,9 @@ void BuildUp::firstSelect(DynamicMesh* mesh, Wand* wand)
 	selectedSize = 1;
 	mVInfoArray[mIndex].selected = 4.0f;
 
-	intersection.nxyz[0] = mVertexArray[mIndex].nxyz[0];
-	intersection.nxyz[1] = mVertexArray[mIndex].nxyz[1];
-	intersection.nxyz[2] = mVertexArray[mIndex].nxyz[2];
+	intersection.nxyz[0] = vNorm[0];
+	intersection.nxyz[1] = vNorm[1];
+	intersection.nxyz[2] = vNorm[2];
 
 	vPoint = intersection.xyz;
 	//vNorm = intersection.nxyz;

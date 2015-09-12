@@ -80,7 +80,7 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
 	float eVec1[3]; float eVec2[3];
 	float P[3]; float Q[3]; float T[3];
-	float* vPoint; float* vPoint2; float* vNorm; float* vNorm2;
+	float* vPoint; float* vPoint2; float vNorm[3]; float* vNorm2;
 	int index; int index2;
 	float* ptrVec;
 
@@ -190,6 +190,8 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 									intersection.nxyz[0] = tempVec[0];
 									intersection.nxyz[1] = tempVec[1];
 									intersection.nxyz[2] = tempVec[2];
+									linAlg::crossProd(vNorm, eVec2, eVec1);
+									linAlg::normVec(vNorm);
 								}
 							}
 						}
@@ -220,12 +222,12 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 	selectedSize = 1;
 	mVInfoArray[mIndex].selected = 4.0f;
 
-	intersection.nxyz[0] = mVertexArray[mIndex].nxyz[0];
-	intersection.nxyz[1] = mVertexArray[mIndex].nxyz[1];
-	intersection.nxyz[2] = mVertexArray[mIndex].nxyz[2];
+	intersection.nxyz[0] = vNorm[0];
+	intersection.nxyz[1] = vNorm[1];
+	intersection.nxyz[2] = vNorm[2];
 
 	vPoint = intersection.xyz;
-	vNorm = intersection.nxyz;
+	//vNorm = intersection.nxyz;
 
 	for (int i = 0; i < selectedSize; i++) {
 		index2 = selectedVertices[i];
