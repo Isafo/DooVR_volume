@@ -3,53 +3,88 @@ layout(location = 0) in vec3 VertexPosition;
 layout(location = 1) in vec3 VertexNormal;
 layout(location = 2) in float Selected;
 
-//out vec3 Position;
-//out vec3 Normal;
+out vec3 Position;
+out vec3 Normal;
 out vec3 resultLight;
+out vec4 uv;
+out vec4 shadowUV;
 
 uniform mat4 MV;
 uniform mat4 P;
-uniform vec4 lightPos;
-uniform vec4 lightPos2;
+
+uniform mat4 LMVP;
+uniform mat4 PP;
+uniform vec3 IntersectionP;
+uniform vec3 IntersectionN;
+//uniform float Radius;
+
+uniform mat4 modelMatrix;
+
+uniform vec3 wandPos;
+uniform vec3 wandDirr;
 
 void main () 
 {
-	vec3 Position =  vec3(  MV * vec4(VertexPosition, 1.0));
-	vec3 Normal = normalize(mat3(MV) * VertexNormal);
-	vec3 LightIntensity;
+	Position =  vec3( MV * vec4(VertexPosition, 1.0));
+	Normal = normalize(mat3(MV) * VertexNormal);	
 
-	if(Selected > 3.0f){
-		LightIntensity = vec3(0.6f +0.3f, 0.1294117f,0.0f);
-	} 
-	else {
-		LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
-	}
+	//vec4 posWorld = modelMatrix * vec4(VertexPosition, 1.0);
+	//vec3 posVec = vec3(posWorld) - wandPos;
 	
-	vec3 Kd = vec3(0.8f, 0.8f, 0.8f);                // Diffuse reflectivity
-	vec3 Ka = vec3(0.1f, 0.1f, 0.1f);                // Ambient reflectivity
-	vec3 Ks = vec3( 0.7f, 0.7f, 0.7f);				 // Specular reflectivity
-	float Shininess = 8.0f;						 // Specular shininess factor
-	vec3 norm = normalize( Normal );			
-	vec3 vie = normalize(vec3(-Position));			 // viewDir	
+	//float dotProd = dot(posVec, wandDirr);
+	//vec3 nWandDirr = dotProd*wandDirr;
+	
+	//vec3 orthogonal = posVec - nWandDirr;
+	//float oLength = length(orthogonal);
+	
+	//vec3 up = cross(vec3(0.0, 1.0, 0.0), wandDirr);
+	//float cos = dot(orthogonal,up)/(length(orthogonal)*length(up));
+	//float sin = sqrt(1-cos*cos);
+	//if (dotProd < 0.02f && dotProd > -0.02f ) {
+	//	uv = vec4(cos*oLength, sin*oLength,oLength, dotProd);
+	//}
+	//else {
+	//	//vec3 sphereLength = vec3(VertexPosition) - Intersection;
+	//	if(oLength < 0.02)
+	//	{
+	//		uv = vec4(cos*oLength, sin*oLength,-1.0f,dotProd);
+	//	}
+	//	else {
+	//	uv = vec4(cos*oLength, sin*oLength,-1.0f,-1.0f);
+	//	}
 		
-	float strength = 0.8f;
+	//}
 
-	//float distance0 = length( vec3(lightPos) - Position);
+	//vec4 posWorld = modelMatrix * vec4(VertexPosition, 1.0);
+	vec3 posVec = vec3(VertexPosition) - IntersectionP;
 	
-	// 0th
-	vec3 s = normalize( vec3(lightPos) - Position ); // lightDir
-	vec3 r = reflect( -s, norm );						 // reflectDir
-	//vec3 halfwayDir = normalize(lightDir + viewDir);  
-	//float spec = pow(max(dot(normal, halfwayDir), 0.0), 16.0);
-	vec3 LI = LightIntensity * (  Ka + Kd * max( dot(s, norm), 0.0 )) + Ks * pow( max( dot(r,vie), 0.0 ), Shininess ) * strength;
-
-	vec3 s2 = normalize( vec3(lightPos2) - Position ); // lightDir
-	vec3 r2 = reflect( -s2, norm );						 // reflectDir
-	vec3 LI2 = LightIntensity * (  Ka + Kd * max( dot(s2, norm), 0.0 ))  + Ks * pow( max( dot(r2,vie), 0.0 ), Shininess ) * strength;
+	float dotProd = dot(posVec, IntersectionN);
+	vec3 nIntersectionN = dotProd*IntersectionN;
 	
-	resultLight = (LI + LI2 )/2.0f;
+	vec3 orthogonal = posVec - nIntersectionN;
+	float oLength = length(orthogonal);
+	
+	vec3 up = cross(vec3(0.0, 1.0, 0.0), IntersectionN);
+	float cos = dot(orthogonal,up)/(length(orthogonal)*length(up));
+	float sin = sqrt(1-cos*cos);
+	//if (dotProd < 0.02f && dotProd > -0.02f ) {
+	vec3 sphereLength = vec3(VertexPosition) - IntersectionP;
+		uv = vec4(cos*oLength, sin*oLength, oLength, length(sphereLength));
+	//}
+	//else {
+	//	//vec3 sphereLength = vec3(VertexPosition) - Intersection;
+	//	if(oLength < 0.02)
+	//	{
+	//		uv = vec4(cos*oLength, sin*oLength,-1.0f,dotProd);
+	//	}
+	//	else {
+	//	uv = vec4(cos*oLength, sin*oLength,-1.0f,-1.0f);
+	//	}
+		
+	//}
+	
+	shadowUV = ( LMVP) * vec4(VertexPosition, 1.0f);
 
-	//! Convert position to clip coordinates and pass along to fragment shader
 	gl_Position =  (P * MV) * vec4(VertexPosition, 1.0);
 
 }

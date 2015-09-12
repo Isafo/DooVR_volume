@@ -10,12 +10,15 @@ public:
 
 	void renderIntersection(MatrixStack* MVstack, GLint locationMV);
 
+	void findIntersection(DynamicMesh* mesh, Wand* wand, int triIndex){};
 	void firstSelect(DynamicMesh* mesh, Wand* wand);
 	void moveVertices(DynamicMesh* mesh, Wand* wand, float dT);
 	void deSelect();
 
 	void setRadius(float rad) { radius = rad; };
 	void setStrength(float str){};
+
+	void getIntersection(float* intersectionP, float* intersectionN){};
 
 private:
 	float radius;
