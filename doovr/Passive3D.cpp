@@ -18,7 +18,7 @@ Passive3D::Passive3D() {
 
 	//connection----------------------
 	try {
-		wand = new Wand3d("COM4"); // usb port
+		wand = new Wand3d("COM3"); // usb port
 	}
 	catch (Wand3dSerialException error) {
 		std::cout << error.what() << std::endl;
@@ -65,39 +65,14 @@ Passive3D::~Passive3D() {
 
 void Passive3D::wand3dCallback(WandData data) {
 
-	//float Orient[16];
-
-	//float dirr[4];
-	//float dirrResult[4];
-
-	/*Position[0] = -data.position[0];
-	Position[1] = data.position[2] - 0.27f;
-	Position[2] = data.position[1] - 0.25f;*/
 	Position[0] = data.position[0];
-	Position[1] = data.position[1] + 0.08f;
+	Position[1] = data.position[1] - 0.23f;
 	Position[2] = data.position[2];
-
-	//utils::getGLRotMatrix(data, Orient);
-	/*float rotZX[16] = { -1.f, 0.f, 0.f, 0.f,
-		0.f, 0.f, 1.f, 0.f,
-		0.f, 1.f, 0.f, 0.f,
-		0.f, 0.f, 0.f, 1.0f };*/
-	//linAlg::matrixMult(rotZX, Orient, OrientationM);
 
 	Velocity[0] = data.velocity[0];
 	Velocity[1] = data.velocity[1];
 	Velocity[2] = data.velocity[2];
 
-
-	//dirr[0] = -data.orientation[0];
-	//dirr[1] = -data.orientation[1];
-	//dirr[2] = -data.orientation[2];
-	//dirr[3] = 1.0f;
-	///*linAlg::vectorMatrixMult(rotZX, dirr, dirrResult);*/
-
-	//Direction[0] = dirrResult[0];
-	//Direction[1] = dirrResult[1];
-	//Direction[2] = dirrResult[2];
 	Direction[0] = -data.orientation[0];
 	Direction[1] = -data.orientation[1];
 	Direction[2] = -data.orientation[2];
