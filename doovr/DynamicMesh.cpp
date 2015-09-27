@@ -301,131 +301,136 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	std::vector<int> changedVertices;
 	changedVertices.reserve(10000);
 
-	nrofVerts = 6; vertexCap = 5;
-	nrofTris = 8; triangleCap = 7;
-	nrofEdges = 24; edgeCap = 23;
+	nrofVerts = 6; vertexCap = 6;
+	nrofTris = 8; triangleCap = 8;
+	nrofEdges = 24; edgeCap = 24;
 
 	//create queue for vertices
 	for (int i = 0; i < MAX_NR_OF_VERTICES; i++) {
 		vInfoArray[i].edgePtr = -(i + 1);
 	}
-	emptyV = -6;
+	emptyV = -7;
 	//create queue for Triangles
 	for (int i = 0; i < MAX_NR_OF_TRIANGLES; i++) {
 		triEPtr[i] = -(i + 1);
 	}
-	emptyT = -8;
+	emptyT = -9;
 	//create queue for Edges
 	for (int i = 0; i < MAX_NR_OF_EDGES; i++) {
 		e[i].nextEdge = -(i + 1);
 	}
-	emptyE = -24;
+	emptyE = -25;
+
+	vertexArray[0].xyz[0] = -1000.0f;	vertexArray[0].xyz[1] = -1000.0f;	vertexArray[0].xyz[2] = -1000.0f; /*normal*/	vertexArray[0].nxyz[0] = -1000.0f;	vertexArray[0].nxyz[1] = -1000;	vertexArray[0].nxyz[2] = -1000.0f;
 
 	// place vertecies
 	// Y 0
-	vertexArray[0].xyz[0] = 0.0f;	vertexArray[0].xyz[1] = MAX_LENGTH / 2.0f;	vertexArray[0].xyz[2] = 0.0f; /*normal*/	vertexArray[0].nxyz[0] = 0.0f;	vertexArray[0].nxyz[1] = 1;	vertexArray[0].nxyz[2] = 0.0f;
-	vertexArray[1].xyz[0] = 0.0f;	vertexArray[1].xyz[1] = -MAX_LENGTH / 2.0f;	vertexArray[1].xyz[2] = 0.0f; /*normal*/	vertexArray[1].nxyz[0] = 0.0f;	vertexArray[1].nxyz[1] = -1;	vertexArray[1].nxyz[2] = 0.0f;
+	vertexArray[1].xyz[0] = 0.0f;	vertexArray[1].xyz[1] = MAX_LENGTH / 2.0f;	vertexArray[1].xyz[2] = 0.0f; /*normal*/	vertexArray[1].nxyz[0] = 0.0f;	vertexArray[1].nxyz[1] = 1;	vertexArray[1].nxyz[2] = 0.0f;
+	vertexArray[2].xyz[0] = 0.0f;	vertexArray[2].xyz[1] = -MAX_LENGTH / 2.0f;	vertexArray[2].xyz[2] = 0.0f; /*normal*/	vertexArray[2].nxyz[0] = 0.0f;	vertexArray[2].nxyz[1] = -1;	vertexArray[2].nxyz[2] = 0.0f;
 
 	// X 2
-	vertexArray[2].xyz[0] = MAX_LENGTH / 2.0f;	vertexArray[2].xyz[1] = 0.0f;	vertexArray[2].xyz[2] = 0.0f; /*normal*/	vertexArray[2].nxyz[0] = 1;	vertexArray[2].nxyz[1] = 0.0f;	vertexArray[2].nxyz[2] = 0.0f;
-	vertexArray[3].xyz[0] = -MAX_LENGTH / 2.0f;	vertexArray[3].xyz[1] = 0.0f;	vertexArray[3].xyz[2] = 0.0f; /*normal*/	vertexArray[3].nxyz[0] = -1;	vertexArray[3].nxyz[1] = 0.0f;	vertexArray[3].nxyz[2] = 0.0f;
+	vertexArray[3].xyz[0] = MAX_LENGTH / 2.0f;	vertexArray[3].xyz[1] = 0.0f;	vertexArray[3].xyz[2] = 0.0f; /*normal*/	vertexArray[3].nxyz[0] = 1;	vertexArray[3].nxyz[1] = 0.0f;	vertexArray[3].nxyz[2] = 0.0f;
+	vertexArray[4].xyz[0] = -MAX_LENGTH / 2.0f;	vertexArray[4].xyz[1] = 0.0f;	vertexArray[4].xyz[2] = 0.0f; /*normal*/	vertexArray[4].nxyz[0] = -1;	vertexArray[4].nxyz[1] = 0.0f;	vertexArray[4].nxyz[2] = 0.0f;
 
 	// Z 4
-	vertexArray[4].xyz[0] = 0.0f;	vertexArray[4].xyz[1] = 0.0f;	vertexArray[4].xyz[2] = -MAX_LENGTH / 2.0f; /*normal*/	vertexArray[4].nxyz[0] = 0.0f;	vertexArray[4].nxyz[1] = 0.0f;	vertexArray[4].nxyz[2] = -1;
-	vertexArray[5].xyz[0] = 0.0f;	vertexArray[5].xyz[1] = 0.0f;	vertexArray[5].xyz[2] = MAX_LENGTH / 2.0f; /*normal*/	vertexArray[5].nxyz[0] = 0.0f;	vertexArray[5].nxyz[1] = 0.0f;	vertexArray[5].nxyz[2] = 1;
+	vertexArray[5].xyz[0] = 0.0f;	vertexArray[5].xyz[1] = 0.0f;	vertexArray[5].xyz[2] = -MAX_LENGTH / 2.0f; /*normal*/	vertexArray[5].nxyz[0] = 0.0f;	vertexArray[5].nxyz[1] = 0.0f;	vertexArray[5].nxyz[2] = -1;
+	vertexArray[6].xyz[0] = 0.0f;	vertexArray[6].xyz[1] = 0.0f;	vertexArray[6].xyz[2] = MAX_LENGTH / 2.0f; /*normal*/	vertexArray[6].nxyz[0] = 0.0f;	vertexArray[6].nxyz[1] = 0.0f;	vertexArray[6].nxyz[2] = 1;
 
 	// bind triangles
-	triangleArray[0].index[0] = 0;	triangleArray[0].index[1] = 3; triangleArray[0].index[2] = 5;
-	triangleArray[1].index[0] = 0;	triangleArray[1].index[1] = 5; triangleArray[1].index[2] = 2;
-	triangleArray[2].index[0] = 0;	triangleArray[2].index[1] = 2;	triangleArray[2].index[2] = 4;
-	triangleArray[3].index[0] = 0;	triangleArray[3].index[1] = 4;	triangleArray[3].index[2] = 3;
-	triangleArray[4].index[0] = 1;	triangleArray[4].index[1] = 5;	triangleArray[4].index[2] = 3;
-	triangleArray[5].index[0] = 1;	triangleArray[5].index[1] = 2;	triangleArray[5].index[2] = 5;
-	triangleArray[6].index[0] = 1;	triangleArray[6].index[1] = 4; triangleArray[6].index[2] = 2;
-	triangleArray[7].index[0] = 1; triangleArray[7].index[1] = 3; triangleArray[7].index[2] = 4;
+	triangleArray[1].index[0] = 1; triangleArray[1].index[1] = 4; triangleArray[1].index[2] = 6;
+	triangleArray[2].index[0] = 1; triangleArray[2].index[1] = 6; triangleArray[2].index[2] = 3;
+	triangleArray[3].index[0] = 1; triangleArray[3].index[1] = 3; triangleArray[3].index[2] = 5;
+	triangleArray[4].index[0] = 1; triangleArray[4].index[1] = 5; triangleArray[4].index[2] = 4;
+	triangleArray[5].index[0] = 2; triangleArray[5].index[1] = 6; triangleArray[5].index[2] = 4;
+	triangleArray[6].index[0] = 2; triangleArray[6].index[1] = 3; triangleArray[6].index[2] = 6;
+	triangleArray[7].index[0] = 2; triangleArray[7].index[1] = 5; triangleArray[7].index[2] = 3;
+	triangleArray[8].index[0] = 2; triangleArray[8].index[1] = 4; triangleArray[8].index[2] = 5;
 
 	// Bind halfEdges
 	//TOP///////////////////////
 	//first tri-----------------
-	e[0].vertex = 0; e[0].triangle = 0;
-	triEPtr[0] = 0;
+	e[1].vertex = 1; e[1].triangle = 1;
+	triEPtr[1] = 1;
 
-	e[0].nextEdge = 1; e[1].vertex = 3; e[1].triangle = 0;
-	e[1].nextEdge = 2; e[2].vertex = 5; e[2].triangle = 0;
-	e[2].nextEdge = 0;
+	e[1].nextEdge = 2; e[2].vertex = 4; e[2].triangle = 1;
+	e[2].nextEdge = 3; e[3].vertex = 6; e[3].triangle = 1;
+	e[3].nextEdge = 1;
 
-	vInfoArray[0].edgePtr = 2;
+	vInfoArray[1].edgePtr = 3;
 
 	//second tri--------------
-	e[3].vertex = 0; e[3].triangle = 1;
-	triEPtr[1] = 3;
+	e[4].vertex = 1; e[4].triangle = 2;
+	triEPtr[2] = 4;
 
-	e[3].nextEdge = 4; e[4].vertex = 5; e[4].triangle = 1;
-	e[4].nextEdge = 5; e[5].vertex = 2; e[5].triangle = 1;
-	e[5].nextEdge = 3;
+	e[4].nextEdge = 5; e[5].vertex = 6; e[5].triangle = 2;
+	e[5].nextEdge = 6; e[6].vertex = 3; e[6].triangle = 2;
+	e[6].nextEdge = 4;
 
-	vInfoArray[5].edgePtr = 3;
+	vInfoArray[6].edgePtr = 4;
 
 	//third tri----------------
-	e[6].vertex = 0; e[6].triangle = 2;
-	triEPtr[2] = 6;
+	e[7].vertex = 1; e[7].triangle = 3;
+	triEPtr[3] = 7;
 
-	e[6].nextEdge = 7; e[7].vertex = 2; e[7].triangle = 2;
-	e[7].nextEdge = 8; e[8].vertex = 4; e[8].triangle = 2;
-	e[8].nextEdge = 6;
+	e[7].nextEdge = 8; e[8].vertex = 3; e[8].triangle = 3;
+	e[8].nextEdge = 9; e[9].vertex = 4; e[9].triangle = 3;
+	e[9].nextEdge = 7;
 
-	vInfoArray[2].edgePtr = 6;
+	vInfoArray[3].edgePtr = 7;
 
 	//fourth tri-----------------
-	e[9].vertex = 0; e[9].triangle = 3;
-	triEPtr[3] = 9;
+	e[10].vertex = 1; e[10].triangle = 4;
+	triEPtr[4] = 10;
 
-	e[9].nextEdge = 10; e[10].vertex = 4; e[10].triangle = 3;
-	e[10].nextEdge = 11; e[11].vertex = 3; e[11].triangle = 3;
-	e[11].nextEdge = 9;
+	e[10].nextEdge = 11; e[11].vertex = 5; e[11].triangle = 4;
+	e[11].nextEdge = 12; e[12].vertex = 4; e[12].triangle = 4;
+	e[12].nextEdge = 10;
 
-	vInfoArray[4].edgePtr = 9;
+	vInfoArray[5].edgePtr = 10;
 
 	//BOTTOM///////////////////////////////////
 	//fifth tri---------------------------
-	e[12].vertex = 1; e[12].triangle = 4;
-	triEPtr[4] = 12;
+	e[13].vertex = 2; e[13].triangle = 5;
+	triEPtr[5] = 13;
 
-	e[12].nextEdge = 13; e[13].vertex = 5; e[13].triangle = 4;
-	e[13].nextEdge = 14; e[14].vertex = 3; e[14].triangle = 4;
-	e[14].nextEdge = 12;
+	e[13].nextEdge = 14; e[14].vertex = 6; e[14].triangle = 5;
+	e[14].nextEdge = 15; e[15].vertex = 4; e[15].triangle = 5;
+	e[15].nextEdge = 13;
 
-	vInfoArray[1].edgePtr = 14;
+	vInfoArray[2].edgePtr = 15;
 
 	//sixth tri-----------------------
-	e[15].vertex = 1; e[15].triangle = 5;
-	triEPtr[5] = 15;
+	e[16].vertex = 2; e[16].triangle = 6;
+	triEPtr[6] = 16;
 
-	e[15].nextEdge = 16; e[16].vertex = 2; e[16].triangle = 5;
-	e[16].nextEdge = 17; e[17].vertex = 5; e[17].triangle = 5;
-	e[17].nextEdge = 15;
+	e[16].nextEdge = 17; e[17].vertex = 3; e[17].triangle = 6;
+	e[17].nextEdge = 18; e[18].vertex = 6; e[18].triangle = 6;
+	e[18].nextEdge = 16;
 
 	//seventh tri---------------------
-	e[18].vertex = 1; e[18].triangle = 6;
-	triEPtr[6] = 18;
+	e[19].vertex = 2; e[19].triangle = 7;
+	triEPtr[7] = 19;
 
-	e[18].nextEdge = 19; e[19].vertex = 4; e[19].triangle = 6;
-	e[19].nextEdge = 20; e[20].vertex = 2; e[20].triangle = 6;
-	e[20].nextEdge = 18;
+	e[19].nextEdge = 20; e[20].vertex = 5; e[20].triangle = 7;
+	e[20].nextEdge = 21; e[21].vertex = 3; e[21].triangle = 7;
+	e[21].nextEdge = 19;
 
 	//seventh tri
-	e[21].vertex = 1; e[21].triangle = 7;
-	triEPtr[7] = 21;
+	e[22].vertex = 2; e[22].triangle = 8;
+	triEPtr[8] = 22;
 
-	e[21].nextEdge = 22; e[22].vertex = 3; e[22].triangle = 7;
-	e[22].nextEdge = 23; e[23].vertex = 4; e[23].triangle = 7;
-	e[23].nextEdge = 21;
+	e[22].nextEdge = 23; e[23].vertex = 4; e[23].triangle = 8;
+	e[23].nextEdge = 24; e[24].vertex = 5; e[24].triangle = 8;
+	e[24].nextEdge = 22;
 
-	vInfoArray[3].edgePtr = 21;
+	vInfoArray[4].edgePtr = 22;
 
 	//TOP SIBLINGS
-	e[triEPtr[0]].sibling = e[e[triEPtr[3]].nextEdge].nextEdge;
-	e[e[e[triEPtr[3]].nextEdge].nextEdge].sibling = triEPtr[0];
+	e[triEPtr[1]].sibling = e[e[triEPtr[4]].nextEdge].nextEdge;
+	e[e[e[triEPtr[4]].nextEdge].nextEdge].sibling = triEPtr[1];
+
+	e[triEPtr[4]].sibling = e[e[triEPtr[3]].nextEdge].nextEdge;
+	e[e[e[triEPtr[3]].nextEdge].nextEdge].sibling = triEPtr[4];
 
 	e[triEPtr[3]].sibling = e[e[triEPtr[2]].nextEdge].nextEdge;
 	e[e[e[triEPtr[2]].nextEdge].nextEdge].sibling = triEPtr[3];
@@ -433,26 +438,20 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	e[triEPtr[2]].sibling = e[e[triEPtr[1]].nextEdge].nextEdge;
 	e[e[e[triEPtr[1]].nextEdge].nextEdge].sibling = triEPtr[2];
 
-	e[triEPtr[1]].sibling = e[e[triEPtr[0]].nextEdge].nextEdge;
-	e[e[e[triEPtr[0]].nextEdge].nextEdge].sibling = triEPtr[1];
-
 	//BOTTOM SIBLINGS
-	e[triEPtr[4]].sibling = e[e[triEPtr[5]].nextEdge].nextEdge;
-	e[e[e[triEPtr[5]].nextEdge].nextEdge].sibling = triEPtr[4];
-
 	e[triEPtr[5]].sibling = e[e[triEPtr[6]].nextEdge].nextEdge;
 	e[e[e[triEPtr[6]].nextEdge].nextEdge].sibling = triEPtr[5];
 
 	e[triEPtr[6]].sibling = e[e[triEPtr[7]].nextEdge].nextEdge;
 	e[e[e[triEPtr[7]].nextEdge].nextEdge].sibling = triEPtr[6];
 
-	e[triEPtr[7]].sibling = e[e[triEPtr[4]].nextEdge].nextEdge;
-	e[e[e[triEPtr[4]].nextEdge].nextEdge].sibling = triEPtr[7];
+	e[triEPtr[7]].sibling = e[e[triEPtr[8]].nextEdge].nextEdge;
+	e[e[e[triEPtr[8]].nextEdge].nextEdge].sibling = triEPtr[7];
+
+	e[triEPtr[8]].sibling = e[e[triEPtr[5]].nextEdge].nextEdge;
+	e[e[e[triEPtr[5]].nextEdge].nextEdge].sibling = triEPtr[8];
 
 	//MIDDLE SIBLINGS
-	e[e[triEPtr[0]].nextEdge].sibling = e[triEPtr[4]].nextEdge;
-	e[e[triEPtr[4]].nextEdge].sibling = e[triEPtr[0]].nextEdge;
-
 	e[e[triEPtr[1]].nextEdge].sibling = e[triEPtr[5]].nextEdge;
 	e[e[triEPtr[5]].nextEdge].sibling = e[triEPtr[1]].nextEdge;
 
@@ -462,8 +461,11 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	e[e[triEPtr[3]].nextEdge].sibling = e[triEPtr[7]].nextEdge;
 	e[e[triEPtr[7]].nextEdge].sibling = e[triEPtr[3]].nextEdge;
 
+	e[e[triEPtr[4]].nextEdge].sibling = e[triEPtr[8]].nextEdge;
+	e[e[triEPtr[8]].nextEdge].sibling = e[triEPtr[4]].nextEdge;
+
 	while (stepRad < rad) {
-		for (int j = 0; j < vertexCap + 1; j++) {
+		for (int j = 1; j < vertexCap + 1; j++) {
 			//tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
 			if (vInfoArray[j].edgePtr > 0) {
 				linAlg::normVec(vertexArray[j].xyz);
@@ -484,7 +486,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	}
 	stepRad = rad;
 	for (int i = 0; i < 60; i++) {
-		for (int j = 0; j < vertexCap + 1; j++) {
+		for (int j = 1; j < vertexCap + 1; j++) {
 			//tempP1[0] = vertexArray[j].x; tempP1[1] = vertexArray[j].y; tempP1[2] = vertexArray[j].z;
 			if (vInfoArray[j].edgePtr > 0) {
 				linAlg::normVec(vertexArray[j].xyz);
