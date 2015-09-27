@@ -457,7 +457,8 @@ int Oculus::runOvr() {
 	Texture savedFeedbackTex("../Assets/Textures/sparad4by1.dds");
 	Texture loadModeInfoTex("../Assets/Textures/loadMode2by1.dds");
 
-	float boardPos[3] = { 0.0f, -0.22f, 0.0f };
+	float boardPos[3] = { 0.0f, -0.36f, 0.0f };
+	//float boardPos[3] = { 0.0f, -0.22f, 0.0f };
 	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
 
 
@@ -1014,14 +1015,14 @@ int Oculus::runOvr() {
 
 				//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
-				glReadBuffer(GL_COLOR_ATTACHMENT0);
+				//glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
+				//glReadBuffer(GL_COLOR_ATTACHMENT0);
 				
-				glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
+				//glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
 
-				std::cout << pixel << std::endl;
+				//std::cout << pixel << std::endl;
 				glReadBuffer(GL_NONE);
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+				//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 				//currentTool->findIntersection(modellingMesh, wand, Pixel);
 				currentTool->getIntersection(intersectionP, intersectionN);
 				//linAlg::normVec(intersectionN);

@@ -66,7 +66,8 @@ Passive3D::~Passive3D() {
 void Passive3D::wand3dCallback(WandData data) {
 
 	Position[0] = data.position[0];
-	Position[1] = data.position[1] - 0.23f;
+	//Position[1] = data.position[1] - 0.23f;
+	Position[1] = data.position[1] - 0.39f;
 	Position[2] = data.position[2];
 
 	Velocity[0] = data.velocity[0];

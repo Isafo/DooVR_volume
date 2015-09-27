@@ -778,6 +778,12 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 		
 		if (vInfoArray[vert3].edgePtr < 0)
 			continue;
+
+		//BUGTEST
+		//if (vInfoArray[vert3].edgePtr == 0)
+		//	std::cout << vInfoArray[vert3].edgePtr;
+		//else
+		//	std::cout << vInfoArray[vert3].edgePtr;
 			
 		tempEdge = e[e[vInfoArray[vert3].edgePtr].nextEdge].sibling;
 		vPoint1 = vertexArray[vert3].xyz;
@@ -1040,6 +1046,8 @@ void DynamicMesh::edgeSplit(float* vPoint, float* vec, int &edge) {
 	/////////////////////////////////////////////////////////
 	/*nextEdge*/tempE2 = tempE = -emptyE;
 	emptyE = e[tempE].nextEdge;
+	//if (emptyE == 0)//BUGTEST|||||||||||
+	//	emptyE = emptyE;
 
 	triEPtr[tempT1] = tempE;
 	vInfoArray[tempV].edgePtr = tempE;
