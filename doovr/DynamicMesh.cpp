@@ -321,15 +321,16 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	}
 	emptyE = -25;
 
+	// índex 0 is not used
 	vertexArray[0].xyz[0] = -1000.0f;	vertexArray[0].xyz[1] = -1000.0f;	vertexArray[0].xyz[2] = -1000.0f; /*normal*/	vertexArray[0].nxyz[0] = -1000.0f;	vertexArray[0].nxyz[1] = -1000;	vertexArray[0].nxyz[2] = -1000.0f;
 
 	// place vertecies
 	// Y 0
-	vertexArray[1].xyz[0] = 0.0f;	vertexArray[1].xyz[1] = MAX_LENGTH / 2.0f;	vertexArray[1].xyz[2] = 0.0f; /*normal*/	vertexArray[1].nxyz[0] = 0.0f;	vertexArray[1].nxyz[1] = 1;	vertexArray[1].nxyz[2] = 0.0f;
+	vertexArray[1].xyz[0] = 0.0f;	vertexArray[1].xyz[1] = MAX_LENGTH / 2.0f;	vertexArray[1].xyz[2] = 0.0f; /*normal*/	vertexArray[1].nxyz[0] = 0.0f;	vertexArray[1].nxyz[1] = 1;		vertexArray[1].nxyz[2] = 0.0f;
 	vertexArray[2].xyz[0] = 0.0f;	vertexArray[2].xyz[1] = -MAX_LENGTH / 2.0f;	vertexArray[2].xyz[2] = 0.0f; /*normal*/	vertexArray[2].nxyz[0] = 0.0f;	vertexArray[2].nxyz[1] = -1;	vertexArray[2].nxyz[2] = 0.0f;
 
 	// X 2
-	vertexArray[3].xyz[0] = MAX_LENGTH / 2.0f;	vertexArray[3].xyz[1] = 0.0f;	vertexArray[3].xyz[2] = 0.0f; /*normal*/	vertexArray[3].nxyz[0] = 1;	vertexArray[3].nxyz[1] = 0.0f;	vertexArray[3].nxyz[2] = 0.0f;
+	vertexArray[3].xyz[0] = MAX_LENGTH / 2.0f;	vertexArray[3].xyz[1] = 0.0f;	vertexArray[3].xyz[2] = 0.0f; /*normal*/	vertexArray[3].nxyz[0] = 1;		vertexArray[3].nxyz[1] = 0.0f;	vertexArray[3].nxyz[2] = 0.0f;
 	vertexArray[4].xyz[0] = -MAX_LENGTH / 2.0f;	vertexArray[4].xyz[1] = 0.0f;	vertexArray[4].xyz[2] = 0.0f; /*normal*/	vertexArray[4].nxyz[0] = -1;	vertexArray[4].nxyz[1] = 0.0f;	vertexArray[4].nxyz[2] = 0.0f;
 
 	// Z 4
@@ -337,14 +338,14 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	vertexArray[6].xyz[0] = 0.0f;	vertexArray[6].xyz[1] = 0.0f;	vertexArray[6].xyz[2] = MAX_LENGTH / 2.0f; /*normal*/	vertexArray[6].nxyz[0] = 0.0f;	vertexArray[6].nxyz[1] = 0.0f;	vertexArray[6].nxyz[2] = 1;
 
 	// bind triangles
-	triangleArray[1].index[0] = 1; triangleArray[1].index[1] = 4; triangleArray[1].index[2] = 6;
-	triangleArray[2].index[0] = 1; triangleArray[2].index[1] = 6; triangleArray[2].index[2] = 3;
-	triangleArray[3].index[0] = 1; triangleArray[3].index[1] = 3; triangleArray[3].index[2] = 5;
-	triangleArray[4].index[0] = 1; triangleArray[4].index[1] = 5; triangleArray[4].index[2] = 4;
-	triangleArray[5].index[0] = 2; triangleArray[5].index[1] = 6; triangleArray[5].index[2] = 4;
-	triangleArray[6].index[0] = 2; triangleArray[6].index[1] = 3; triangleArray[6].index[2] = 6;
-	triangleArray[7].index[0] = 2; triangleArray[7].index[1] = 5; triangleArray[7].index[2] = 3;
-	triangleArray[8].index[0] = 2; triangleArray[8].index[1] = 4; triangleArray[8].index[2] = 5;
+	triangleArray[1].index[0] = 1;		triangleArray[1].index[1] = 4;		triangleArray[1].index[2] = 6;
+	triangleArray[2].index[0] = 1;		triangleArray[2].index[1] = 6;		triangleArray[2].index[2] = 3;
+	triangleArray[3].index[0] = 1;		triangleArray[3].index[1] = 3;		triangleArray[3].index[2] = 5;
+	triangleArray[4].index[0] = 1;		triangleArray[4].index[1] = 5;		triangleArray[4].index[2] = 4;
+	triangleArray[5].index[0] = 2;		triangleArray[5].index[1] = 6;		triangleArray[5].index[2] = 4;
+	triangleArray[6].index[0] = 2;		triangleArray[6].index[1] = 3;		triangleArray[6].index[2] = 6;
+	triangleArray[7].index[0] = 2;		triangleArray[7].index[1] = 5;		triangleArray[7].index[2] = 3;
+	triangleArray[8].index[0] = 2;		triangleArray[8].index[1] = 4;		triangleArray[8].index[2] = 5;
 
 	// Bind halfEdges
 	//TOP///////////////////////
@@ -373,7 +374,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 	triEPtr[3] = 7;
 
 	e[7].nextEdge = 8; e[8].vertex = 3; e[8].triangle = 3;
-	e[8].nextEdge = 9; e[9].vertex = 4; e[9].triangle = 3;
+	e[8].nextEdge = 9; e[9].vertex = 5; e[9].triangle = 3;
 	e[9].nextEdge = 7;
 
 	vInfoArray[3].edgePtr = 7;
@@ -773,11 +774,10 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 	static float edgeLength, edgeLength2;
 
 	//sIt = sHead->next;
-	for (int i = 0; i < listSize; i++)
-	{
+	for (int i = 0; i < listSize; i++) {
 		vert3 = changeList[i];
 		vInfoArray[vert3].selected = 4.0f;
-		
+
 		if (vInfoArray[vert3].edgePtr < 0)
 			continue;
 
@@ -786,13 +786,12 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 		//	std::cout << vInfoArray[vert3].edgePtr;
 		//else
 		//	std::cout << vInfoArray[vert3].edgePtr;
-			
+
 		tempEdge = e[e[vInfoArray[vert3].edgePtr].nextEdge].sibling;
 		vPoint1 = vertexArray[vert3].xyz;
 
 		do {
-			if (vInfoArray[e[tempEdge].vertex].selected < 4.0f)
-			{
+			if (vInfoArray[e[tempEdge].vertex].selected < 4.0f) {
 				tempE = tempEdge;
 				tempEdge = e[e[tempEdge].nextEdge].sibling;
 
@@ -815,11 +814,10 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 					linAlg::calculateVec(vPoint3, vPoint4, tempNorm1);
 					edgeLength2 = linAlg::vecLength(tempNorm1);
 
-					if (edgeLength2 < MAX_LENGTH)
-					{
+					if (edgeLength2 < MAX_LENGTH) {
 						edgeFlip(tempE);
-						if (edgeLength2 < MIN_LENGTH)
-						{
+
+						if (edgeLength2 < MIN_LENGTH) {
 							edgeCollapse(false, tempE);
 						}
 					}
@@ -837,56 +835,57 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 					edgeCollapse(false, tempE);
 				}
 			}
-			else
+			else {
 				tempEdge = e[e[tempEdge].nextEdge].sibling;
-
+			}
 		} while (tempEdge != vInfoArray[vert3].edgePtr);
 
-		//now do it for vertexEPtr aswell---------------------------
-		tempE = tempEdge;
+		// check if tempE was removed
+		if (e[tempE].nextEdge > 0) {
+			//now do it for vertexEPtr aswell---------------------------
+			int temptemptemp = tempE;
+			tempE = tempEdge;
 
-		vert2 = e[tempE].vertex;
-		vPoint2 = vertexArray[vert2].xyz;
+			vert2 = e[tempE].vertex;
+			vPoint2 = vertexArray[vert2].xyz;
 
-		linAlg::calculateVec(vPoint2, vPoint1, tempVec1);
+			linAlg::calculateVec(vPoint2, vPoint1, tempVec1);
 
-		edgeLength = linAlg::vecLength(tempVec1);
+			edgeLength = linAlg::vecLength(tempVec1);
 
-		//check if edge is too long
-		if (edgeLength > MAX_LENGTH) {
-			//check if edge should be flipped
-			vert1 = e[e[e[tempE].nextEdge].nextEdge].vertex;
-			vert2 = e[e[e[e[tempE].sibling].nextEdge].nextEdge].vertex;
+			//check if edge is too long
+			if (edgeLength > MAX_LENGTH) {
+				//check if edge should be flipped
+				vert1 = e[e[e[tempE].nextEdge].nextEdge].vertex;
+				vert2 = e[e[e[e[tempE].sibling].nextEdge].nextEdge].vertex;
 
-			vPoint3 = vertexArray[vert1].xyz;
+				vPoint3 = vertexArray[vert1].xyz;
 
-			vPoint4 = vertexArray[vert2].xyz;
-			linAlg::calculateVec(vPoint3, vPoint4, tempNorm1);
-			edgeLength2 = linAlg::vecLength(tempNorm1);
+				vPoint4 = vertexArray[vert2].xyz;
+				linAlg::calculateVec(vPoint3, vPoint4, tempNorm1);
+				edgeLength2 = linAlg::vecLength(tempNorm1);
 
-			if (edgeLength2 < MAX_LENGTH)
-			{
-				edgeFlip(tempE);
-				if (edgeLength2 < MIN_LENGTH)
-				{
-					edgeCollapse(false, tempE);
+				if (edgeLength2 < MAX_LENGTH) {
+					edgeFlip(tempE);
+					if (edgeLength2 < MIN_LENGTH) {
+						edgeCollapse(false, tempE);
+					}
 				}
-			}
-			//---------------------
-			//should not be flipped, should be split
-			else
-			{
-				edgeSplit(vPoint1, tempVec1, tempE);
+				//---------------------
+				//should not be flipped, should be split
+				else {
+					edgeSplit(vPoint1, tempVec1, tempE);
+				}
+				//----------------------
 			}
 			//----------------------
+			// check if edge is too short
+			else if (edgeLength < MIN_LENGTH) {
+				edgeCollapse(false, tempE);
+			}
+			//>-----------------------
 		}
-		//----------------------
-		// check if edge is too short
-		else if (edgeLength < MIN_LENGTH) {
-			edgeCollapse(false, tempE);
-		}
-	//>-----------------------
-       
+		
 		tempEdge = vInfoArray[vert3].edgePtr;
 		// Update normal /////////////////////////////////////////////////////////////////////////////
 		do {
@@ -897,7 +896,7 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 			vPoint3 = vertexArray[vert2].xyz;
 
 			linAlg::calculateVec(vPoint2, vPoint1, tempVec1);
-			linAlg::calculateVec(vPoint3, vPoint1, tempVec2 );
+			linAlg::calculateVec(vPoint3, vPoint1, tempVec2);
 
 			linAlg::crossProd(tempNorm1, tempVec2, tempVec1);
 
@@ -919,11 +918,11 @@ void DynamicMesh::updateArea(int* changeList, int listSize) {
 
 		linAlg::normVec(tempNorm2);
 
-        vertexArray[vert3].nxyz[0] = tempNorm2[0];
+		vertexArray[vert3].nxyz[0] = tempNorm2[0];
 		vertexArray[vert3].nxyz[1] = tempNorm2[1];
 		vertexArray[vert3].nxyz[2] = tempNorm2[2];
-		
-		
+
+
 		//sIt = sIt->next;
 	}
 }
@@ -1223,11 +1222,11 @@ void DynamicMesh::edgeCollapse(bool recursive, int &edge) {
 	currVert = e[e[edge].sibling].vertex;
    	nVert = e[edge].vertex;
 	
-	//check for special cases
+	//check for special cases, test if two edges have more than 2 vertecies incommon
 	tempE = e[e[edge].nextEdge].sibling;
 	tempE2 = e[e[e[edge].sibling].nextEdge].sibling;
-	do{
-		do{
+	do {
+		do {
 			if (e[tempE2].vertex == e[tempE].vertex)
 				ctr++;
 
@@ -1238,8 +1237,7 @@ void DynamicMesh::edgeCollapse(bool recursive, int &edge) {
 		tempE = e[e[tempE].nextEdge].sibling;
 	} while (tempE != edge);
 
-	if (ctr != 2)
-	{
+	if (ctr != 2) {
 		//test-----------------
 		//float tempVec[3] = { vertexArray[nVert].x - vertexArray[currVert].x, vertexArray[nVert].y - vertexArray[currVert].y, vertexArray[nVert].z - vertexArray[currVert].z };
 		//linAlg::normVec(tempVec);
@@ -1251,8 +1249,7 @@ void DynamicMesh::edgeCollapse(bool recursive, int &edge) {
 		
 	// rebind edges that point to nVert
 	tempE = e[e[e[edge].nextEdge].nextEdge].sibling;
-	while (tempE != e[e[edge].sibling].nextEdge)
-	{
+	while (tempE != e[e[edge].sibling].nextEdge) {
 		e[tempE].vertex = currVert;
 
 		// rebind the triangles containing nVert as index
@@ -1291,7 +1288,7 @@ void DynamicMesh::edgeCollapse(bool recursive, int &edge) {
 	triangleArray[tempE2].index[1] = 0;
 	triangleArray[tempE2].index[2] = 0;
 	nrofTris = nrofTris - 2;
-	                                                                                                                
+	                                   
 	// reset the removed vertex
 	vertexArray[nVert].xyz[0] = 100.0f;
 	vertexArray[nVert].xyz[1] = 100.0f;
@@ -1314,6 +1311,7 @@ void DynamicMesh::edgeCollapse(bool recursive, int &edge) {
 	e[e[e[e[edge].sibling].nextEdge].nextEdge].nextEdge = emptyE;
 	e[e[e[edge].sibling].nextEdge].nextEdge = -e[e[e[edge].sibling].nextEdge].nextEdge;
 	e[e[edge].sibling].nextEdge = -e[e[edge].sibling].nextEdge;
+
 	e[e[e[edge].nextEdge].nextEdge].nextEdge = -e[edge].sibling;
 	e[e[edge].nextEdge].nextEdge = -e[e[edge].nextEdge].nextEdge;
 	e[edge].nextEdge = -e[edge].nextEdge;
