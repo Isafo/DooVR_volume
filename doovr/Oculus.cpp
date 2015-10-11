@@ -487,21 +487,17 @@ int Oculus::runOvr() {
 	int modellingState[NR_OF_MODELLING_STATES] = { 0 };
 	int aModellingStateIsActive = 0;
 
-	const int NR_OF_MODELLING_BUTTONS = 4;
+	const int NR_OF_MODELLING_BUTTONS = 5;
 	/*!	[0] resetMesh
 		[1] save
 		[2] load
 		[3] Wireframe
-		[4] increase wand size */
+		[4] export to obj*/
 	menuBox* modellingButton[NR_OF_MODELLING_BUTTONS];
-	MenuItem* modellingButtonString[NR_OF_MODELLING_BUTTONS - 1];
+	MenuItem* modellingButtonString[NR_OF_MODELLING_BUTTONS - 2];
 	MenuItem* modellingButtonFrame;
 
-	Texture* modellingButtonTex[NR_OF_MODELLING_BUTTONS];
-	modellingButtonTex[0] = &menuIcons;
-	modellingButtonTex[1] = &menuIcons;
-	modellingButtonTex[2] = &menuIcons;
-	modellingButtonTex[3] = &menuIcons;
+	Texture* modellingButtonTex = &menuIcons;
 
 	/*!	0 indicates that the state is not active,
 		1 indicates that the state has just been activated
@@ -520,7 +516,8 @@ int Oculus::runOvr() {
 	modellingButton[0] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + 0.06, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
 	modellingButton[1] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.04, 0.025f, 0.025f, 0.025f, 3, 0, 1, 1, 5, 5);
 	modellingButton[2] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.08, 0.025f, 0.025f, 0.025f, 4, 0, 1, 1, 5, 5);
-	modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.12, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1, 5, 5);
+	modellingButton[4] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.12, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
+	modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.16, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1, 5, 5);
 
 	// place modellingButton Frame
 	modellingButtonFrame = new MenuItem(0.0f, -0.01245f, 0.0f, 0.04f, 0.04f, 0, 3, 1, 1);
@@ -804,10 +801,9 @@ int Oculus::runOvr() {
 				if (aModellingStateIsActive == 0) {
 					activeButton = handleMenu(wandPos, modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
 					switch (activeButton) {
-						//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
+						//3.2.1 - new/reset mesh button>----------------------------------------------------------------------------------------------
 						case 0: {
 							if (modellingButtonState[activeButton] == 1) {
-								/*// reset mesh
 								if (th2Status == 0) {
 									th2Status = 1;
 									th2 = std::thread(loadMesh, modellingMesh, currentMesh);
@@ -816,14 +812,6 @@ int Oculus::runOvr() {
 								modellingButton[activeButton]->setState(true);
 
 								reset = true;
-								*/
-								// TEMP CODE FOR TESTING EXPORT TO OBJ FUNCTION WHILE NO BUTTON EXISTS IN THE GUI ========================================================================
-								if (th2Status == 0) {
-									th2Status = 1;
-									th2 = std::thread(exportFileToObj, modellingMesh);
-								}
-
-								modellingButton[activeButton]->setState(true); //========================================================================*/
 							}
 							else if (modellingButtonState[activeButton] == 3) {
 								modellingButton[activeButton]->setState(false);
@@ -902,20 +890,18 @@ int Oculus::runOvr() {
 							}
 							break;
 						}
-						//3.2.4 - wand size button >---------------------------------------------------------------------------------------------
+						//3.2.4 - export to obj file button >---------------------------------------------------------------------------------------------
 						case 4: {
-							// change wand size
 							if (modellingButtonState[activeButton] == 1) {
+								if (th2Status == 0) {
+									th2Status = 1;
+									th2 = std::thread(exportFileToObj, modellingMesh);
+								}
 								modellingButton[activeButton]->setState(true);
-
-								lastRadius = wandRadius;
-
-								wand->getPosition(lastPos);
 							}
-
-							if (modellingButtonState[activeButton] == 3)
+							else if (modellingButtonState[activeButton] == 3) {
 								modellingButton[activeButton]->setState(false);
-
+							}
 							break;
 						}
 					}
@@ -1167,7 +1153,7 @@ int Oculus::runOvr() {
 								}
 
 								MVstack.push();
-									glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
+									glBindTexture(GL_TEXTURE_2D, modellingButtonTex->getTextureID());
 
 									MVstack.translate(modellingButton[i]->getPosition());
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
@@ -1189,7 +1175,7 @@ int Oculus::runOvr() {
 								MVstack.pop();
 							}
 
-							for (int i = 0; i < NR_OF_MODELLING_BUTTONS - 1; i++) {
+							for (int i = 0; i < NR_OF_MODELLING_BUTTONS - 2; i++) {
 								MVstack.push();
 									MVstack.translate(modellingButton[i]->getPosition());
 									MVstack.translate(modellingButtonString[i]->getPosition());
@@ -1930,7 +1916,7 @@ int Oculus::runOvr() {
 								}
 
 								MVstack.push();
-									glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
+									glBindTexture(GL_TEXTURE_2D, modellingButtonTex->getTextureID());
 
 									MVstack.translate(modellingButton[i]->getPosition());
 									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
