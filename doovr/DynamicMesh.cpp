@@ -791,20 +791,16 @@ void DynamicMesh::exportToObj() {
 		// TODO: clean up the arrays empty slots before exporting
 
 		// write all vertecies
-		for (int i = 1; i < vertexCap; i++) {
+		for (int i = 1; i <= vertexCap; i++) {
 			file << "v " << vertexArray[i].xyz[0] << " " << vertexArray[i].xyz[1] << " " << vertexArray[i].xyz[2] << "\n";
 			file << "vn " << vertexArray[i].nxyz[0] << " " << vertexArray[i].nxyz[1] << " " << vertexArray[i].nxyz[2] << "\n";
 		}
 		
 		// write triangle indecies
-		for (int i = 1; i < triangleCap; i++) {
+		for (int i = 1; i <= triangleCap; i++) {
 			//  only write the valid vertex indecies
-			if (triangleArray[i].index[0] != 0) {
-				if (triangleArray[i].index[0] < vertexCap && triangleArray[i].index[1] < vertexCap && triangleArray[i].index[2] < vertexCap)
-					file << "f " << triangleArray[i].index[0] << " " << triangleArray[i].index[1] << " " << triangleArray[i].index[2] << "\n";
-				else
-					std::cout << "wrong" << std::endl;
-			}
+			if (triangleArray[i].index[0] != 0) 
+				file << "f " << triangleArray[i].index[0] << " " << triangleArray[i].index[1] << " " << triangleArray[i].index[2] << "\n";
 		}
 
 		file.close();
