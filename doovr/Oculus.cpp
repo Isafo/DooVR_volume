@@ -807,7 +807,7 @@ int Oculus::runOvr() {
 						//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
 						case 0: {
 							if (modellingButtonState[activeButton] == 1) {
-								// reset mesh
+								/*// reset mesh
 								if (th2Status == 0) {
 									th2Status = 1;
 									th2 = std::thread(loadMesh, modellingMesh, currentMesh);
@@ -816,9 +816,9 @@ int Oculus::runOvr() {
 								modellingButton[activeButton]->setState(true);
 
 								reset = true;
-								
+								*/
 								// TEMP CODE FOR TESTING EXPORT TO OBJ FUNCTION WHILE NO BUTTON EXISTS IN THE GUI ========================================================================
-								/*if (th2Status == 0) {
+								if (th2Status == 0) {
 									th2Status = 1;
 									th2 = std::thread(exportFileToObj, modellingMesh);
 								}

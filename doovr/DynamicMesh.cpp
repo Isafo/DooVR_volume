@@ -798,7 +798,13 @@ void DynamicMesh::exportToObj() {
 		
 		// write triangle indecies
 		for (int i = 1; i < triangleCap; i++) {
-			file << "f " << triangleArray[i].index[0] << " " << triangleArray[i].index[1] << " " << triangleArray[i].index[2] << "\n";
+			//  only write the valid vertex indecies
+			if (triangleArray[i].index[0] != 0) {
+				if (triangleArray[i].index[0] < vertexCap && triangleArray[i].index[1] < vertexCap && triangleArray[i].index[2] < vertexCap)
+					file << "f " << triangleArray[i].index[0] << " " << triangleArray[i].index[1] << " " << triangleArray[i].index[2] << "\n";
+				else
+					std::cout << "wrong" << std::endl;
+			}
 		}
 
 		file.close();
