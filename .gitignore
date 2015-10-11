@@ -264,6 +264,7 @@ OculusSDK/
 Src/
 Assets/
 savedFiles/
+exportedFiles/
 
 # RC files
 *.rc

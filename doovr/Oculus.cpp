@@ -55,6 +55,8 @@ void loadStaticMesh(StaticMesh* item, std::string fileName);
 void loadMesh(DynamicMesh* item, std::string fileName);
 //! saves the main mesh to a file
 void saveFile(DynamicMesh* item);
+//! exports the current mesh to an obj file
+void exportFileToObj(DynamicMesh* item);
 // --------------------------------------
 // --- Variable Declerations ------------
 const bool L_MULTISAMPLING = false;
@@ -814,7 +816,14 @@ int Oculus::runOvr() {
 								modellingButton[activeButton]->setState(true);
 
 								reset = true;
+								
+								// TEMP CODE FOR TESTING EXPORT TO OBJ FUNCTION WHILE NO BUTTON EXISTS IN THE GUI ========================================================================
+								/*if (th2Status == 0) {
+									th2Status = 1;
+									th2 = std::thread(exportFileToObj, modellingMesh);
+								}
 
+								modellingButton[activeButton]->setState(true); //========================================================================*/
 							}
 							else if (modellingButtonState[activeButton] == 3) {
 								modellingButton[activeButton]->setState(false);
@@ -2145,6 +2154,13 @@ void loadMesh(DynamicMesh* item, std::string fileName) {
 void saveFile(DynamicMesh* item) {
 	meshLock.lock();
 		item->save();
+	meshLock.unlock();
+	th2Status = 2;
+}
+
+void exportFileToObj(DynamicMesh* item) {
+	meshLock.lock();
+	item->exportToObj();
 	meshLock.unlock();
 	th2Status = 2;
 }

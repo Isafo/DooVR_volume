@@ -75,8 +75,8 @@ class DynamicMesh : public Mesh{
 	void sphereSubdivide(float rad);
 
 	void save();
-
 	void load(std::string _fileName);
+	void exportToObj();
 
 	void updateHVerts();
 

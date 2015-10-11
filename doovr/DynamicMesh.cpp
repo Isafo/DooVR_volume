@@ -763,6 +763,54 @@ void DynamicMesh::save() {
 	}
 }
 
+void DynamicMesh::exportToObj() {
+
+	std::cout << "exporting mesh to .obj..." << std::endl;
+
+	// get date and time
+	time_t now = time(0);
+	struct tm tstruct;
+	char buf[80];
+	tstruct = *localtime(&now);
+
+	int bitCount = 0;
+
+	strftime(buf, sizeof(buf), "%Y-%m-%d_%X", &tstruct);
+
+	// replace : with - to be able to save file
+	buf[13] = '-';
+	buf[16] = '-';
+
+	std::string fileName(buf);
+
+	std::ofstream file;
+	file.open("../exportedFiles/" + fileName + ".obj");
+
+	if (file.is_open()) {
+
+		// TODO: clean up the arrays empty slots before exporting
+
+		// write all vertecies
+		for (int i = 1; i < vertexCap; i++) {
+			file << "v " << vertexArray[i].xyz[0] << " " << vertexArray[i].xyz[1] << " " << vertexArray[i].xyz[2] << "\n";
+			file << "vn " << vertexArray[i].nxyz[0] << " " << vertexArray[i].nxyz[1] << " " << vertexArray[i].nxyz[2] << "\n";
+		}
+		
+		// write triangle indecies
+		for (int i = 1; i < triangleCap; i++) {
+			file << "f " << triangleArray[i].index[0] << " " << triangleArray[i].index[1] << " " << triangleArray[i].index[2] << "\n";
+		}
+
+		file.close();
+
+		std::cout << "export complete" << std::endl;
+	}
+	else {
+		std::cout << "could not open file for export" << std::endl;
+	}
+}
+
+
 void DynamicMesh::updateArea(int* changeList, int listSize) {
 
 	static float* vPoint1; static float* vPoint2; static float* vPoint3; static float* vPoint4;
