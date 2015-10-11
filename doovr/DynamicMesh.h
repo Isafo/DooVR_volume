@@ -18,7 +18,7 @@ struct dBufferData {
 	GLfloat selected;
 };
 
-//! Data structure halfEdge pointing to the next edge in the triangle counter clockwise.
+//! HalfEdge data structure. HalfEdge points to the next edge in the triangle counter clockwise.
 struct halfEdge {
 	int nextEdge;
 	int sibling;
@@ -76,6 +76,8 @@ class DynamicMesh : public Mesh{
 
 	void save();
 	void load(std::string _fileName);
+	//! Exports the mesh to an obj file
+	/*! The exported obj file contains vertexposition, vertexnormal and triangle indecies. No texture coordinates.*/
 	void exportToObj();
 
 	void updateHVerts();
@@ -85,12 +87,18 @@ class DynamicMesh : public Mesh{
   private:
 
 	const int MAX_NR_OF_VERTICES = 1000000;
+	//! negative index of the latest removed vertex
+	/*! vInfoArray's edgepointer contains the negative index of an empty slot in the vertexArray*/
 	int emptyV;
 
 	const int MAX_NR_OF_TRIANGLES = 2 * MAX_NR_OF_VERTICES;
+	//! negative index of the latest removed triangle
+	/*! triEPtr contains the negative index of an empty slot in the triangleArray*/
 	int emptyT;
 
 	const int MAX_NR_OF_EDGES = 3 * MAX_NR_OF_VERTICES;
+	//! negative index of the latest removed edge
+	/*! nextEdge contains the negative index of an empty slot in the halfEdge array e*/
 	int emptyE;
 
 	//largest index in the vertexArray where values exist 
@@ -98,19 +106,23 @@ class DynamicMesh : public Mesh{
 	//largest index in the indexArray where values exist 
 	int triangleCap;
 
-	// tells the range that needs to be cleaned in the buffer after loading a smaller mesh
+	//! tells the range that needs to be cleaned in the buffer after loading a smaller mesh
 	int vertexRange = 0;
+	//! tells the range that needs to be cleaned in the buffer after loading a smaller mesh
 	int triangleRange = 0;
 
-	//Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle 
+	//! Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle
+	/*! An empty slot in vInfoArray and vertexArray saves the negative index of the next empty slot in the array in the edgePtr variable.*/
 	vInfo* vInfoArray;
-	//Array that exists parallell to the indexArray and contains indices to an edge that is part of the corresponding triangle 
+	//! Array that exists parallell to the indexArray and contains indices to an edge that is part of the corresponding triangle
+	/*! An empty slot in triEPtr and triangleArray saves the negative index of the next empty slot in the array in triEPtr*/
 	int* triEPtr;
 
-	//Array that stores all halfEdges of the mesh
+	//! Array that stores all halfEdges of the mesh
+	/*! An empty slot in the array saves the negative index of the next empty slot in the array in the nextEdge variable*/
 	halfEdge* e;
 	int nrofEdges;
-	//largest index in the edgeArray where values exist 
+	//! largest index in the edgeArray where values exist 
 	int edgeCap;
 	
 	sVert HVerts[1000000];
@@ -134,9 +146,7 @@ class DynamicMesh : public Mesh{
 	void edgeSplit(float* vPoint, float* vec, int &edge);
 
 	void edgeFlip(int &edge);
-	//! removes the vertexpoint nVert and moves currVert halfway towards nVert.
-	/*! vPoint is the position of currVert, vec is the vector between the vertecies that are to close to each other,
-	and edge is a pointer to the edge that is to short*/
+	//! removes the edge by deleting the vertex the edge points to and moves currVert halfway towards nVert.
 	void edgeCollapse(bool recursive, int &edge);
 
 	//! subdivides the surface into a sphere
@@ -147,6 +157,4 @@ class DynamicMesh : public Mesh{
 
 	//! updates the changed vertecies normal 
 	void updateNormals(int* changeList, int listSize);
-
-	
 };
