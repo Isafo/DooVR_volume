@@ -14,9 +14,6 @@
 #include "GLFW/glfw3.h"
 #include <GLFW/glfw3native.h>
 
-#include <OVR/OVR.h>
-#include <Src/OVR_CAPI.h>
-#include <Src/OVR_CAPI_GL.h>
 #include <iomanip>      // std::setprecision
 
 namespace Utilities {

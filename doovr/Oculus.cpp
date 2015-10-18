@@ -40,7 +40,173 @@
 #include "glm\glm\glm.hpp"
 #include "glm\glm\gtc\matrix_transform.hpp"
 
-#include "Utilities.h"
+//#include <OVR/OVR_CAPI.h>
+#include <OVR/OVR.h>
+#include <OVR/OVR_CAPI_GL.h>
+//#include <OVR/Win32_GLAppUtil.h> //needed for OVR GL structs.
+
+
+struct DepthBuffer
+{
+	GLuint        texId;
+
+	DepthBuffer(OVR::Sizei size, int sampleCount)
+	{
+		OVR_ASSERT(sampleCount <= 1); // The code doesn't currently handle MSAA textures.
+
+		glGenTextures(1, &texId);
+		glBindTexture(GL_TEXTURE_2D, texId);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		GLenum internalFormat = GL_DEPTH_COMPONENT24;
+		GLenum type = GL_UNSIGNED_INT;
+		//if (GLE_ARB_depth_buffer_float)
+		//{
+		internalFormat = GL_DEPTH_COMPONENT32F;
+		type = GL_FLOAT;
+		//}
+
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, size.w, size.h, 0, GL_DEPTH_COMPONENT, type, NULL);
+	}
+	~DepthBuffer()
+	{
+		if (texId)
+		{
+			glDeleteTextures(1, &texId);
+			texId = 0;
+		}
+	}
+};
+
+struct TextureBuffer
+{
+	ovrHmd              hmd;
+	ovrSwapTextureSet*  TextureSet;
+	GLuint              texId;
+	GLuint              fboId;
+	OVR::Sizei               texSize;
+
+	TextureBuffer(ovrHmd hmd, bool rendertarget, bool displayableOnHmd, OVR::Sizei size, int mipLevels, unsigned char * data, int sampleCount) :
+		hmd(hmd),
+		TextureSet(nullptr),
+		texId(0),
+		fboId(0),
+		texSize(0, 0)
+	{
+		OVR_ASSERT(sampleCount <= 1); // The code doesn't currently handle MSAA textures.
+
+		texSize = size;
+
+		if (displayableOnHmd)
+		{
+			// This texture isn't necessarily going to be a rendertarget, but it usually is.
+			OVR_ASSERT(hmd); // No HMD? A little odd.
+			OVR_ASSERT(sampleCount == 1); // ovr_CreateSwapTextureSetD3D11 doesn't support MSAA.
+
+			ovrResult result = ovr_CreateSwapTextureSetGL(hmd, GL_SRGB8_ALPHA8, size.w, size.h, &TextureSet);
+
+			if (OVR_SUCCESS(result))
+			{
+				for (int i = 0; i < TextureSet->TextureCount; ++i)
+				{
+					ovrGLTexture* tex = (ovrGLTexture*)&TextureSet->Textures[i];
+					glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);
+
+					if (rendertarget)
+					{
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					}
+					else
+					{
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					}
+				}
+			}
+		}
+		else
+		{
+			glGenTextures(1, &texId);
+			glBindTexture(GL_TEXTURE_2D, texId);
+
+			if (rendertarget)
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			}
+			else
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			}
+
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, texSize.w, texSize.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		}
+
+		if (mipLevels > 1)
+		{
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+
+		glGenFramebuffers(1, &fboId);
+	}
+
+	~TextureBuffer()
+	{
+		if (TextureSet)
+		{
+			ovr_DestroySwapTextureSet(hmd, TextureSet);
+			TextureSet = nullptr;
+		}
+		if (texId)
+		{
+			glDeleteTextures(1, &texId);
+			texId = 0;
+		}
+		if (fboId)
+		{
+			glDeleteFramebuffers(1, &fboId);
+			fboId = 0;
+		}
+	}
+
+	OVR::Sizei GetSize() const
+	{
+		return texSize;
+	}
+
+	void SetAndClearRenderSurface(DepthBuffer* dbuffer)
+	{
+		auto tex = reinterpret_cast<ovrGLTexture*>(&TextureSet->Textures[TextureSet->CurrentIndex]);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->OGL.TexId, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dbuffer->texId, 0);
+
+		glViewport(0, 0, texSize.w, texSize.h);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_FRAMEBUFFER_SRGB);
+	}
+
+	void UnsetRenderSurface()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+	}
+};
 
 // ------- Function declerations --------
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
@@ -60,59 +226,56 @@ void saveFile(DynamicMesh* item);
 // --------------------------------------
 // --- Variable Declerations ------------
 const bool L_MULTISAMPLING = false;
-const int G_DISTORTIONCAPS = 0
-| ovrDistortionCap_Vignette
-| ovrDistortionCap_Chromatic
-| ovrDistortionCap_Overdrive
-| ovrDistortionCap_TimeWarp // Turning this on gives ghosting???
-;
 
-ovrHmd hmd;
-ovrGLConfig g_Cfg;
-ovrEyeRenderDesc g_EyeRenderDesc[2];
+
+
+static const unsigned int required_tracking_caps = 0;
 
 std::mutex loaderMeshLock, meshLock;
 
 /*! tells the state of the thread
-	0 = not running
-	1 = running
-	2 = not joined after running */
+0 = not running
+1 = running
+2 = not joined after running */
 std::atomic <int> th1Status(0);
 std::atomic <int> th2Status(0);
 
 
 int Oculus::runOvr() {
 
+
+
 	//=========================================================================================================================================
 	// 1 - Initialize OVR, GLFW and openGL variables
 	//=========================================================================================================================================
+	ovr_Initialize(nullptr);
 
 	// 1.1 - oculus variables \________________________________________________________________________________________________________________
-	ovrVector3f g_EyeOffsets[2];
-	ovrPosef g_EyePoses[2];
-	ovrTexture g_EyeTextures[2];
-	OVR::Matrix4f g_ProjectionMatrix[2];
-	OVR::Sizei g_RenderTargetSize;
-	//ovrVector3f g_CameraPosition;
+	TextureBuffer * eyeRenderTexture[2] = { nullptr, nullptr };
+	DepthBuffer   * eyeDepthBuffer[2] = { nullptr, nullptr };
+	ovrGLTexture  * mirrorTexture = nullptr;
+	GLuint          mirrorFBO = 0;
 
-	int WIN_SCALE[2];
+	OVR::Matrix4f oProjectionMatrix[2];
+	ovrVector3f ViewOffset[2];
+	ovrPosef EyeRenderPose[2];
 
-	ovr_Initialize();
-	int det;
-	// Check for attached head mounted display...
-	hmd = ovrHmd_Create(0);
-	if (!hmd) {
-		printf("No Oculus Rift device attached, using virtual version...\n");
-		hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
+	ovrFrameTiming ftiming;
+	ovrTrackingState hmdState;
 
-		det = ovrHmd_Detect();
-		std::cout << det << std::endl;
-	}
 
-	// Check to see if we are running in "Direct" or "Extended Desktop" mode...
-	bool l_DirectMode = ((hmd->HmdCaps & ovrHmdCap_ExtendDesktop) == 0);
+	ovrHmd HMD;
+	ovrGraphicsLuid luid;
+	ovrResult result = ovr_Create(&HMD, &luid);
+	if (!OVR_SUCCESS(result))
+		std::cout << "Oculus fail";
 
-	// INITIALIZE GL ////////////////////////////////////////////////////
+	ovrHmdDesc hmdDesc = ovr_GetHmdDesc(HMD);
+
+	// Setup Window and Graphics
+	// Note: the mirror window can be any size, for this sample we use 1/2 the HMD resolution
+	ovrSizei windowSize = { hmdDesc.Resolution.w / 2, hmdDesc.Resolution.h / 2 };
+	// INITIALIZE GL \__________________________________________________________________________________________________________________________
 	if (!glfwInit()) {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
 		return 1;
@@ -125,65 +288,14 @@ int Oculus::runOvr() {
 	// SETUP GLFW WINDOW AND CONTEXT /////////////////////////////////////////////////////////////
 	// Create a window...
 	GLFWwindow* l_Window;
-	GLFWmonitor* l_Monitor;
-	ovrSizei l_ClientSize;
-
-	if (l_DirectMode) {
-		printf("Running in \"Direct\" mode...\n");
-		l_Monitor = NULL;
-
-		l_ClientSize.w = hmd->Resolution.w; // Something reasonable, smaller, but maintain aspect ratio...
-		l_ClientSize.h = hmd->Resolution.h; // Something reasonable, smaller, but maintain aspect ratio...
-	}
-	else {// Extended Desktop mode...
-		printf("Running in \"Extended Desktop\" mode...\n");
-		int l_Count;
-		GLFWmonitor** l_Monitors = glfwGetMonitors(&l_Count);
-		switch (l_Count) {
-		case 0: {
-			printf("No monitors found, exiting...\n");
-			exit(EXIT_FAILURE);
-			break;
-		} case 1: {
-			printf("Two monitors expected, found only one, using primary...\n");
-			l_Monitor = glfwGetPrimaryMonitor();
-			break;
-		} case 2: {
-			printf("Two monitors found, using second monitor...\n");
-			l_Monitor = l_Monitors[1];
-			break;
-		} default: {
-			printf("More than two monitors found, using second monitor...\n");
-			l_Monitor = l_Monitors[1];
-		}
-		}
-
-		l_ClientSize.w = hmd->Resolution.w; // 1920 for DK2...
-		l_ClientSize.h = hmd->Resolution.h; // 1080 for DK2...
-
-		WIN_SCALE[0] = hmd->Resolution.w;
-		WIN_SCALE[1] = hmd->Resolution.h;
-	}
-
-	l_Window = glfwCreateWindow(l_ClientSize.w, l_ClientSize.h, "GLFW Oculus Rift Test", l_Monitor, NULL);
+	GLFWmonitor* l_Monitor = NULL;
+	l_Window = glfwCreateWindow(windowSize.w, windowSize.h, "GLFW Oculus Rift Test", l_Monitor, NULL);
 
 	// Check if window creation was succesfull...
 	if (!l_Window) {
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
-
-	// Attach the window in "Direct Mode"...
-#if defined(_WIN32)
-	if (l_DirectMode) {
-		ovrBool l_AttachResult = ovrHmd_AttachToWindow(hmd, glfwGetWin32Window(l_Window), NULL, NULL);
-		if (!l_AttachResult) {
-			printf("Could not attach to window...");
-			exit(EXIT_FAILURE);
-		}
-	}
-#endif
-
 	// Make the context current for this window...
 	glfwMakeContextCurrent(l_Window);
 
@@ -206,59 +318,58 @@ int Oculus::runOvr() {
 	printf("Vendor: %s\n", (char*)glGetString(GL_VENDOR));
 	printf("Renderer: %s\n", (char*)glGetString(GL_RENDERER));
 
-	//CREATE OCULUS TEXTURES AND BIND THESE TO GL///////////////////////////////////////////////////////////////////////////////
-	ovrSizei l_EyeTextureSizes[2];
+	// Set up HMD tracking \______________________________________________________________________________________________________________________
 
-	l_EyeTextureSizes[ovrEye_Left] = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->MaxEyeFov[ovrEye_Left], 1.0f);
-	l_EyeTextureSizes[ovrEye_Right] = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->MaxEyeFov[ovrEye_Right], 1.0f);
-
-	// Combine for one texture for both eyes...
-	g_RenderTargetSize.w = l_EyeTextureSizes[ovrEye_Left].w + l_EyeTextureSizes[ovrEye_Right].w;
-	g_RenderTargetSize.h = (l_EyeTextureSizes[ovrEye_Left].h>l_EyeTextureSizes[ovrEye_Right].h ? l_EyeTextureSizes[ovrEye_Left].h : l_EyeTextureSizes[ovrEye_Right].h);
-
-	// Create the FBO being a single one for both eyes (this is open for debate)...
-	GLuint l_FBOId;
-	glGenFramebuffers(1, &l_FBOId);
-	glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
-
-	// The texture we're going to render to...
-	GLuint l_TextureId;
-	glGenTextures(1, &l_TextureId);
-	// "Bind" the newly created texture : all future texture functions will modify this texture...
-	glBindTexture(GL_TEXTURE_2D, l_TextureId);
-	// Give an empty image to OpenGL (the last "0")
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_RenderTargetSize.w, g_RenderTargetSize.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	// Linear filtering...
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	// Create Depth Buffer...
-	GLuint l_DepthBufferId;
-	glGenRenderbuffers(1, &l_DepthBufferId);
-	glBindRenderbuffer(GL_RENDERBUFFER, l_DepthBufferId);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, g_RenderTargetSize.w, g_RenderTargetSize.h);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_DepthBufferId);
-
-	// Set the texture as our colour attachment #0...
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, l_TextureId, 0);
-
-	// Set the list of draw buffers...
-	GLenum l_GLDrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, l_GLDrawBuffers); // "1" is the size of DrawBuffers
-
-	// Check if everything is OK...
-	GLenum l_Check = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
-	if (l_Check != GL_FRAMEBUFFER_COMPLETE) {
-		printf("There is a problem with the FBO.\n");
-		exit(EXIT_FAILURE);
+	// Start the sensor which informs of the Rift's pose and motion
+	result = ovr_ConfigureTracking(HMD, ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
+	if (!OVR_SUCCESS(result))
+	{
+		//if (retryCreate) goto Done;
+		//VALIDATE(OVR_SUCCESS(result), "Failed to configure tracking.");
+		std::cout << "error";
 	}
 
-	// Unbind...
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// Make eye render buffers
+	for (int eye = 0; eye < 2; ++eye)
+	{
+		ovrSizei idealTextureSize = ovr_GetFovTextureSize(HMD, ovrEyeType(eye), hmdDesc.DefaultEyeFov[eye], 1);
+		eyeRenderTexture[eye] = new TextureBuffer(HMD, true, true, idealTextureSize, 1, NULL, 1);
+		eyeDepthBuffer[eye] = new DepthBuffer(eyeRenderTexture[eye]->GetSize(), 0);
 
-	//WandView
+		if (!eyeRenderTexture[eye]->TextureSet)
+		{
+			//if (retryCreate) goto Done;
+			//VALIDATE(false, "Failed to create texture.");
+			std::cout << "error";
+		}
+	}
+
+	// Create mirror texture and an FBO used to copy mirror texture to back buffer
+	result = ovr_CreateMirrorTextureGL(HMD, GL_SRGB8_ALPHA8, windowSize.w, windowSize.h, reinterpret_cast<ovrTexture**>(&mirrorTexture));
+	if (!OVR_SUCCESS(result))
+	{
+		//if (retryCreate) goto Done;
+		//VALIDATE(false, "Failed to create mirror texture.");
+		std::cout << "errror";
+	}
+
+	// Configure the mirror read buffer
+	glGenFramebuffers(1, &mirrorFBO);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, mirrorFBO);
+	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mirrorTexture->OGL.TexId, 0);
+	glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+	ovrEyeRenderDesc EyeRenderDesc[2];
+	EyeRenderDesc[0] = ovr_GetRenderDesc(HMD, ovrEye_Left, hmdDesc.DefaultEyeFov[0]);
+	EyeRenderDesc[1] = ovr_GetRenderDesc(HMD, ovrEye_Right, hmdDesc.DefaultEyeFov[1]);
+
+	// Turn off vsync to let the compositor do its magic
+	//wglSwapIntervalEXT(0);
+
+
+
+	//WandView \____________________________________________________________________________
 
 	// create and set up the FBO
 	GLuint wandViewFBO;
@@ -283,13 +394,13 @@ int Oculus::runOvr() {
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-*/
+	*/
 	//Assign the shadow map to texture channel 0 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
 
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, wandShadowMap, 0);
-	
+
 	GLuint pickingTexture;
 	glGenTextures(1, &pickingTexture);
 	glBindTexture(GL_TEXTURE_2D, pickingTexture);
@@ -297,7 +408,7 @@ int Oculus::runOvr() {
 		0, GL_RGB, GL_FLOAT, NULL);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
 		pickingTexture, 0);
-	
+
 	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
 	//glDrawBuffer(GL_NONE);
 	//glReadBuffer(GL_NONE);
@@ -311,54 +422,6 @@ int Oculus::runOvr() {
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// SETUP TEXTURES FOR EACH EYE /////////////////////////////////////////////////////////////////////
-	// Left eye...
-	g_EyeTextures[ovrEye_Left].Header.API = ovrRenderAPI_OpenGL;
-	g_EyeTextures[ovrEye_Left].Header.TextureSize = g_RenderTargetSize;
-	g_EyeTextures[ovrEye_Left].Header.RenderViewport.Pos.x = 0;
-	g_EyeTextures[ovrEye_Left].Header.RenderViewport.Pos.y = 0;
-	g_EyeTextures[ovrEye_Left].Header.RenderViewport.Size = l_EyeTextureSizes[ovrEye_Left];
-	((ovrGLTexture&)(g_EyeTextures[ovrEye_Left])).OGL.TexId = l_TextureId;
-
-	// Right eye (mostly the same as left but with the viewport on the right side of the texture)
-	g_EyeTextures[ovrEye_Right] = g_EyeTextures[ovrEye_Left];
-	g_EyeTextures[ovrEye_Right].Header.RenderViewport.Pos.x = (g_RenderTargetSize.w + 1) / 2;
-	g_EyeTextures[ovrEye_Right].Header.RenderViewport.Pos.y = 0;
-
-	// OCULUS RIFT EYE CONFIGURATIONS
-	g_Cfg.OGL.Header.API = ovrRenderAPI_OpenGL;
-	g_Cfg.OGL.Header.BackBufferSize.w = l_ClientSize.w;
-	g_Cfg.OGL.Header.BackBufferSize.h = l_ClientSize.h;
-	g_Cfg.OGL.Header.Multisample = (L_MULTISAMPLING ? 1 : 0);
-
-	g_Cfg.OGL.Window = glfwGetWin32Window(l_Window);
-	g_Cfg.OGL.DC = GetDC(g_Cfg.OGL.Window);
-
-	// Enable capabilities...
-	// ovrHmd_SetEnabledCaps(hmd, ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction);
-
-	ovrBool l_ConfigureResult = ovrHmd_ConfigureRendering(hmd, &g_Cfg.Config, G_DISTORTIONCAPS, hmd->MaxEyeFov, g_EyeRenderDesc);
-	if (!l_ConfigureResult) {
-		printf("Configure failed.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	// Start the sensor which provides the Rift�s pose and motion...
-	uint32_t l_SupportedSensorCaps = ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position;
-	uint32_t l_RequiredTrackingCaps = 0;
-	ovrBool l_TrackingResult = ovrHmd_ConfigureTracking(hmd, l_SupportedSensorCaps, l_RequiredTrackingCaps);
-	if (!l_TrackingResult) {
-		printf("Could not start tracking...");
-		exit(EXIT_FAILURE);
-	}
-
-	// set projection matrix for each eye
-	g_ProjectionMatrix[ovrEye_Left] = ovrMatrix4f_Projection(g_EyeRenderDesc[ovrEye_Left].Fov, 0.3f, 100.0f, true);
-	g_ProjectionMatrix[ovrEye_Right] = ovrMatrix4f_Projection(g_EyeRenderDesc[ovrEye_Right].Fov, 0.3f, 100.0f, true);
-
-	// set IPD offset values
-	g_EyeOffsets[ovrEye_Left] = g_EyeRenderDesc[ovrEye_Left].HmdToEyeViewOffset;
-	g_EyeOffsets[ovrEye_Right] = g_EyeRenderDesc[ovrEye_Right].HmdToEyeViewOffset;
 
 	glfwSetWindowSizeCallback(l_Window, WindowSizeCallback);
 
@@ -410,7 +473,7 @@ int Oculus::runOvr() {
 	float unitMat[16] = { 0.0f }; unitMat[0] = 1; unitMat[5] = 1; unitMat[10] = 1; unitMat[15] = 1;
 
 	float wandPos[3];
-	float wandVelocity[3] = {0};
+	float wandVelocity[3] = { 0 };
 
 	float currTime = 0;
 	float lastTime;
@@ -461,38 +524,38 @@ int Oculus::runOvr() {
 
 	float boardPos[3] = { 0.0f, -0.36f, 0.0f };
 	//float boardPos[3] = { 0.0f, -0.22f, 0.0f };
-	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f) , boardPos[2], 0.50, 0.25, 0.40);
+	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f), boardPos[2], 0.50, 0.25, 0.40);
 
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
-		Mode 1 = loading mode
-		Mode 2 = saving mode
-		Mode 3 = instructions mode*/
+	Mode 1 = loading mode
+	Mode 2 = saving mode
+	Mode 3 = instructions mode*/
 	int mode = 0;
 	//! contains the number of any active states
 	int activeButton = -1;
 	// 2.5.1 - modelling states and variables used in modelling mode >--------------------------------------------------------------------
-	
+
 	const int NR_OF_MODELLING_STATES = 3;
 	/*! 0 indicates that the state is not active,
-		1 indicates that the state has just been activated
-		2 indicates that the state is active
-		3 indicates that the state has just been deactivated
+	1 indicates that the state has just been activated
+	2 indicates that the state is active
+	3 indicates that the state has just been deactivated
 
-		modellingState[0] is the use tool state
-		modellingState[1] is the moveMesh state
-		modellingState[2] is the changeWandSize state
+	modellingState[0] is the use tool state
+	modellingState[1] is the moveMesh state
+	modellingState[2] is the changeWandSize state
 	*/
 	int modellingState[NR_OF_MODELLING_STATES] = { 0 };
 	int aModellingStateIsActive = 0;
 
 	const int NR_OF_MODELLING_BUTTONS = 4;
 	/*!	[0] resetMesh
-		[1] save
-		[2] load
-		[3] Wireframe
-		[4] increase wand size */
+	[1] save
+	[2] load
+	[3] Wireframe
+	[4] increase wand size */
 	menuBox* modellingButton[NR_OF_MODELLING_BUTTONS];
 	MenuItem* modellingButtonString[NR_OF_MODELLING_BUTTONS - 1];
 	MenuItem* modellingButtonFrame;
@@ -504,17 +567,17 @@ int Oculus::runOvr() {
 	modellingButtonTex[3] = &menuIcons;
 
 	/*!	0 indicates that the state is not active,
-		1 indicates that the state has just been activated
-		2 indicates that the state is active
-		3 indicates that the state has just been deactivated
-		4 indicates that the state is active (on/off)
-		5 indicates that the state has been activated and then the button was released
+	1 indicates that the state has just been activated
+	2 indicates that the state is active
+	3 indicates that the state has just been deactivated
+	4 indicates that the state is active (on/off)
+	5 indicates that the state has been activated and then the button was released
 
-		[0] reset
-		[1] save
-		[2] load
-		[3] Wireframe
-		[4] change wand size*/
+	[0] reset
+	[1] save
+	[2] load
+	[3] Wireframe
+	[4] change wand size*/
 	static int modellingButtonState[NR_OF_MODELLING_BUTTONS];
 
 	modellingButton[0] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + 0.06, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
@@ -552,24 +615,24 @@ int Oculus::runOvr() {
 	MenuItem trackingInfo(boardPos[0], boardPos[1] + 0.0125f, boardPos[2] - 0.22f, 0.24f, 0.08f, 1, 6, 9, 2);
 
 	/*! tool 0 = push/pull
-			 1 = 
+	1 =
 	*/
 	int activeTool = 0;
 	tool[activeTool].setState(true);
 	// 2.5.2 - variables used in Load Mode >------------------------------------------------------------------------------------------------
 	const int NR_OF_LOAD_BUTTONS = 2;
 	/*! 0 = loadFile button
-		1 = exitLoad button*/
+	1 = exitLoad button*/
 	menuBox* loadButton[NR_OF_LOAD_BUTTONS];
 	/*! 0 indicates that the state is not active,
-		1 indicates that the state has just been activated
-		2 indicates that the state is active
-		3 indicates that the state has just been deactivated
-		4 indicates that the state is active (on/off)
-		5 indicates that the state has been activated and then the button was released 
-	
-		[0] = loadFile
-		[1] = exitLoad  */
+	1 indicates that the state has just been activated
+	2 indicates that the state is active
+	3 indicates that the state has just been deactivated
+	4 indicates that the state is active (on/off)
+	5 indicates that the state has been activated and then the button was released
+
+	[0] = loadFile
+	[1] = exitLoad  */
 	int loadButtonState[NR_OF_LOAD_BUTTONS] = { 0 };
 
 	Texture* loadButtonTex[NR_OF_LOAD_BUTTONS];
@@ -607,7 +670,7 @@ int Oculus::runOvr() {
 	GLint locationLP = glGetUniformLocation(sceneShader.programID, "lightPos");
 	GLint locationP = glGetUniformLocation(sceneShader.programID, "P"); //perspective matrix
 	GLint locationMV = glGetUniformLocation(sceneShader.programID, "MV"); //modelview matrix
-//	GLint* MVptr = &locationMV;
+	//	GLint* MVptr = &locationMV;
 	GLint locationTex = glGetUniformLocation(sceneShader.programID, "tex"); //texcoords
 
 	GLint locationMeshMV = glGetUniformLocation(meshShader.programID, "MV"); //modelview matrix
@@ -683,11 +746,8 @@ int Oculus::runOvr() {
 	//=======================================================================================================================================
 	//Render loop
 	//=======================================================================================================================================
-
-	//ovrHmd_RecenterPose(hmd);
-	ovrHmd_DismissHSWDisplay(hmd); // dismiss health safety warning
-	unsigned int l_FrameIndex = 0;
-
+	oProjectionMatrix[0] = ovrMatrix4f_Projection(hmdDesc.DefaultEyeFov[0], 0.2f, 1000.0f, ovrProjection_RightHanded);
+	oProjectionMatrix[1] = ovrMatrix4f_Projection(hmdDesc.DefaultEyeFov[1], 0.2f, 1000.0f, ovrProjection_RightHanded);
 	while (!glfwWindowShouldClose(l_Window)) {
 
 		lastTime = currTime;
@@ -700,16 +760,16 @@ int Oculus::runOvr() {
 			//===============================================================================================================================
 			// 3 - Modelling Mode
 			//===============================================================================================================================
-			case 0: {
+		case 0: {
 
 
-				// 3.1 - modellingstates \_____________________________________________________________________________________________________
-				//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
-			
+			// 3.1 - modellingstates \_____________________________________________________________________________________________________
+			//3.1.1 - use modellingtool >--------------------------------------------------------------------------------------------------
+
 			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_UP)) {
 				if (modellingState[0] == 2) {
 					currentTool->moveVertices(modellingMesh, wand, deltaTime);
-					
+
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
@@ -720,1294 +780,1346 @@ int Oculus::runOvr() {
 				{
 					modellingState[0] = 1;
 
-						aModellingStateIsActive++;
-					}
+					aModellingStateIsActive++;
 				}
-				else {
-					if (modellingState[0] == 3) {
-						modellingState[0] = 0;
-					}
-					else if (modellingState[0] != 0) {
-						modellingState[0] = 3;
-						currentTool->deSelect();
-						aModellingStateIsActive--;
-					}
-					currentTool->deSelect();
-					currentTool->firstSelect(modellingMesh, wand);
-				}
-				
-				//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
-				
-				if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
-					if (modellingState[1] == 0) {
-						modellingState[1] = 1;
-						wand->getPosition(lastPos);
-						modellingMesh->getPosition(lastPos2);
-
-						wand->getDirection(prevWandDirection);
-						modellingMesh->getOrientation(prevMeshOrientation);
-						linAlg::normVec(prevWandDirection);
-
-						aModellingStateIsActive++;
-					}
-					else if (modellingState[1] == 1) {
-						modellingState[1] = 2;
-					}
-					else if (modellingState[1] == 2) {
-						//	move mesh
-						linAlg::calculateVec(wandPos, lastPos, moveVec);
-						moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
-						moveVec[1] = lastPos2[1] + moveVec[1] - wandPos[1];
-						moveVec[2] = lastPos2[2] + moveVec[2] - wandPos[2];
-
-						wand->getDirection(wandDirection);
-						linAlg::normVec(wandDirection);
-
-						linAlg::crossProd(vVec, wandDirection, prevWandDirection);
-						linAlg::normVec(vVec);
-						linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
-
-						linAlg::matrixMult(transform, prevMeshOrientation, meshOrientation);
-
-						linAlg::vectorMatrixMult(transform, moveVec, nMoveVec);
-						nMoveVec[0] += wandPos[0];
-						nMoveVec[1] += wandPos[1];
-						nMoveVec[2] += wandPos[2];
-
-						modellingMesh->setPosition(nMoveVec);
-						modellingMesh->setOrientation(meshOrientation);
-					}
-				}
-				else {
-					if (modellingState[1] == 3) {
-						modellingState[1] = 0;
-					}
-					else if (modellingState[1] != 0) {
-						modellingState[1] = 3;
-
-						aModellingStateIsActive--;
-					}
-				}
-
-				//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
-				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
-					glfwSetWindowShouldClose(l_Window, GL_TRUE);
-				}
-				if (glfwGetKey(l_Window, GLFW_KEY_LEFT)) {
-					currentTool->setStrength(0.01f*deltaTime);
-				}
-				if (glfwGetKey(l_Window, GLFW_KEY_RIGHT)) {
-					currentTool->setStrength(-0.01f*deltaTime);
-				}
-
-				// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
-				if (aModellingStateIsActive == 0) {
-					activeButton = handleMenu(wandPos, modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
-					switch (activeButton) {
-						//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
-						case 0: {
-							if (modellingButtonState[activeButton] == 1) {
-								// reset mesh
-								if (th2Status == 0) {
-									th2Status = 1;
-									th2 = std::thread(loadMesh, modellingMesh, currentMesh);
-								}
-								
-								modellingButton[activeButton]->setState(true);
-
-								reset = true;
-
-							}
-							else if (modellingButtonState[activeButton] == 3) {
-								modellingButton[activeButton]->setState(false);
-							}
-							break;
-						}
-						//3.2.2 - save mesh button >--------------------------------------------------------------------------------------------
-						case 1: {
-							// save mesh
-							if (modellingButtonState[activeButton] == 1) {
-								modellingButton[activeButton]->setState(true);
-								if (th2Status == 0) {
-									th2Status = 1;
-									th2 = std::thread(saveFile, modellingMesh);
-									mode = 2; // enter save mode
-								}
-							}
-							else if (modellingButtonState[activeButton] == 3) {
-								modellingButton[activeButton]->setState(false);
-							}
-
-							break;
-						}
-						//3.2.3 - load mesh button >--------------------------------------------------------------------------------------------
-						case 2: {
-							// load mesh
-							if (modellingButtonState[activeButton] == 1) { // just activated
-
-								// get all filenames in the savedFiles folder
-								meshFile = getSavedFileNames();
-
-								// check if any files were found
-								if (meshFile.empty()) {
-									// if no files were found leave loading state
-									// TODO: display feedback in Oculus that there are no saved files found
-									std::cout << "no saved files found!" << std::endl;
-								}
-								else {
-									// saved files found
-									// set staticMesh as placeHolder during loading as a loading indicator
-									placeHolder = new StaticMesh(); placeHolder->load("../Assets/Models/placeHolder.bin"); placeHolder->createBuffers();
-									loaderMesh = new StaticMesh();
-
-									previewMesh = placeHolder;
-
-									tempVec[0] = boardPos[0];
-									tempVec[1] = boardPos[1] + 0.1f;
-									tempVec[2] = boardPos[2];
-									previewMesh->setPosition(tempVec);
-
-									loadButton[1] = new menuBox(boardPos[0] - 0.03f, boardPos[1] + 0.03f, boardPos[2] + 0.05f, 0.06f, 0.01f, 0.02f, 0, 1, 3, 1, 5, 5);
-									loadButton[0] = new menuBox(boardPos[0] + 0.03f, boardPos[1] + 0.03f, boardPos[2] + 0.05f, 0.04f, 0.01f, 0.02f, 0, 3, 2, 1, 5, 5);
-
-									// Call thread to load the mesh preview
-									if (th1Status == 0) {
-										th1Status = 1;
-										th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-										mode = 1; // activate load mode
-									}
-								}
-							}
-							break;
-						}
-						//3.2.4 - wireframe button >---------------------------------------------------------------------------------------------
-						case 3: {
-							// wireframe
-							if (modellingButtonState[activeButton] == 1) {
-								if (modellingButton[activeButton]->getState() == true){
-									modellingButton[activeButton]->setState(false);
-									lines = false;
-								}
-								else {
-									modellingButton[activeButton]->setState(true);
-									lines = true;
-								}
-							}
-							break;
-						}
-						//3.2.4 - wand size button >---------------------------------------------------------------------------------------------
-						case 4: {
-							// change wand size
-							if (modellingButtonState[activeButton] == 1) {
-								modellingButton[activeButton]->setState(true);
-
-								lastRadius = wandRadius;
-
-								wand->getPosition(lastPos);
-							}
-
-							if (modellingButtonState[activeButton] == 3)
-								modellingButton[activeButton]->setState(false);
-
-							break;
-						}
-					}
-					for (int i = 0; i < NR_OF_TOOLS; i++) {
-						if (wandPos[0] < tool[i].getPosition()[0] + tool[i].getDim()[0] / 2.f
-							&& wandPos[0] > tool[i].getPosition()[0] - tool[i].getDim()[0] / 2.f
-							&& wandPos[1] > tool[i].getPosition()[1] - tool[i].getDim()[1] / 2.f
-							&& wandPos[1] < tool[i].getPosition()[1] + tool[i].getDim()[1] / 2.f
-							&& wandPos[2] > tool[i].getPosition()[2] - tool[i].getDim()[2] / 2.f
-							&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {
-							if (!tool[i].getState()) {
-								tool[activeTool].setState(false);
-								delete currentTool;
-								tool[i].setState(true);
-								activeTool = i;
-								if (i == 0)
-									currentTool = new Drag(modellingMesh, wand);
-								else if (i == 1)
-									currentTool = new Smooth(modellingMesh, wand);
-								else if (i == 2)
-									currentTool = new BuildUp(modellingMesh, wand);
-								
-								currentTool->setRadius(toolRad);
-								currentTool->setStrength(toolStr);
-							}
-
-							break;
-						}
-					}
-					if (wandPos[0] < toolSize.getPosition()[0] + toolSize.getDim()[0] / 2.f
-						&& wandPos[0] > toolSize.getPosition()[0] - toolSize.getDim()[0] / 2.f
-						&& wandPos[1] > toolSize.getPosition()[1] - toolSize.getDim()[1] / 2.f
-						&& wandPos[1] < toolSize.getPosition()[1] + toolSize.getDim()[1] / 2.f
-						&& wandPos[2] > toolSize.getPosition()[2] - toolSize.getDim()[2] / 2.f
-						&& wandPos[2] < toolSize.getPosition()[2] + toolSize.getDim()[2] / 2.f) {
-						tempVecPtr = toolSizeFill.getPosition();
-						toolSizeFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
-						currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f;
-					}
-					else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
-						&& wandPos[0] > toolStrength.getPosition()[0] - toolStrength.getDim()[0] / 2.f
-						&& wandPos[1] > toolStrength.getPosition()[1] - toolStrength.getDim()[1] / 2.f
-						&& wandPos[1] < toolStrength.getPosition()[1] + toolStrength.getDim()[1] / 2.f
-						&& wandPos[2] > toolStrength.getPosition()[2] - toolStrength.getDim()[2] / 2.f
-						&& wandPos[2] < toolStrength.getPosition()[2] + toolStrength.getDim()[2] / 2.f) {
-						tempVecPtr = toolStrengthFill.getPosition();
-						toolStrengthFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
-						currentTool->setStrength((wandPos[1] - tempVecPtr[1])); toolStr = (wandPos[1] - tempVecPtr[1]) ;
-					}
-				}
-
-				if (reset) {
-					if (th2.joinable()) {
-						th2.join();
-						th2Status = 0;
-						modellingMesh->cleanBuffer();
-						modellingMesh->updateOGLData();
-						tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
-						modellingMesh->setPosition(tempVec);
-						reset = false;
-					}
-				}	
-
-				//wandViewMAP -------------------------------------------
-				glViewport(0, 0, 1024, 1024);
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wandViewFBO);
-				glClear(GL_DEPTH_BUFFER_BIT);
-				glUseProgram(projectionShader.programID);
-
-				//glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
-				glm::mat4 projP = glm::ortho(-0.1f, 0.1f, -0.1f, 0.1f, 0.0f, 1.0f);
-				glm::transpose(projP);
-				glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
-				//glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
-				MVstack.push();
-
-					//pmat4 = wand->getOrientation();
-					//linAlg::invertMatrix(pmat4, unitMat);
-					//linAlg::transpose(unitMat);
-					//MVstack.multiply(pmat4);
-
-					//wand->getPosition(wandPos);
-					glm::vec3 gWandPos = glm::vec3(wandPos[0], wandPos[1], wandPos[2]);
-					wand->getDirection(tempVec);
-					glm::vec3 gWandDirr = glm::vec3(tempVec[0], tempVec[1], tempVec[2]);
-					//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
-					//MVstack.translate(tempVec);
-					
-					glm::normalize(gWandDirr);
-
-					glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
-					//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
-					MVstack.multiply(&camTrans[0][0]);
-
-					MVstack.push();
-						MVstack.translate(modellingMesh->getPosition());
-						MVstack.multiply(modellingMesh->getOrientation());
-						//MVstack.multiply(&projP[0][0]);
-						linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
-						glUniformMatrix4fv(locationProjMV, 1, GL_FALSE, LMVP);
-						linAlg::matrixMult(biasMatrix, LMVP, LMVP);
-						
-						modellingMesh->render();
-					MVstack.pop();
-				MVstack.pop();
-
-				//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-				//glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
-				//glReadBuffer(GL_COLOR_ATTACHMENT0);
-				
-				//glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
-
-				//std::cout << pixel << std::endl;
-				glReadBuffer(GL_NONE);
-				//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-				//currentTool->findIntersection(modellingMesh, wand, Pixel);
-				currentTool->getIntersection(intersectionP, intersectionN);
-				//linAlg::normVec(intersectionN);
-
-				glm::vec3 interP = glm::vec3(intersectionP[0], intersectionP[1], intersectionP[2]);
-				wand->getDirection(tempVec);
-				glm::vec3 interN = glm::vec3(intersectionN[0], intersectionN[1], intersectionN[2]);
-				//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
-				//MVstack.translate(tempVec);
-
-				glm::mat4 interTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
-				//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
-			
-				MVstack.push();
-					MVstack.multiply(&interTrans[0][0]);
-					MVstack.translate(modellingMesh->getPosition());
-					MVstack.multiply(modellingMesh->getOrientation());
-				//MVstack.multiply(&projP[0][0]);
-					linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
-					linAlg::matrixMult(biasMatrix, LMVP, LMVP);
-				MVstack.pop();
-
-				// Begin the frame...
-				ovrHmd_BeginFrame(hmd, l_FrameIndex);
-				// Get eye poses for both the left and the right eye. g_EyePoses contains all Rift information: orientation, positional tracking and
-				// the IPD in the form of the input variable g_EyeOffsets.
-				ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
-				// Bind the FBO...
-				glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
-				//glModes
-				GLRenderCallsOculus();
-
-				for (int l_EyeIndex = 0; l_EyeIndex<ovrEye_Count; l_EyeIndex++) {
-
-					// 3.3 OCULUS/CAMERA TRANSFORMS \______________________________________________________________________________________________
-					MVstack.push();
-						ovrEyeType l_Eye = hmd->EyeRenderOrder[l_EyeIndex];
-
-						glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
-
-						glUseProgram(sceneShader.programID);
-						// Pass projection matrix on to OpenGL...
-						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-						//glUniformMatrix4fv(locationP, 1, GL_FALSE, &projP[0][0]);
-						glUniform1i(locationTex, 0);
-
-						// Multiply with orientation retrieved from sensor...
-						OVR::Quatf l_Orientation = OVR::Quatf(g_EyePoses[l_Eye].Orientation);
-						OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
-						MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
-						//MVstack.multiply(wand->getOrientation());
-
-						//!-- Translation due to positional tracking (DK2) and IPD...
-						float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
-						MVstack.translate(eyePoses);
-						//wand->getPosition(tempVec);
-						//tempVec[0] = -tempVec[0]; tempVec[1] = -tempVec[1]; tempVec[2] = -tempVec[2];
-						//MVstack.translate(tempVec);
-						//MVstack.multiply(&camTrans[0][0]);
-
-						//POSSABLY DOABLE IN SHADER
-						pmat4 = MVstack.getCurrentMatrix();
-						for (int i = 0; i < 16; i++)
-							mat4[i] = pmat4[i];
-
-						//linAlg::transpose(mat4);
-						linAlg::vectorMatrixMult(mat4, lPos, LP);
-						linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix()); //TODO: check if this uniform is needed
-
-						// 3.4 - Scene Matrix stack \__________________________________________________________________________________________________
-						MVstack.push();
-							// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
-
-							glUniform4fv(locationLP, 1, LP);
-							MVstack.push();
-								MVstack.translate(board.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								//glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-								glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-								board.render();
-							MVstack.pop();
-
-							glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-
-							// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
-							MVstack.push();
-								MVstack.translate(trackingRange.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-								glLineWidth(2.0f);
-								trackingRange.render();
-								glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-							MVstack.pop();
-
-							// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
-
-							glUseProgram(bloomShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-							MVstack.push();
-								MVstack.translate(title.getPosition());
-								MVstack.rotX(1.57079f);
-								glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								title.render();
-							MVstack.pop();
-							/*
-							//glUseProgram(menuShader.programID);
-							//glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-							MVstack.push();
-								MVstack.translate(menuInfoPanel.getPosition());
-								//MVstack.rotX(1.57079f);
-								//MVstack.rotZ(1.57079f);
-								glBindTexture(GL_TEXTURE_2D, menuInfo.getTextureID());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								menuInfoPanel.render();
-							MVstack.pop();*/
-
-							// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
-							for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
-
-								if (modellingButton[i]->getState()) {
-									glUseProgram(bloomShader.programID);
-									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								}
-								else {
-									glUseProgram(menuShader.programID);
-									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								}
-
-								MVstack.push();
-									glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
-
-									MVstack.translate(modellingButton[i]->getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									modellingButton[i]->render();
-								MVstack.pop();
-							}
-
-							// place modellingButton frames
-							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-							glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
-
-							for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
-								MVstack.push();
-									MVstack.translate(modellingButton[i]->getPosition());
-									MVstack.translate(modellingButtonFrame->getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									modellingButtonFrame->render();
-								MVstack.pop();
-							}
-
-							for (int i = 0; i < NR_OF_MODELLING_BUTTONS - 1; i++) {
-								MVstack.push();
-									MVstack.translate(modellingButton[i]->getPosition());
-									MVstack.translate(modellingButtonString[i]->getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									modellingButtonString[i]->render();
-								MVstack.pop();
-							}
-							
-							MVstack.push();
-								MVstack.translate(toolFrame.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								toolFrame.render();
-							MVstack.pop();
-							MVstack.push();
-								MVstack.translate(toolString.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								toolString.render();
-							MVstack.pop();
-
-							MVstack.push();
-								MVstack.translate(trackingInfo.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								trackingInfo.render();
-							MVstack.pop();
-
-
-
-							// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
-							
-							if (lines) {
-								glUseProgram(flatShader.programID);
-								glUniformMatrix4fv(locationFlatP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-								MVstack.push();
-									MVstack.translate(modellingMesh->getPosition());
-									MVstack.multiply(modellingMesh->getOrientation());
-									glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									glUniform4fv(locationFlatLP, 1, LP);
-									glUniform4fv(locationFlatLP2, 1, lPosTemp);
-
-									modellingMesh->render();
-
-							} else {
-								glUseProgram(meshShader.programID);
-
-								glUniformMatrix4fv(locationMeshPP, 1, GL_FALSE, &projP[0][0]);
-								glUniformMatrix4fv(locationMeshLMVP, 1, GL_FALSE, LMVP);
-								glUniform3fv(locationMeshIntersectionP, 1, intersectionP);
-								glUniform3fv(locationMeshIntersectionN, 1, intersectionN);
-								glUniform1f(locationMeshRad, toolRad);
-								wand->getPosition(tempVec);
-								glUniform3fv(locationMeshWP, 1, tempVec);
-
-								wand->getDirection(tempVec);
-								linAlg::normVec(tempVec);
-								glUniform3fv(locationMeshWD, 1, tempVec);
-
-								tempVecPtr = modellingMesh->getPosition();
-								vMat[12] = tempVecPtr[0]; vMat[13] = tempVecPtr[1]; vMat[14] = tempVecPtr[2];
-								linAlg::matrixMult(vMat, modellingMesh->getOrientation(), transform);
-								glUniformMatrix4fv(locationMeshM, 1, GL_FALSE, transform);
-
-								glBindTexture(GL_TEXTURE_2D, meshTex.getTextureID());
-								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-								glUniform1i(locationMeshTex, 0);
-								
-
-								glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-								glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-								glUniform1i(locationMeshDTex, 0);
-
-								MVstack.push();
-									MVstack.translate(modellingMesh->getPosition());
-									MVstack.multiply(modellingMesh->getOrientation());
-									glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									glUniform4fv(locationMeshLP, 1, LP);
-									glUniform4fv(locationMeshLP2, 1, lPosTemp);
-
-									modellingMesh->render();
-							}
-								
-							MVstack.pop();
-
-							glUseProgram(sceneShader.programID);
-							glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-							//	currentTool->renderIntersection(MVptr, locationMeshMV);
-
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-							// 3.4.6 Render wand >-------------------------------------------------------------------------------------------
-							MVstack.push();
-								MVstack.translate(wandPos);
-								MVstack.multiply(wand->getOrientation());
-
-
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								MVstack.push();
-									translateVector[0] = 0.0f;
-									translateVector[1] = 0.0f;
-									translateVector[2] = -0.1f;
-									MVstack.translate(translateVector);
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									
-									boxWand.render();		
-								MVstack.pop();
-								//render brush------------------------
-
-								/*MVstack.push();
-									translateVector[0] = 0.0f;
-									translateVector[1] = 0.0f;
-									translateVector[2] = 1.0f;
-									MVstack.translate(translateVector);
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									brushPointer.render();
-								MVstack.pop();
-
-								MVstack.push();
-									MVstack.scale(wandRadius);
-									MVstack.translate(brush.getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									brush.render();
-								MVstack.pop();*/
-								currentTool->render(MVptr, locationMV);
-							MVstack.pop();
-
-							glUseProgram(bloomShader.programID);
-
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								
-								// render tool select GUI
-								for (int i = 0; i < NR_OF_TOOLS; i++) {
-
-									if (tool[i].getState()) {
-										glUseProgram(bloomShader.programID);
-										
-										glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-									}
-									else {
-										glUseProgram(menuShader.programID);
-										glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-									}
-
-									glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
-									MVstack.push();
-										MVstack.translate(tool[i].getPosition());
-										glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-										tool[i].render();
-									MVstack.pop();
-								}
-								glBindTexture(GL_TEXTURE_2D, menuStrings.getTextureID());
-								glUseProgram(menuShader.programID);
-								MVstack.push();
-									MVstack.translate(toolSizeFill.getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									toolSizeFill.render();
-								MVstack.pop();
-
-								MVstack.push();
-									MVstack.translate(toolStrengthFill.getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									toolStrengthFill.render();
-								MVstack.pop();
-
-								glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
-								MVstack.push();
-									MVstack.translate(toolSize.getPosition());
-									MVstack.push();
-										MVstack.translate(sizeString.getPosition());
-										glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-										sizeString.render();
-									MVstack.pop();
-
-									MVstack.push();
-										MVstack.translate(strengthString.getPosition());
-										glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-										strengthString.render();
-									MVstack.pop();
-
-								MVstack.pop();
-								
-
-																
-								glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
-								glUseProgram(bloomShader.programID);
-								
-								MVstack.push();
-									MVstack.translate(toolSize.getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									toolSize.render();
-								MVstack.pop();
-
-								MVstack.push();
-									MVstack.translate(toolStrength.getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									toolStrength.render();
-								MVstack.pop();
-								
-						//	}
-
-						MVstack.pop();
-					MVstack.pop();
-
-				}
-				break;
 			}
-			case 1: {
-				//===============================================================================================================================
-				// 4 - LOAD Mode
-				//===============================================================================================================================if (th2Status = 0) {
-				
-			
-				
-				// 4.1 - Keyboard events \_______________________________________________________________________________________________________
-				// 4.1.1 - Move mesh >-----------------------------------------------------------------------------------------------------------
-				if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
-					if (modellingState[1] == 0) {
+			else {
+				if (modellingState[0] == 3) {
+					modellingState[0] = 0;
+				}
+				else if (modellingState[0] != 0) {
+					modellingState[0] = 3;
+					currentTool->deSelect();
+					aModellingStateIsActive--;
+				}
+				currentTool->deSelect();
+				currentTool->firstSelect(modellingMesh, wand);
+			}
 
-						wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+			//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
 
-						modellingState[1] = 1;
+			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
+				if (modellingState[1] == 0) {
+					modellingState[1] = 1;
+					wand->getPosition(lastPos);
+					modellingMesh->getPosition(lastPos2);
+
+					wand->getDirection(prevWandDirection);
+					modellingMesh->getOrientation(prevMeshOrientation);
+					linAlg::normVec(prevWandDirection);
+
+					aModellingStateIsActive++;
+				}
+				else if (modellingState[1] == 1) {
+					modellingState[1] = 2;
+				}
+				else if (modellingState[1] == 2) {
+					//	move mesh
+					linAlg::calculateVec(wandPos, lastPos, moveVec);
+					moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
+					moveVec[1] = lastPos2[1] + moveVec[1] - wandPos[1];
+					moveVec[2] = lastPos2[2] + moveVec[2] - wandPos[2];
+
+					wand->getDirection(wandDirection);
+					linAlg::normVec(wandDirection);
+
+					linAlg::crossProd(vVec, wandDirection, prevWandDirection);
+					linAlg::normVec(vVec);
+					linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
+
+					linAlg::matrixMult(transform, prevMeshOrientation, meshOrientation);
+
+					linAlg::vectorMatrixMult(transform, moveVec, nMoveVec);
+					nMoveVec[0] += wandPos[0];
+					nMoveVec[1] += wandPos[1];
+					nMoveVec[2] += wandPos[2];
+
+					modellingMesh->setPosition(nMoveVec);
+					modellingMesh->setOrientation(meshOrientation);
+				}
+			}
+			else {
+				if (modellingState[1] == 3) {
+					modellingState[1] = 0;
+				}
+				else if (modellingState[1] != 0) {
+					modellingState[1] = 3;
+
+					aModellingStateIsActive--;
+				}
+			}
+
+			//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
+			if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
+				glfwSetWindowShouldClose(l_Window, GL_TRUE);
+			}
+			if (glfwGetKey(l_Window, GLFW_KEY_LEFT)) {
+				currentTool->setStrength(0.01f*deltaTime);
+			}
+			if (glfwGetKey(l_Window, GLFW_KEY_RIGHT)) {
+				currentTool->setStrength(-0.01f*deltaTime);
+			}
+
+			// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
+			if (aModellingStateIsActive == 0) {
+				activeButton = handleMenu(wandPos, modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
+				switch (activeButton) {
+					//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
+				case 0: {
+					if (modellingButtonState[activeButton] == 1) {
+						// reset mesh
+						if (th2Status == 0) {
+							th2Status = 1;
+							th2 = std::thread(loadMesh, modellingMesh, currentMesh);
+						}
+
+						modellingButton[activeButton]->setState(true);
+
+						reset = true;
+
+					}
+					else if (modellingButtonState[activeButton] == 3) {
+						modellingButton[activeButton]->setState(false);
+					}
+					break;
+				}
+					//3.2.2 - save mesh button >--------------------------------------------------------------------------------------------
+				case 1: {
+					// save mesh
+					if (modellingButtonState[activeButton] == 1) {
+						modellingButton[activeButton]->setState(true);
+						if (th2Status == 0) {
+							th2Status = 1;
+							th2 = std::thread(saveFile, modellingMesh);
+							mode = 2; // enter save mode
+						}
+					}
+					else if (modellingButtonState[activeButton] == 3) {
+						modellingButton[activeButton]->setState(false);
+					}
+
+					break;
+				}
+					//3.2.3 - load mesh button >--------------------------------------------------------------------------------------------
+				case 2: {
+					// load mesh
+					if (modellingButtonState[activeButton] == 1) { // just activated
+
+						// get all filenames in the savedFiles folder
+						meshFile = getSavedFileNames();
+
+						// check if any files were found
+						if (meshFile.empty()) {
+							// if no files were found leave loading state
+							// TODO: display feedback in Oculus that there are no saved files found
+							std::cout << "no saved files found!" << std::endl;
+						}
+						else {
+							// saved files found
+							// set staticMesh as placeHolder during loading as a loading indicator
+							placeHolder = new StaticMesh(); placeHolder->load("../Assets/Models/placeHolder.bin"); placeHolder->createBuffers();
+							loaderMesh = new StaticMesh();
+
+							previewMesh = placeHolder;
+
+							tempVec[0] = boardPos[0];
+							tempVec[1] = boardPos[1] + 0.1f;
+							tempVec[2] = boardPos[2];
+							previewMesh->setPosition(tempVec);
+
+							loadButton[1] = new menuBox(boardPos[0] - 0.03f, boardPos[1] + 0.03f, boardPos[2] + 0.05f, 0.06f, 0.01f, 0.02f, 0, 1, 3, 1, 5, 5);
+							loadButton[0] = new menuBox(boardPos[0] + 0.03f, boardPos[1] + 0.03f, boardPos[2] + 0.05f, 0.04f, 0.01f, 0.02f, 0, 3, 2, 1, 5, 5);
+
+							// Call thread to load the mesh preview
+							if (th1Status == 0) {
+								th1Status = 1;
+								th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+								mode = 1; // activate load mode
+							}
+						}
+					}
+					break;
+				}
+					//3.2.4 - wireframe button >---------------------------------------------------------------------------------------------
+				case 3: {
+					// wireframe
+					if (modellingButtonState[activeButton] == 1) {
+						if (modellingButton[activeButton]->getState() == true){
+							modellingButton[activeButton]->setState(false);
+							lines = false;
+						}
+						else {
+							modellingButton[activeButton]->setState(true);
+							lines = true;
+						}
+					}
+					break;
+				}
+					//3.2.4 - wand size button >---------------------------------------------------------------------------------------------
+				case 4: {
+					// change wand size
+					if (modellingButtonState[activeButton] == 1) {
+						modellingButton[activeButton]->setState(true);
+
+						lastRadius = wandRadius;
+
 						wand->getPosition(lastPos);
-						previewMesh->getPosition(lastPos2);
-
-						wand->getDirection(prevWandDirection);
-						previewMesh->getOrientation(prevMeshOrientation);
-						linAlg::normVec(prevWandDirection);
-
-						aModellingStateIsActive++;
 					}
-					else if (modellingState[1] == 1) {
-						modellingState[1] = 2;
-					}
-					else if (modellingState[1] == 2) {
-						//	move mesh
-						linAlg::calculateVec(wandPos, lastPos, moveVec);
-						moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
-						moveVec[1] = lastPos2[1] + moveVec[1] - wandPos[1];
-						moveVec[2] = lastPos2[2] + moveVec[2] - wandPos[2];
 
-						wand->getDirection(wandDirection);	
-						linAlg::normVec(wandDirection);
-						
-						linAlg::crossProd(vVec, wandDirection, prevWandDirection);
-						linAlg::normVec(vVec);
-						linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
+					if (modellingButtonState[activeButton] == 3)
+						modellingButton[activeButton]->setState(false);
 
-						linAlg::matrixMult(transform, prevMeshOrientation, meshOrientation);
-
-						linAlg::vectorMatrixMult(transform, moveVec, nMoveVec);
-						nMoveVec[0] += wandPos[0];
-						nMoveVec[1] += wandPos[1];
-						nMoveVec[2] += wandPos[2];
-
-						previewMesh->setPosition(nMoveVec);
-						previewMesh->setOrientation(meshOrientation);
-					}
+					break;
 				}
-				else {
-					if (modellingState[1] == 3) {
-						modellingState[1] = 0;
-					}
-					else if (modellingState[1] != 0) {
-						// just released button
-					
-						wand->getVelocity(wandVelocity);
-						if (linAlg::vecLength(wandVelocity) < 0.4) {
-							//changedMesh = true;
-							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+				}
+				for (int i = 0; i < NR_OF_TOOLS; i++) {
+					if (wandPos[0] < tool[i].getPosition()[0] + tool[i].getDim()[0] / 2.f
+						&& wandPos[0] > tool[i].getPosition()[0] - tool[i].getDim()[0] / 2.f
+						&& wandPos[1] > tool[i].getPosition()[1] - tool[i].getDim()[1] / 2.f
+						&& wandPos[1] < tool[i].getPosition()[1] + tool[i].getDim()[1] / 2.f
+						&& wandPos[2] > tool[i].getPosition()[2] - tool[i].getDim()[2] / 2.f
+						&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {
+						if (!tool[i].getState()) {
+							tool[activeTool].setState(false);
+							delete currentTool;
+							tool[i].setState(true);
+							activeTool = i;
+							if (i == 0)
+								currentTool = new Drag(modellingMesh, wand);
+							else if (i == 1)
+								currentTool = new Smooth(modellingMesh, wand);
+							else if (i == 2)
+								currentTool = new BuildUp(modellingMesh, wand);
+
+							currentTool->setRadius(toolRad);
+							currentTool->setStrength(toolStr);
 						}
-						modellingState[1] = 3;
-						aModellingStateIsActive--;
+
+						break;
 					}
 				}
-
-				if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
-					glfwSetWindowShouldClose(l_Window, GL_TRUE);
+				if (wandPos[0] < toolSize.getPosition()[0] + toolSize.getDim()[0] / 2.f
+					&& wandPos[0] > toolSize.getPosition()[0] - toolSize.getDim()[0] / 2.f
+					&& wandPos[1] > toolSize.getPosition()[1] - toolSize.getDim()[1] / 2.f
+					&& wandPos[1] < toolSize.getPosition()[1] + toolSize.getDim()[1] / 2.f
+					&& wandPos[2] > toolSize.getPosition()[2] - toolSize.getDim()[2] / 2.f
+					&& wandPos[2] < toolSize.getPosition()[2] + toolSize.getDim()[2] / 2.f) {
+					tempVecPtr = toolSizeFill.getPosition();
+					toolSizeFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
+					currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f;
 				}
-
-				// 4.1.2 - Load next mesh \______________________________________________________________________________________________________
-				// move mesh until it leaves the tracking range then load a new mesh
-				tempMoveVec = previewMesh->getPosition();
-				if (linAlg::vecLength(wandVelocity) != 0) {
-				
-					tempVec[0] = tempMoveVec[0] + wandVelocity[0] * deltaTime;
-					tempVec[1] = tempMoveVec[1] + wandVelocity[1] * deltaTime;
-					tempVec[2] = +tempMoveVec[2] + wandVelocity[2] * deltaTime;
-					previewMesh->setPosition(tempVec);
+				else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
+					&& wandPos[0] > toolStrength.getPosition()[0] - toolStrength.getDim()[0] / 2.f
+					&& wandPos[1] > toolStrength.getPosition()[1] - toolStrength.getDim()[1] / 2.f
+					&& wandPos[1] < toolStrength.getPosition()[1] + toolStrength.getDim()[1] / 2.f
+					&& wandPos[2] > toolStrength.getPosition()[2] - toolStrength.getDim()[2] / 2.f
+					&& wandPos[2] < toolStrength.getPosition()[2] + toolStrength.getDim()[2] / 2.f) {
+					tempVecPtr = toolStrengthFill.getPosition();
+					toolStrengthFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
+					currentTool->setStrength((wandPos[1] - tempVecPtr[1])); toolStr = (wandPos[1] - tempVecPtr[1]);
 				}
-				//trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f), boardPos[2], 0.50, 0.25, 0.40);
-				// check if the preview mesh has left the tracking range area and increment fileIndex accordingly
-				if (tempMoveVec[0] > 0.25) {
+			}
 
-					previewMesh = placeHolder;
-
-					tempVec[0] = -0.25f + (tempMoveVec[0] - 0.25);
-					tempVec[1] = placeHolder->getPosition()[1];
-					tempVec[2] = placeHolder->getPosition()[2];
-					previewMesh->setPosition(tempVec);
-					fileIndex--;
-
-					wandVelocity[1] = 0.0f; wandVelocity[2] = 0.0f;
-					if (wandVelocity[0] < 0.1f) {
-						if (th1Status == 0) {
-							th1Status = 1;
-							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-						} else {
-							failedToStartLoading = true;
-						}
-					} else {
-						maxVelocityNotLoaded = true;
-					}
-
-					// reset initial starting pos
-					wand->getPosition(lastPos);
-					previewMesh->getPosition(lastPos2);
-					wand->getDirection(prevWandDirection);
-					previewMesh->getOrientation(prevMeshOrientation);
-					linAlg::normVec(prevWandDirection);
-				}
-
-				else if (tempMoveVec[0] < -0.25) {
-					previewMesh = placeHolder;
-
-					tempVec[0] = 0.25f + (tempMoveVec[0] + 0.25);
-					tempVec[1] = placeHolder->getPosition()[1];
-					tempVec[2] = placeHolder->getPosition()[2];
-					previewMesh->setPosition(tempVec);
-
-					fileIndex++;
-
-					wandVelocity[1] = 0.0f; wandVelocity[2] = 0.0f;
-					if (abs(wandVelocity[0]) < 1.5f) {
-						if (th1Status == 0) {
-							th1Status = 1;
-							th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-						} else {
-							failedToStartLoading = true;
-						}
-					} else {
-						maxVelocityNotLoaded = true;
-					}
-
-					// reset initial starting pos
-					wand->getPosition(lastPos);
-					previewMesh->getPosition(lastPos2);
-					wand->getDirection(prevWandDirection);
-					previewMesh->getOrientation(prevMeshOrientation);
-					linAlg::normVec(prevWandDirection);
-				}
-
-				// check if the thread is ready with a new mesh
-				if (th1.joinable()) {
-					th1.join();
-					th1Status = 0;
-
-					// check if the loaded mesh was changed before it was loaded by the thread
-					if (failedToStartLoading) {
-						th1Status = 1;
-						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-					} else {
-						loaderMesh->setPosition(placeHolder->getPosition());
-						previewMesh = loaderMesh;
-						previewMesh->createBuffers();
-						th1Status = 0;
-					}	
-				}
-
-				if (abs(wandVelocity[0]) < 1.5f && maxVelocityNotLoaded) {
-					if (th1Status == 0) {
-						th1Status = 1;
-						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
-						maxVelocityNotLoaded = false;
-					}
-				}
-
-				// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
-				if (aModellingStateIsActive == 0) {
-					activeButton = handleMenu(wandPos, loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
-
-					switch (activeButton) {
-						case 0: {
-							// load mesh button
-							if (loadButtonState[activeButton] == 1) {
-								if (th2Status == 0){
-									th2Status = 1;
-									th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
-									currentMesh = meshFile[fileIndex % meshFile.size()];
-									wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
-								}
-							}
-							break;
-						}
-						case 1: {
-							// quit mode to modelling mode
-
-							if (th1Status != 0) {
-								th1.join();
-								th1Status = 0;
-							}
-							if (th2Status != 0) {
-								th2.join();
-								th2Status = 0;
-							}
-
-							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
-							delete loadButton[0];
-							delete loadButton[1];
-							delete loaderMesh;
-							delete placeHolder;
-							mode = 0;
-
-							continue;
-						}
-						default: {
-							break;
-						}
-					}
-				}
-				
+			if (reset) {
 				if (th2.joinable()) {
 					th2.join();
 					th2Status = 0;
-
 					modellingMesh->cleanBuffer();
-					delete loadButton[0];
-					delete loadButton[1];
-					delete loaderMesh;
-					delete placeHolder;
-					mode = 0;
+					modellingMesh->updateOGLData();
 					tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
 					modellingMesh->setPosition(tempVec);
+					reset = false;
+				}
+			}
+
+			//wandViewMAP -------------------------------------------
+			glViewport(0, 0, 1024, 1024);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wandViewFBO);
+			glClear(GL_DEPTH_BUFFER_BIT);
+			glUseProgram(projectionShader.programID);
+
+			//glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
+			glm::mat4 projP = glm::ortho(-0.1f, 0.1f, -0.1f, 0.1f, 0.0f, 1.0f);
+			glm::transpose(projP);
+			glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
+			//glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
+			MVstack.push();
+
+			//pmat4 = wand->getOrientation();
+			//linAlg::invertMatrix(pmat4, unitMat);
+			//linAlg::transpose(unitMat);
+			//MVstack.multiply(pmat4);
+
+			//wand->getPosition(wandPos);
+			glm::vec3 gWandPos = glm::vec3(wandPos[0], wandPos[1], wandPos[2]);
+			wand->getDirection(tempVec);
+			glm::vec3 gWandDirr = glm::vec3(tempVec[0], tempVec[1], tempVec[2]);
+			//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
+			//MVstack.translate(tempVec);
+
+			glm::normalize(gWandDirr);
+
+			glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
+			//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
+			MVstack.multiply(&camTrans[0][0]);
+
+			MVstack.push();
+			MVstack.translate(modellingMesh->getPosition());
+			MVstack.multiply(modellingMesh->getOrientation());
+			//MVstack.multiply(&projP[0][0]);
+			linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
+			glUniformMatrix4fv(locationProjMV, 1, GL_FALSE, LMVP);
+			linAlg::matrixMult(biasMatrix, LMVP, LMVP);
+
+			modellingMesh->render();
+			MVstack.pop();
+			MVstack.pop();
+
+			//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+			//glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
+			//glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+			//glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
+
+			//std::cout << pixel << std::endl;
+			glReadBuffer(GL_NONE);
+			//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+			//currentTool->findIntersection(modellingMesh, wand, Pixel);
+			currentTool->getIntersection(intersectionP, intersectionN);
+			//linAlg::normVec(intersectionN);
+
+			glm::vec3 interP = glm::vec3(intersectionP[0], intersectionP[1], intersectionP[2]);
+			wand->getDirection(tempVec);
+			glm::vec3 interN = glm::vec3(intersectionN[0], intersectionN[1], intersectionN[2]);
+			//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
+			//MVstack.translate(tempVec);
+
+			glm::mat4 interTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
+			//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
+
+			MVstack.push();
+			MVstack.multiply(&interTrans[0][0]);
+			MVstack.translate(modellingMesh->getPosition());
+			MVstack.multiply(modellingMesh->getOrientation());
+			//MVstack.multiply(&projP[0][0]);
+			linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
+			linAlg::matrixMult(biasMatrix, LMVP, LMVP);
+			MVstack.pop();
+
+
+			// get hmd eye poses \__________________________________________________________________________________________________________________
+			// Get both eye poses simultaneously, with IPD offset already included.
+			// Get eye poses, feeding in correct IPD offset
+			ViewOffset[0] = EyeRenderDesc[0].HmdToEyeViewOffset;
+			ViewOffset[1] = EyeRenderDesc[1].HmdToEyeViewOffset;
+
+			ftiming = ovr_GetFrameTiming(HMD, 0);
+			hmdState = ovr_GetTrackingState(HMD, ftiming.DisplayMidpointSeconds);
+			ovr_CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, EyeRenderPose);
+
+
+			GLRenderCallsOculus();
+
+			for (int l_EyeIndex = 0; l_EyeIndex < ovrEye_Count; l_EyeIndex++) {
+				// Increment to use next texture, just before writing
+
+				eyeRenderTexture[l_EyeIndex]->TextureSet->CurrentIndex = (eyeRenderTexture[l_EyeIndex]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[l_EyeIndex]->TextureSet->TextureCount;
+
+				// Switch to eye render target
+				eyeRenderTexture[l_EyeIndex]->SetAndClearRenderSurface(eyeDepthBuffer[l_EyeIndex]);
+
+
+
+				// 3.3 OCULUS/CAMERA TRANSFORMS \______________________________________________________________________________________________
+				MVstack.push();
+				glUseProgram(sceneShader.programID);
+				// Pass projection matrix on to OpenGL...
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+				//glUniformMatrix4fv(locationP, 1, GL_FALSE, &projP[0][0]);
+				glUniform1i(locationTex, 0);
+
+				// Multiply with orientation retrieved from sensor...
+				OVR::Quatf l_Orientation = OVR::Quatf(EyeRenderPose[l_EyeIndex].Orientation);
+				OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
+				MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
+				//MVstack.multiply(wand->getOrientation());
+
+				//!-- Translation due to positional tracking (DK2) and IPD...
+				float eyePoses[3] = { -EyeRenderPose[l_EyeIndex].Position.x, -EyeRenderPose[l_EyeIndex].Position.y, -EyeRenderPose[l_EyeIndex].Position.z };
+				MVstack.translate(eyePoses);
+				//wand->getPosition(tempVec);
+				//tempVec[0] = -tempVec[0]; tempVec[1] = -tempVec[1]; tempVec[2] = -tempVec[2];
+				//MVstack.translate(tempVec);
+				//MVstack.multiply(&camTrans[0][0]);
+
+				//POSSABLY DOABLE IN SHADER
+				pmat4 = MVstack.getCurrentMatrix();
+				for (int i = 0; i < 16; i++)
+					mat4[i] = pmat4[i];
+
+				//linAlg::transpose(mat4);
+				linAlg::vectorMatrixMult(mat4, lPos, LP);
+				linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix()); //TODO: check if this uniform is needed
+
+				// 3.4 - Scene Matrix stack \__________________________________________________________________________________________________
+				MVstack.push();
+				// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
+
+				glUniform4fv(locationLP, 1, LP);
+				MVstack.push();
+				MVstack.translate(board.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				//glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				board.render();
+				MVstack.pop();
+
+				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+
+				// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(trackingRange.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(2.0f);
+				trackingRange.render();
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				MVstack.pop();
+
+				// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
+
+				glUseProgram(bloomShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+				MVstack.push();
+				MVstack.translate(title.getPosition());
+				MVstack.rotX(1.57079f);
+				glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				title.render();
+				MVstack.pop();
+				/*
+				//glUseProgram(menuShader.programID);
+				//glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+				MVstack.push();
+				MVstack.translate(menuInfoPanel.getPosition());
+				//MVstack.rotX(1.57079f);
+				//MVstack.rotZ(1.57079f);
+				glBindTexture(GL_TEXTURE_2D, menuInfo.getTextureID());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				menuInfoPanel.render();
+				MVstack.pop();*/
+
+				// 3.4.4 Render modelling buttons >-----------------------------------------------------------------------------------------
+				for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
+
+					if (modellingButton[i]->getState()) {
+						glUseProgram(bloomShader.programID);
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+					}
+					else {
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+					}
+
+					MVstack.push();
+					glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
+
+					MVstack.translate(modellingButton[i]->getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					modellingButton[i]->render();
+					MVstack.pop();
+				}
+
+				// place modellingButton frames
+				glUseProgram(menuShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+				glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
+
+				for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
+					MVstack.push();
+					MVstack.translate(modellingButton[i]->getPosition());
+					MVstack.translate(modellingButtonFrame->getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					modellingButtonFrame->render();
+					MVstack.pop();
+				}
+
+				for (int i = 0; i < NR_OF_MODELLING_BUTTONS - 1; i++) {
+					MVstack.push();
+					MVstack.translate(modellingButton[i]->getPosition());
+					MVstack.translate(modellingButtonString[i]->getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					modellingButtonString[i]->render();
+					MVstack.pop();
+				}
+
+				MVstack.push();
+				MVstack.translate(toolFrame.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				toolFrame.render();
+				MVstack.pop();
+				MVstack.push();
+				MVstack.translate(toolString.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				toolString.render();
+				MVstack.pop();
+
+				MVstack.push();
+				MVstack.translate(trackingInfo.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				trackingInfo.render();
+				MVstack.pop();
+
+
+
+				// 3.4.5 Render mesh >------------------------------------------------------------------------------------------------------
+
+				if (lines) {
+					glUseProgram(flatShader.programID);
+					glUniformMatrix4fv(locationFlatP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+					MVstack.push();
+					MVstack.translate(modellingMesh->getPosition());
+					MVstack.multiply(modellingMesh->getOrientation());
+					glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					glUniform4fv(locationFlatLP, 1, LP);
+					glUniform4fv(locationFlatLP2, 1, lPosTemp);
+
+					modellingMesh->render();
+
+				}
+				else {
+					glUseProgram(meshShader.programID);
+
+					glUniformMatrix4fv(locationMeshPP, 1, GL_FALSE, &projP[0][0]);
+					glUniformMatrix4fv(locationMeshLMVP, 1, GL_FALSE, LMVP);
+					glUniform3fv(locationMeshIntersectionP, 1, intersectionP);
+					glUniform3fv(locationMeshIntersectionN, 1, intersectionN);
+					glUniform1f(locationMeshRad, toolRad);
+					wand->getPosition(tempVec);
+					glUniform3fv(locationMeshWP, 1, tempVec);
+
+					wand->getDirection(tempVec);
+					linAlg::normVec(tempVec);
+					glUniform3fv(locationMeshWD, 1, tempVec);
+
+					tempVecPtr = modellingMesh->getPosition();
+					vMat[12] = tempVecPtr[0]; vMat[13] = tempVecPtr[1]; vMat[14] = tempVecPtr[2];
+					linAlg::matrixMult(vMat, modellingMesh->getOrientation(), transform);
+					glUniformMatrix4fv(locationMeshM, 1, GL_FALSE, transform);
+
+					glBindTexture(GL_TEXTURE_2D, meshTex.getTextureID());
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+					glUniform1i(locationMeshTex, 0);
+
+
+					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+					glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+					glUniform1i(locationMeshDTex, 0);
+
+					MVstack.push();
+					MVstack.translate(modellingMesh->getPosition());
+					MVstack.multiply(modellingMesh->getOrientation());
+					glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					glUniform4fv(locationMeshLP, 1, LP);
+					glUniform4fv(locationMeshLP2, 1, lPosTemp);
+
+					modellingMesh->render();
+				}
+
+				MVstack.pop();
+
+				glUseProgram(sceneShader.programID);
+				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+				//	currentTool->renderIntersection(MVptr, locationMeshMV);
+
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+				// 3.4.6 Render wand >-------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(wandPos);
+				MVstack.multiply(wand->getOrientation());
+
+
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				MVstack.push();
+				translateVector[0] = 0.0f;
+				translateVector[1] = 0.0f;
+				translateVector[2] = -0.1f;
+				MVstack.translate(translateVector);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+
+				boxWand.render();
+				MVstack.pop();
+				//render brush------------------------
+
+				/*MVstack.push();
+				translateVector[0] = 0.0f;
+				translateVector[1] = 0.0f;
+				translateVector[2] = 1.0f;
+				MVstack.translate(translateVector);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				brushPointer.render();
+				MVstack.pop();
+
+				MVstack.push();
+				MVstack.scale(wandRadius);
+				MVstack.translate(brush.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				brush.render();
+				MVstack.pop();*/
+				currentTool->render(MVptr, locationMV);
+				MVstack.pop();
+
+				glUseProgram(bloomShader.programID);
+
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+				// render tool select GUI
+				for (int i = 0; i < NR_OF_TOOLS; i++) {
+
+					if (tool[i].getState()) {
+						glUseProgram(bloomShader.programID);
+
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+					}
+					else {
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+					}
+
+					glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
+					MVstack.push();
+					MVstack.translate(tool[i].getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					tool[i].render();
+					MVstack.pop();
+				}
+				glBindTexture(GL_TEXTURE_2D, menuStrings.getTextureID());
+				glUseProgram(menuShader.programID);
+				MVstack.push();
+				MVstack.translate(toolSizeFill.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				toolSizeFill.render();
+				MVstack.pop();
+
+				MVstack.push();
+				MVstack.translate(toolStrengthFill.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				toolStrengthFill.render();
+				MVstack.pop();
+
+				glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
+				MVstack.push();
+				MVstack.translate(toolSize.getPosition());
+				MVstack.push();
+				MVstack.translate(sizeString.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				sizeString.render();
+				MVstack.pop();
+
+				MVstack.push();
+				MVstack.translate(strengthString.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				strengthString.render();
+				MVstack.pop();
+
+				MVstack.pop();
+
+
+
+				glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
+				glUseProgram(bloomShader.programID);
+
+				MVstack.push();
+				MVstack.translate(toolSize.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				toolSize.render();
+				MVstack.pop();
+
+				MVstack.push();
+				MVstack.translate(toolStrength.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				toolStrength.render();
+				MVstack.pop();
+
+				//	}
+
+				MVstack.pop();
+				MVstack.pop();
+				eyeRenderTexture[l_EyeIndex]->UnsetRenderSurface();
+			}
+			break;
+		}
+		case 1: {
+			//===============================================================================================================================
+			// 4 - LOAD Mode
+			//===============================================================================================================================if (th2Status = 0) {
+
+
+
+			// 4.1 - Keyboard events \_______________________________________________________________________________________________________
+			// 4.1.1 - Move mesh >-----------------------------------------------------------------------------------------------------------
+			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_DOWN)) {
+				if (modellingState[1] == 0) {
+
+					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+
+					modellingState[1] = 1;
+					wand->getPosition(lastPos);
+					previewMesh->getPosition(lastPos2);
+
+					wand->getDirection(prevWandDirection);
+					previewMesh->getOrientation(prevMeshOrientation);
+					linAlg::normVec(prevWandDirection);
+
+					aModellingStateIsActive++;
+				}
+				else if (modellingState[1] == 1) {
+					modellingState[1] = 2;
+				}
+				else if (modellingState[1] == 2) {
+					//	move mesh
+					linAlg::calculateVec(wandPos, lastPos, moveVec);
+					moveVec[0] = lastPos2[0] + moveVec[0] - wandPos[0];
+					moveVec[1] = lastPos2[1] + moveVec[1] - wandPos[1];
+					moveVec[2] = lastPos2[2] + moveVec[2] - wandPos[2];
+
+					wand->getDirection(wandDirection);
+					linAlg::normVec(wandDirection);
+
+					linAlg::crossProd(vVec, wandDirection, prevWandDirection);
+					linAlg::normVec(vVec);
+					linAlg::rotAxis(vVec, acos(linAlg::dotProd(prevWandDirection, wandDirection)), transform);
+
+					linAlg::matrixMult(transform, prevMeshOrientation, meshOrientation);
+
+					linAlg::vectorMatrixMult(transform, moveVec, nMoveVec);
+					nMoveVec[0] += wandPos[0];
+					nMoveVec[1] += wandPos[1];
+					nMoveVec[2] += wandPos[2];
+
+					previewMesh->setPosition(nMoveVec);
+					previewMesh->setOrientation(meshOrientation);
+				}
+			}
+			else {
+				if (modellingState[1] == 3) {
+					modellingState[1] = 0;
+				}
+				else if (modellingState[1] != 0) {
+					// just released button
+
+					wand->getVelocity(wandVelocity);
+					if (linAlg::vecLength(wandVelocity) < 0.4) {
+						//changedMesh = true;
+						wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+					}
+					modellingState[1] = 3;
+					aModellingStateIsActive--;
+				}
+			}
+
+			if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
+				glfwSetWindowShouldClose(l_Window, GL_TRUE);
+			}
+
+			// 4.1.2 - Load next mesh \______________________________________________________________________________________________________
+			// move mesh until it leaves the tracking range then load a new mesh
+			tempMoveVec = previewMesh->getPosition();
+			if (linAlg::vecLength(wandVelocity) != 0) {
+
+				tempVec[0] = tempMoveVec[0] + wandVelocity[0] * deltaTime;
+				tempVec[1] = tempMoveVec[1] + wandVelocity[1] * deltaTime;
+				tempVec[2] = +tempMoveVec[2] + wandVelocity[2] * deltaTime;
+				previewMesh->setPosition(tempVec);
+			}
+			//trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f), boardPos[2], 0.50, 0.25, 0.40);
+			// check if the preview mesh has left the tracking range area and increment fileIndex accordingly
+			if (tempMoveVec[0] > 0.25) {
+
+				previewMesh = placeHolder;
+
+				tempVec[0] = -0.25f + (tempMoveVec[0] - 0.25);
+				tempVec[1] = placeHolder->getPosition()[1];
+				tempVec[2] = placeHolder->getPosition()[2];
+				previewMesh->setPosition(tempVec);
+				fileIndex--;
+
+				wandVelocity[1] = 0.0f; wandVelocity[2] = 0.0f;
+				if (wandVelocity[0] < 0.1f) {
+					if (th1Status == 0) {
+						th1Status = 1;
+						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+					}
+					else {
+						failedToStartLoading = true;
+					}
+				}
+				else {
+					maxVelocityNotLoaded = true;
+				}
+
+				// reset initial starting pos
+				wand->getPosition(lastPos);
+				previewMesh->getPosition(lastPos2);
+				wand->getDirection(prevWandDirection);
+				previewMesh->getOrientation(prevMeshOrientation);
+				linAlg::normVec(prevWandDirection);
+			}
+
+			else if (tempMoveVec[0] < -0.25) {
+				previewMesh = placeHolder;
+
+				tempVec[0] = 0.25f + (tempMoveVec[0] + 0.25);
+				tempVec[1] = placeHolder->getPosition()[1];
+				tempVec[2] = placeHolder->getPosition()[2];
+				previewMesh->setPosition(tempVec);
+
+				fileIndex++;
+
+				wandVelocity[1] = 0.0f; wandVelocity[2] = 0.0f;
+				if (abs(wandVelocity[0]) < 1.5f) {
+					if (th1Status == 0) {
+						th1Status = 1;
+						th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+					}
+					else {
+						failedToStartLoading = true;
+					}
+				}
+				else {
+					maxVelocityNotLoaded = true;
+				}
+
+				// reset initial starting pos
+				wand->getPosition(lastPos);
+				previewMesh->getPosition(lastPos2);
+				wand->getDirection(prevWandDirection);
+				previewMesh->getOrientation(prevMeshOrientation);
+				linAlg::normVec(prevWandDirection);
+			}
+
+			// check if the thread is ready with a new mesh
+			if (th1.joinable()) {
+				th1.join();
+				th1Status = 0;
+
+				// check if the loaded mesh was changed before it was loaded by the thread
+				if (failedToStartLoading) {
+					th1Status = 1;
+					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+				}
+				else {
+					loaderMesh->setPosition(placeHolder->getPosition());
+					previewMesh = loaderMesh;
+					previewMesh->createBuffers();
+					th1Status = 0;
+				}
+			}
+
+			if (abs(wandVelocity[0]) < 1.5f && maxVelocityNotLoaded) {
+				if (th1Status == 0) {
+					th1Status = 1;
+					th1 = std::thread(loadStaticMesh, loaderMesh, meshFile[fileIndex % meshFile.size()]);
+					maxVelocityNotLoaded = false;
+				}
+			}
+
+			// 4.2 - Handle buttons and button switch \______________________________________________________________________________________
+			if (aModellingStateIsActive == 0) {
+				activeButton = handleMenu(wandPos, loadButton, NR_OF_LOAD_BUTTONS, loadButtonState);
+
+				switch (activeButton) {
+				case 0: {
+					// load mesh button
+					if (loadButtonState[activeButton] == 1) {
+						if (th2Status == 0){
+							th2Status = 1;
+							th2 = std::thread(loadMesh, modellingMesh, meshFile[fileIndex % meshFile.size()]);
+							currentMesh = meshFile[fileIndex % meshFile.size()];
+							wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+						}
+					}
+					break;
+				}
+				case 1: {
+					// quit mode to modelling mode
 
 					if (th1Status != 0) {
 						th1.join();
 						th1Status = 0;
 					}
+					if (th2Status != 0) {
+						th2.join();
+						th2Status = 0;
+					}
+
+					wandVelocity[0] = 0; wandVelocity[1] = 0; wandVelocity[2] = 0;
+					delete loadButton[0];
+					delete loadButton[1];
+					delete loaderMesh;
+					delete placeHolder;
+					mode = 0;
+
 					continue;
 				}
+				default: {
+					break;
+				}
+				}
+			}
 
-				
+			if (th2.joinable()) {
+				th2.join();
+				th2Status = 0;
 
-				// Begin the frame...
-				ovrHmd_BeginFrame(hmd, l_FrameIndex);
-				// Get eye poses for both the left and the right eye. g_EyePoses contains all Rift information: orientation, positional tracking and
-				// the IPD in the form of the input variable g_EyeOffsets.
-				ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
-				// Bind the FBO...
-				glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
-				//glModes
-				GLRenderCallsOculus();
+				modellingMesh->cleanBuffer();
+				delete loadButton[0];
+				delete loadButton[1];
+				delete loaderMesh;
+				delete placeHolder;
+				mode = 0;
+				tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
+				modellingMesh->setPosition(tempVec);
 
-				for (int l_EyeIndex = 0; l_EyeIndex<ovrEye_Count; l_EyeIndex++) {
+				if (th1Status != 0) {
+					th1.join();
+					th1Status = 0;
+				}
+				continue;
+			}
 
-					// 4.3 OCULUS/CAMERA TRANSFORMS \______________________________________________________________________________________________
+
+
+
+			ViewOffset[0] = EyeRenderDesc[0].HmdToEyeViewOffset;
+			ViewOffset[1] = EyeRenderDesc[1].HmdToEyeViewOffset;
+
+			ftiming = ovr_GetFrameTiming(HMD, 0);
+			hmdState = ovr_GetTrackingState(HMD, ftiming.DisplayMidpointSeconds);
+			ovr_CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, EyeRenderPose);
+
+			//glModes
+			GLRenderCallsOculus();
+
+			for (int l_EyeIndex = 0; l_EyeIndex<ovrEye_Count; l_EyeIndex++) {
+
+				eyeRenderTexture[l_EyeIndex]->TextureSet->CurrentIndex = (eyeRenderTexture[l_EyeIndex]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[l_EyeIndex]->TextureSet->TextureCount;
+
+				// Switch to eye render target
+				eyeRenderTexture[l_EyeIndex]->SetAndClearRenderSurface(eyeDepthBuffer[l_EyeIndex]);
+
+
+				// 4.3 OCULUS/CAMERA TRANSFORMS \______________________________________________________________________________________________
+				MVstack.push();
+
+				glUseProgram(sceneShader.programID);
+				// Pass projection matrix on to OpenGL...
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+				glUniform1i(locationTex, 0);
+
+				// Multiply with orientation retrieved from sensor...
+				OVR::Quatf l_Orientation = OVR::Quatf(EyeRenderPose[l_EyeIndex].Orientation);
+				OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
+				MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
+
+				//!-- Translation due to positional tracking (DK2) and IPD...
+				float eyePoses[3] = { -EyeRenderPose[l_EyeIndex].Position.x, -EyeRenderPose[l_EyeIndex].Position.y, -EyeRenderPose[l_EyeIndex].Position.z };
+				MVstack.translate(eyePoses);
+
+				//POSSABLY DOABLE IN SHADER
+				pmat4 = MVstack.getCurrentMatrix();
+				for (int i = 0; i < 16; i++)
+					mat4[i] = pmat4[i];
+
+				//linAlg::transpose(mat4);
+				linAlg::vectorMatrixMult(mat4, lPos, LP);
+				linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+
+				// 4.4 - Scene Matrix stack \__________________________________________________________________________________________________
+				MVstack.push();
+				// 4.4.1 - RENDER BOARD >--------------------------------------------------------------------------------------------------
+				glUniform4fv(locationLP, 1, LP);
+				MVstack.push();
+				MVstack.translate(board.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				board.render();
+				MVstack.pop();
+
+				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+
+				// 4.4.2 - RENDER trackingrange >-----------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(trackingRange.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(2.0f);
+				trackingRange.render();
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				MVstack.pop();
+
+				// 4.4.3 - RENDER title >---------------------------------------------------------------------------------------------------
+				glUseProgram(menuShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+				MVstack.push();
+				MVstack.translate(title.getPosition());
+				MVstack.rotX(1.57079f);
+				glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				title.render();
+				MVstack.pop();
+
+
+				// 4.4.4 - RENDER Load buttons >--------------------------------------------------------------------------------------------
+				for (int i = 0; i < NR_OF_LOAD_BUTTONS; i++) {
+
+					if (loadButton[i]->getState()) {
+						glUseProgram(bloomShader.programID);
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+					}
+					else {
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+					}
+
 					MVstack.push();
-						ovrEyeType l_Eye = hmd->EyeRenderOrder[l_EyeIndex];
+					glBindTexture(GL_TEXTURE_2D, menuStrings.getTextureID());
 
-						glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
-
-						glUseProgram(sceneShader.programID);
-						// Pass projection matrix on to OpenGL...
-						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-						glUniform1i(locationTex, 0);
-
-						// Multiply with orientation retrieved from sensor...
-						OVR::Quatf l_Orientation = OVR::Quatf(g_EyePoses[l_Eye].Orientation);
-						OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
-						MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
-
-						//!-- Translation due to positional tracking (DK2) and IPD...
-						float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
-						MVstack.translate(eyePoses);
-
-						//POSSABLY DOABLE IN SHADER
-						pmat4 = MVstack.getCurrentMatrix();
-						for (int i = 0; i < 16; i++)
-							mat4[i] = pmat4[i];
-
-						//linAlg::transpose(mat4);
-						linAlg::vectorMatrixMult(mat4, lPos, LP);
-						linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-
-						// 4.4 - Scene Matrix stack \__________________________________________________________________________________________________
-						MVstack.push();
-							// 4.4.1 - RENDER BOARD >--------------------------------------------------------------------------------------------------
-							glUniform4fv(locationLP, 1, LP);
-							MVstack.push();
-								MVstack.translate(board.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-								board.render();
-							MVstack.pop();
-
-							glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-
-							// 4.4.2 - RENDER trackingrange >-----------------------------------------------------------------------------------------
-							MVstack.push();
-								MVstack.translate(trackingRange.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-								glLineWidth(2.0f);
-								trackingRange.render();
-								glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-							MVstack.pop();
-
-							// 4.4.3 - RENDER title >---------------------------------------------------------------------------------------------------
-							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-							MVstack.push();
-								MVstack.translate(title.getPosition());
-								MVstack.rotX(1.57079f);
-								glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								title.render();
-							MVstack.pop();
-
-
-							// 4.4.4 - RENDER Load buttons >--------------------------------------------------------------------------------------------
-							for (int i = 0; i < NR_OF_LOAD_BUTTONS; i++) {
-
-								if (loadButton[i]->getState()) {
-									glUseProgram(bloomShader.programID);
-									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								}
-								else {
-									glUseProgram(menuShader.programID);
-									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								}
-
-								MVstack.push();
-									glBindTexture(GL_TEXTURE_2D, menuStrings.getTextureID());
-
-									MVstack.translate(loadButton[i]->getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									loadButton[i]->render();
-								MVstack.pop();
-							}
-
-							// render menuinfo during limited time
-							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-							MVstack.push();
-								glBindTexture(GL_TEXTURE_2D, loadModeInfoTex.getTextureID());
-								MVstack.translate(loadModeInfo.getPosition());
-								MVstack.rotX(1.57079f);
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								loadModeInfo.render();
-							MVstack.pop();
-
-							// 4.4.5 - RENDER meshes >--------------------------------------------------------------------------------------------------
-							glUseProgram(meshShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-							MVstack.push();
-								MVstack.translate(previewMesh->getPosition());
-								MVstack.multiply(previewMesh->getOrientation());
-								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glUniform4fv(locationMeshLP, 1, LP);
-								glUniform4fv(locationMeshLP2, 1, lPosTemp);
-								previewMesh->render();
-							MVstack.pop();
-
-							MVstack.push();
-								translateVector[0] = previewMesh->getPosition()[0] + 0.5f;
-								translateVector[1] = boardPos[1] + 0.1;
-								translateVector[2] = boardPos[2];
-								MVstack.translate(translateVector);
-								MVstack.multiply(placeHolder->getOrientation());
-								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glUniform4fv(locationMeshLP, 1, LP);
-								glUniform4fv(locationMeshLP2, 1, lPosTemp);
-								placeHolder->render();
-							MVstack.pop();
-
-							MVstack.push();
-								translateVector[0] = previewMesh->getPosition()[0] - 0.5f;
-								translateVector[1] = boardPos[1] + 0.1;
-								translateVector[2] = boardPos[2];
-								MVstack.translate(translateVector);
-								MVstack.multiply(placeHolder->getOrientation());
-								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glUniform4fv(locationMeshLP, 1, LP);
-								glUniform4fv(locationMeshLP2, 1, lPosTemp);
-								placeHolder->render();
-							MVstack.pop();
-
-							glUseProgram(sceneShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-							// 4.4.6 - RENDER wand >--------------------------------------------------------------------------------------------------
-							MVstack.push();
-								MVstack.translate(wandPos);
-								MVstack.multiply(wand->getOrientation());
-
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								MVstack.push();
-									translateVector[0] = 0.0f;
-									translateVector[1] = 0.0f;
-									translateVector[2] = -0.1f;
-									MVstack.translate(translateVector);
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-									boxWand.render();
-								MVstack.pop();
-								//render brush------------------------
-								MVstack.push();
-									/*MVstack.scale(wandRadius);
-									glUseProgram(sphereShader.programID);
-									glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-									glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									sphereWand.render();*/
-								MVstack.pop();
-							MVstack.pop();
-						MVstack.pop();
+					MVstack.translate(loadButton[i]->getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					loadButton[i]->render();
 					MVstack.pop();
 				}
-				break;
+
+				// render menuinfo during limited time
+				glUseProgram(menuShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+				MVstack.push();
+				glBindTexture(GL_TEXTURE_2D, loadModeInfoTex.getTextureID());
+				MVstack.translate(loadModeInfo.getPosition());
+				MVstack.rotX(1.57079f);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				loadModeInfo.render();
+				MVstack.pop();
+
+				// 4.4.5 - RENDER meshes >--------------------------------------------------------------------------------------------------
+				glUseProgram(meshShader.programID);
+				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+				MVstack.push();
+				MVstack.translate(previewMesh->getPosition());
+				MVstack.multiply(previewMesh->getOrientation());
+				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glUniform4fv(locationMeshLP, 1, LP);
+				glUniform4fv(locationMeshLP2, 1, lPosTemp);
+				previewMesh->render();
+				MVstack.pop();
+
+				MVstack.push();
+				translateVector[0] = previewMesh->getPosition()[0] + 0.5f;
+				translateVector[1] = boardPos[1] + 0.1;
+				translateVector[2] = boardPos[2];
+				MVstack.translate(translateVector);
+				MVstack.multiply(placeHolder->getOrientation());
+				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glUniform4fv(locationMeshLP, 1, LP);
+				glUniform4fv(locationMeshLP2, 1, lPosTemp);
+				placeHolder->render();
+				MVstack.pop();
+
+				MVstack.push();
+				translateVector[0] = previewMesh->getPosition()[0] - 0.5f;
+				translateVector[1] = boardPos[1] + 0.1;
+				translateVector[2] = boardPos[2];
+				MVstack.translate(translateVector);
+				MVstack.multiply(placeHolder->getOrientation());
+				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glUniform4fv(locationMeshLP, 1, LP);
+				glUniform4fv(locationMeshLP2, 1, lPosTemp);
+				placeHolder->render();
+				MVstack.pop();
+
+				glUseProgram(sceneShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+				// 4.4.6 - RENDER wand >--------------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(wandPos);
+				MVstack.multiply(wand->getOrientation());
+
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				MVstack.push();
+				translateVector[0] = 0.0f;
+				translateVector[1] = 0.0f;
+				translateVector[2] = -0.1f;
+				MVstack.translate(translateVector);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				boxWand.render();
+				MVstack.pop();
+				//render brush------------------------
+				MVstack.push();
+				/*MVstack.scale(wandRadius);
+				glUseProgram(sphereShader.programID);
+				glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+				glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				sphereWand.render();*/
+				MVstack.pop();
+				MVstack.pop();
+				MVstack.pop();
+				MVstack.pop();
+				eyeRenderTexture[l_EyeIndex]->UnsetRenderSurface();
 			}
+			break;
+		}
 
 			// ===================================================================================================================================
 			// 5 - Save mode
 			// ===================================================================================================================================
-			case 2: {
+		case 2: {
 
-				// 5.1 CHECK THREAD \_____________________________________________________________________________________________________________
-				if (th2.joinable()) {
-					th2.join();
-					th2Status = 0;
-					finishedTime = time(NULL) + 3; // set timer to wait 5 secounds before leaving save to give user feedback
+			// 5.1 CHECK THREAD \_____________________________________________________________________________________________________________
+			if (th2.joinable()) {
+				th2.join();
+				th2Status = 0;
+				finishedTime = time(NULL) + 3; // set timer to wait 5 secounds before leaving save to give user feedback
+			}
+
+			if (th2Status == 0) {
+				if (time(NULL) >= finishedTime) { // exit save mode when timer reached
+					mode = 0; // return to modelling mode
+				}
+			}
+
+
+			// get hmd eye poses \__________________________________________________________________________________________________________________
+			// Get both eye poses simultaneously, with IPD offset already included.
+			ViewOffset[0] = EyeRenderDesc[0].HmdToEyeViewOffset;
+			ViewOffset[1] = EyeRenderDesc[1].HmdToEyeViewOffset;
+
+			ftiming = ovr_GetFrameTiming(HMD, 0);
+			hmdState = ovr_GetTrackingState(HMD, ftiming.DisplayMidpointSeconds);
+			ovr_CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, EyeRenderPose);
+
+
+			GLRenderCallsOculus();
+
+			for (int l_EyeIndex = 0; l_EyeIndex < ovrEye_Count; l_EyeIndex++) {
+				// Increment to use next texture, just before writing
+
+				eyeRenderTexture[l_EyeIndex]->TextureSet->CurrentIndex = (eyeRenderTexture[l_EyeIndex]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[l_EyeIndex]->TextureSet->TextureCount;
+
+				// Switch to eye render target
+				eyeRenderTexture[l_EyeIndex]->SetAndClearRenderSurface(eyeDepthBuffer[l_EyeIndex]);
+
+
+
+				glUseProgram(sceneShader.programID);
+				// Pass projection matrix on to OpenGL...
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+				glUniform1i(locationTex, 0);
+
+				// Multiply with orientation retrieved from sensor...
+				OVR::Quatf l_Orientation = OVR::Quatf(EyeRenderPose[l_EyeIndex].Orientation);
+				OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
+				MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
+
+				//!-- Translation due to positional tracking (DK2) and IPD...
+				float eyePoses[3] = { -EyeRenderPose[l_EyeIndex].Position.x, -EyeRenderPose[l_EyeIndex].Position.y, -EyeRenderPose[l_EyeIndex].Position.z };
+				MVstack.translate(eyePoses);
+
+				//POSSABLY DOABLE IN SHADER
+				pmat4 = MVstack.getCurrentMatrix();
+				for (int i = 0; i < 16; i++)
+					mat4[i] = pmat4[i];
+
+				//linAlg::transpose(mat4);
+				linAlg::vectorMatrixMult(mat4, lPos, LP);
+				linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix()); //TODO: check if this uniform is needed
+
+				// 5.3 - Scene Matrix stack \__________________________________________________________________________________________________
+				MVstack.push();
+				// 5.3.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
+				glUniform4fv(locationLP, 1, LP);
+				MVstack.push();
+				MVstack.translate(board.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				board.render();
+				MVstack.pop();
+
+
+				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+
+				// 5.3.2 Render tracking range >-------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(trackingRange.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(2.0f);
+				trackingRange.render();
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				MVstack.pop();
+
+				// 5.3.3 Render title >----------------------------------------------------------------------------------------------------
+				glUseProgram(menuShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+				MVstack.push();
+				MVstack.translate(title.getPosition());
+				MVstack.rotX(1.57079f);
+				glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				title.render();
+				MVstack.pop();
+
+				// 5.3.4 Render modelling buttons >-----------------------------------------------------------------------------------------
+				// info
+				for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
+
+					if (modellingButton[i]->getState()) {
+						glUseProgram(bloomShader.programID);
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+					}
+					else {
+						glUseProgram(menuShader.programID);
+						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+					}
+
+					MVstack.push();
+					glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
+
+					MVstack.translate(modellingButton[i]->getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					modellingButton[i]->render();
+					MVstack.pop();
 				}
 
 				if (th2Status == 0) {
-					if (time(NULL) >= finishedTime) { // exit save mode when timer reached
-						mode = 0; // return to modelling mode
-					}
-				}
-
-				// Begin the frame...
-				ovrHmd_BeginFrame(hmd, l_FrameIndex);
-				// Get eye poses for both the left and the right eye. g_EyePoses contains all Rift information: orientation, positional tracking and
-				// the IPD in the form of the input variable g_EyeOffsets.
-				ovrHmd_GetEyePoses(hmd, l_FrameIndex, g_EyeOffsets, g_EyePoses, NULL);
-				// Bind the FBO...
-				glBindFramebuffer(GL_FRAMEBUFFER, l_FBOId);
-				//glModes
-				GLRenderCallsOculus();
-
-				for (int l_EyeIndex = 0; l_EyeIndex<ovrEye_Count; l_EyeIndex++) {
-
-					// 5.2 OCULUS/CAMERA TRANSFORMS \______________________________________________________________________________________________
+					glUseProgram(menuShader.programID);
+					glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
 					MVstack.push();
-						ovrEyeType l_Eye = hmd->EyeRenderOrder[l_EyeIndex];
-
-						glViewport(g_EyeTextures[l_Eye].Header.RenderViewport.Pos.x,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Pos.y,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Size.w,
-							g_EyeTextures[l_Eye].Header.RenderViewport.Size.h);
-
-						glUseProgram(sceneShader.programID);
-						// Pass projection matrix on to OpenGL...
-						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-						glUniform1i(locationTex, 0);
-
-						// Multiply with orientation retrieved from sensor...
-						OVR::Quatf l_Orientation = OVR::Quatf(g_EyePoses[l_Eye].Orientation);
-						OVR::Matrix4f l_ModelViewMatrix = OVR::Matrix4f(l_Orientation.Inverted());
-						MVstack.multiply(&(l_ModelViewMatrix.Transposed().M[0][0]));
-
-						//!-- Translation due to positional tracking (DK2) and IPD...
-						float eyePoses[3] = { -g_EyePoses[l_Eye].Position.x, -g_EyePoses[l_Eye].Position.y, -g_EyePoses[l_Eye].Position.z };
-						MVstack.translate(eyePoses);
-
-						//POSSABLY DOABLE IN SHADER
-						pmat4 = MVstack.getCurrentMatrix();
-						for (int i = 0; i < 16; i++)
-							mat4[i] = pmat4[i];
-
-						//linAlg::transpose(mat4);
-						linAlg::vectorMatrixMult(mat4, lPos, LP);
-						linAlg::vectorMatrixMult(mat4, lPos2, lPosTemp);
-						glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix()); //TODO: check if this uniform is needed
-
-						// 5.3 - Scene Matrix stack \__________________________________________________________________________________________________
-						MVstack.push();
-							// 5.3.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
-							glUniform4fv(locationLP, 1, LP);
-							MVstack.push();
-								MVstack.translate(board.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-								board.render();
-							MVstack.pop();
-
-
-							glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-
-							// 5.3.2 Render tracking range >-------------------------------------------------------------------------------------------
-							MVstack.push();
-								MVstack.translate(trackingRange.getPosition());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-								glLineWidth(2.0f);
-								trackingRange.render();
-								glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-							MVstack.pop();
-
-							// 5.3.3 Render title >----------------------------------------------------------------------------------------------------
-							glUseProgram(menuShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-							
-							MVstack.push();
-								MVstack.translate(title.getPosition());
-								MVstack.rotX(1.57079f);
-								glBindTexture(GL_TEXTURE_2D, titleTex.getTextureID());
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								title.render();
-							MVstack.pop();
-
-							// 5.3.4 Render modelling buttons >-----------------------------------------------------------------------------------------
-							// info
-							for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++) {
-
-								if (modellingButton[i]->getState()) {
-									glUseProgram(bloomShader.programID);
-									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								}
-								else {
-									glUseProgram(menuShader.programID);
-									glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								}
-
-								MVstack.push();
-									glBindTexture(GL_TEXTURE_2D, modellingButtonTex[i]->getTextureID());
-
-									MVstack.translate(modellingButton[i]->getPosition());
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									modellingButton[i]->render();
-								MVstack.pop();
-							}
-
-							if (th2Status == 0) {
-								glUseProgram(menuShader.programID);
-								glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-								MVstack.push();
-								glBindTexture(GL_TEXTURE_2D, savedFeedbackTex.getTextureID());
-								MVstack.translate(savedFeedback.getPosition());
-								MVstack.rotX(1.57079f);
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								savedFeedback.render();
-								MVstack.pop();
-							}
-
-
-							//glBindTexture(GL_TEXTURE_2D, 0);
-							// 5.3.5 Render mesh >------------------------------------------------------------------------------------------------------
-							glUseProgram(meshShader.programID);
-							glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-
-
-							MVstack.push();
-								MVstack.translate(modellingMesh->getPosition());
-								MVstack.multiply(modellingMesh->getOrientation());
-								glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								glUniform4fv(locationMeshLP, 1, LP);
-								glUniform4fv(locationMeshLP2, 1, lPosTemp);
-
-								if (lines) {
-									glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-									modellingMesh->render();
-									glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-								}
-								else {
-									modellingMesh->render();
-								}
-
-							MVstack.pop();
-
-							glUseProgram(sceneShader.programID);
-							glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-							// 5.3.6 Render wand >------------------------------------------------------------------------------------------------------
-							MVstack.push();
-								MVstack.translate(wandPos);
-								MVstack.multiply(wand->getOrientation());
-
-								glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-								MVstack.push();
-									translateVector[0] = 0.0f;
-									translateVector[1] = 0.0f;
-									translateVector[2] = -0.1f;
-									MVstack.translate(translateVector);
-									glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-									boxWand.render();
-								MVstack.pop();
-								//render brush------------------------
-								//MVstack.push();
-									/*	MVstack.scale(wandRadius);
-									glUseProgram(sphereShader.programID);
-									glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
-									glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-									sphereWand.render();*/
-								//MVstack.pop();
-							MVstack.pop();
-						MVstack.pop();
+					glBindTexture(GL_TEXTURE_2D, savedFeedbackTex.getTextureID());
+					MVstack.translate(savedFeedback.getPosition());
+					MVstack.rotX(1.57079f);
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					savedFeedback.render();
 					MVstack.pop();
 				}
-				break;
+
+
+				//glBindTexture(GL_TEXTURE_2D, 0);
+				// 5.3.5 Render mesh >------------------------------------------------------------------------------------------------------
+				glUseProgram(meshShader.programID);
+				glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+
+
+				MVstack.push();
+				MVstack.translate(modellingMesh->getPosition());
+				MVstack.multiply(modellingMesh->getOrientation());
+				glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glUniform4fv(locationMeshLP, 1, LP);
+				glUniform4fv(locationMeshLP2, 1, lPosTemp);
+
+				if (lines) {
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					modellingMesh->render();
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				}
+				else {
+					modellingMesh->render();
+				}
+
+				MVstack.pop();
+
+				glUseProgram(sceneShader.programID);
+				glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
+				// 5.3.6 Render wand >------------------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(wandPos);
+				MVstack.multiply(wand->getOrientation());
+
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				MVstack.push();
+				translateVector[0] = 0.0f;
+				translateVector[1] = 0.0f;
+				translateVector[2] = -0.1f;
+				MVstack.translate(translateVector);
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				boxWand.render();
+				MVstack.pop();
+				//render brush------------------------
+				//MVstack.push();
+				/*	MVstack.scale(wandRadius);
+				glUseProgram(sphereShader.programID);
+				glUniformMatrix4fv(locationWandP, 1, GL_FALSE, &(g_ProjectionMatrix[l_Eye].Transposed().M[0][0]));
+				glUniformMatrix4fv(locationWandMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				sphereWand.render();*/
+				//MVstack.pop();
+				MVstack.pop();
+				MVstack.pop();
+				MVstack.pop();
+				eyeRenderTexture[l_EyeIndex]->UnsetRenderSurface();
 			}
+			break;
+		}
 		}
 		// Back to the default framebuffer...
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//eyeRenderTexture[l_EyeIndex]->UnsetRenderSurface();
 
-		// Do everything, distortion, front/back buffer swap...
-		ovrHmd_EndFrame(hmd, g_EyePoses, g_EyeTextures);
-		++l_FrameIndex;
+		// Do distortion rendering, Present and flush/sync
+
+		// Set up positional data.
+		ovrViewScaleDesc viewScaleDesc;
+		viewScaleDesc.HmdSpaceToWorldScaleInMeters = 1.0f;
+		viewScaleDesc.HmdToEyeViewOffset[0] = ViewOffset[0];
+		viewScaleDesc.HmdToEyeViewOffset[1] = ViewOffset[1];
+
+		ovrLayerEyeFov ld;
+		ld.Header.Type = ovrLayerType_EyeFov;
+		ld.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;   // Because OpenGL.
+
+		for (int eye = 0; eye < 2; ++eye)
+		{
+			ld.ColorTexture[eye] = eyeRenderTexture[eye]->TextureSet;
+			ld.Viewport[eye] = OVR::Recti(eyeRenderTexture[eye]->GetSize());
+			ld.Fov[eye] = hmdDesc.DefaultEyeFov[eye];
+			ld.RenderPose[eye] = EyeRenderPose[eye];
+		}
+
+		ovrLayerHeader* layers = &ld.Header;
+		ovrResult result = ovr_SubmitFrame(HMD, 0, &viewScaleDesc, &layers, 1);
+		// exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
+		if (!OVR_SUCCESS(result))
+			std::cout << "error";
+
+		//isVisible = (result == ovrSuccess);
+
+		// Blit mirror texture to back buffer
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, mirrorFBO);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		GLint w = mirrorTexture->OGL.Header.TextureSize.w;
+		GLint h = mirrorTexture->OGL.Header.TextureSize.h;
+		glBlitFramebuffer(0, h, w, 0,
+			0, 0, w, h,
+			GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+		glfwSwapBuffers(l_Window);
+
 		glfwPollEvents();
-
 	}
 
 	// join threads
@@ -2021,32 +2133,32 @@ int Oculus::runOvr() {
 	}
 
 	// Clean up FBO...
-	glDeleteRenderbuffers(1, &l_DepthBufferId);
-	glDeleteTextures(1, &l_TextureId);
-	glDeleteFramebuffers(1, &l_FBOId);
+	//glDeleteRenderbuffers(1, &l_DepthBufferId);
+	//glDeleteTextures(1, &l_TextureId);
+	//glDeleteFramebuffers(1, &l_FBOId);
 
 	// Clean up window...
 	glfwDestroyWindow(l_Window);
 	glfwTerminate();
 
 	// Clean up Oculus...
-	ovrHmd_Destroy(hmd);
+	ovr_Destroy(HMD);
 	ovr_Shutdown();
 
 	return 1;
 }
 
 static void WindowSizeCallback(GLFWwindow* p_Window, int p_Width, int p_Height) {
-	if (p_Width>0 && p_Height>0) {
-		g_Cfg.OGL.Header.BackBufferSize.w = p_Width;
-		g_Cfg.OGL.Header.BackBufferSize.h = p_Height;
+	/*if (p_Width>0 && p_Height>0) {
+	g_Cfg.OGL.Header.BackBufferSize.w = p_Width;
+	g_Cfg.OGL.Header.BackBufferSize.h = p_Height;
 
-		ovrBool l_ConfigureResult = ovrHmd_ConfigureRendering(hmd, &g_Cfg.Config, G_DISTORTIONCAPS, hmd->MaxEyeFov, g_EyeRenderDesc);
-		if (!l_ConfigureResult) {
-			printf("Configure failed.\n");
-			exit(EXIT_FAILURE);
-		}
+	ovrBool l_ConfigureResult = ovrHmd_ConfigureRendering(hmd, &g_Cfg.Config, G_DISTORTIONCAPS, hmd->MaxEyeFov, g_EyeRenderDesc);
+	if (!l_ConfigureResult) {
+	printf("Configure failed.\n");
+	exit(EXIT_FAILURE);
 	}
+	}*/
 }
 
 void GLRenderCallsOculus(){
@@ -2056,6 +2168,7 @@ void GLRenderCallsOculus(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_FRAMEBUFFER_SRGB);
 	//glEnable(GL_FLAT);
 	glShadeModel(GL_FLAT);
 	glCullFace(GL_BACK);
@@ -2077,7 +2190,7 @@ void GLRenderCallsOculus(){
 //! checks if a menu item is choosen and sets the appropriate state 
 int handleMenu(float* wandPosition, menuBox** menuItem, const int nrOfModellingUIButtons, int* state) {
 	for (int i = 0; i < nrOfModellingUIButtons; i++) {
-		if (wandPosition[0] < menuItem[i]->getPosition()[0] + menuItem[i]->getDim()[0] /2.0f
+		if (wandPosition[0] < menuItem[i]->getPosition()[0] + menuItem[i]->getDim()[0] / 2.0f
 			&& wandPosition[0] > menuItem[i]->getPosition()[0] - menuItem[i]->getDim()[0] / 2.0f
 			&& wandPosition[1] > menuItem[i]->getPosition()[1] - menuItem[i]->getDim()[1] / 2.0f
 			&& wandPosition[1] < menuItem[i]->getPosition()[1] + menuItem[i]->getDim()[1] / 2.0f
@@ -2132,21 +2245,21 @@ std::vector<std::string> getSavedFileNames() {
 
 void loadStaticMesh(StaticMesh* item, std::string fileName) {
 	loaderMeshLock.lock();
-		item->load(fileName);
+	item->load(fileName);
 	loaderMeshLock.unlock();
 	th1Status = 2;
 }
 
 void loadMesh(DynamicMesh* item, std::string fileName) {
 	meshLock.lock();
-		item->load(fileName);
+	item->load(fileName);
 	meshLock.unlock();
 	th2Status = 2;
 }
 
 void saveFile(DynamicMesh* item) {
 	meshLock.lock();
-		item->save();
+	item->save();
 	meshLock.unlock();
 	th2Status = 2;
 }
