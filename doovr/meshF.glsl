@@ -48,13 +48,13 @@ void main () {
 		//LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
 	}
 	else {
-		LightIntensity = vec3(0.6f, 0.1294117f, 0.0f);
+		LightIntensity = vec3(0.3f, 0.02f, 0.0f);
 	}
 	
-	vec3 Kd = vec3(0.8f, 0.8f, 0.8f);                // Diffuse reflectivity
+	vec3 Kd = vec3(0.7f, 0.7f, 0.7f);                // Diffuse reflectivity
 	vec3 Ka = vec3(0.1f, 0.1f, 0.1f);                // Ambient reflectivity
-	vec3 Ks = vec3( 0.7f, 0.7f, 0.7f);				 // Specular reflectivity
-	float Shininess = 8.0f;						 // Specular shininess factor
+	vec3 Ks = vec3( 0.2f, 0.2f, 0.2f);				 // Specular reflectivity
+	float Shininess = 6.0f;						 // Specular shininess factor
 	vec3 norm = normalize( Normal );			
 	vec3 vie = normalize(vec3(-Position));			 // viewDir	
 		
