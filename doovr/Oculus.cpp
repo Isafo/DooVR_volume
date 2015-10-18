@@ -274,7 +274,7 @@ int Oculus::runOvr() {
 
 	// Setup Window and Graphics
 	// Note: the mirror window can be any size, for this sample we use 1/2 the HMD resolution
-	ovrSizei windowSize = { hmdDesc.Resolution.w / 2, hmdDesc.Resolution.h / 2 };
+	ovrSizei windowSize = { hmdDesc.Resolution.w, hmdDesc.Resolution.h };
 	// INITIALIZE GL \__________________________________________________________________________________________________________________________
 	if (!glfwInit()) {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
@@ -502,7 +502,7 @@ int Oculus::runOvr() {
 	// Scene textures
 
 	Texture whiteTex("../Assets/Textures/light.DDS");
-	Texture groundTex("../Assets/Textures/Gbord.DDS");
+	Texture groundTex("../Assets/Textures/bordPixlar.DDS");
 	Texture titleTex("../Assets/Textures/Titel2by1.DDS");
 	Texture resetTex("../Assets/Textures/reset.DDS");
 	Texture saveTex("../Assets/Textures/save.DDS");
@@ -2164,7 +2164,7 @@ static void WindowSizeCallback(GLFWwindow* p_Window, int p_Width, int p_Height) 
 void GLRenderCallsOculus(){
 	// Clear...
 	//GL calls
-	glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+	glClearColor(0.01f, 0.01f, 0.01f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
