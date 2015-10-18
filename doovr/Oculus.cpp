@@ -40,6 +40,8 @@
 #include "glm\glm\glm.hpp"
 #include "glm\glm\gtc\matrix_transform.hpp"
 
+#include "Utilities.h"
+
 // ------- Function declerations --------
 //! Sets up a glfw window depending on the resolution of the Oculus Rift device
 static void WindowSizeCallback(GLFWwindow *p_Window, int p_Width, int p_Height);
