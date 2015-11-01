@@ -742,8 +742,8 @@ int Oculus::runOvr() {
 	StaticMesh* loaderMesh;
 
 	Tool* currentTool;
-	//currentTool = new Push(modellingMesh, wand);
-	currentTool = new Drag(modellingMesh, wand);
+	currentTool = new Push(modellingMesh, wand);
+	//currentTool = new Drag(modellingMesh, wand);
 
 	//=======================================================================================================================================
 	//Render loop
