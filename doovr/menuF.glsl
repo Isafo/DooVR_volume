@@ -7,7 +7,7 @@ uniform vec4 lightPos;
 uniform sampler2D tex;
 
 void main () {
-	float lightIntensity = 0.7f;
+	float lightIntensity = 0.5f;
 
 	// DXT from directX, so we have to invert the UV coordinates 
 	//(coord.u, 1.0-coord.v) to fetch the correct texel.

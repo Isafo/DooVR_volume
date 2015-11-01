@@ -504,6 +504,7 @@ int Oculus::runOvr() {
 	// Scene textures
 
 	Texture whiteTex("../Assets/Textures/light.DDS");
+	Texture greyTex("../Assets/Textures/lightBlue.DDS");
 	Texture groundTex("../Assets/Textures/bordPixlar.DDS");
 	Texture titleTex("../Assets/Textures/Titel2by1.DDS");
 	Texture resetTex("../Assets/Textures/reset.DDS");
@@ -524,10 +525,10 @@ int Oculus::runOvr() {
 	Texture savedFeedbackTex("../Assets/Textures/sparad4by1.dds");
 	Texture loadModeInfoTex("../Assets/Textures/loadMode2by1.dds");
 
-	float boardPos[3] = { 0.0f, -0.36f, 0.0f };
+	float boardPos[3] = { 0.0f, -0.24f, 0.0f };
 	//float boardPos[3] = { 0.0f, -0.22f, 0.0f };
-	Box board(boardPos[0], boardPos[1], boardPos[2], 1.4, 0.02, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) + 0.01f), boardPos[2], 0.50, 0.25, 0.40);
-
+	Box board(boardPos[0], boardPos[1] - 1.08*0.5, boardPos[2] - 0.148, 1.4, 1.08, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) - 0.002f), boardPos[2], 0.50, 0.25, 0.40);
+	MenuItem ground(boardPos[0], boardPos[1] - 1.08, boardPos[2], 50, 50);
 
 	// 2.5 - Modes \______________________________________________________________________________________________________________________
 	/*! Mode 0 = modelling mode
@@ -580,11 +581,11 @@ int Oculus::runOvr() {
 	[4] change wand size*/
 	static int modellingButtonState[NR_OF_MODELLING_BUTTONS];
 
-	modellingButton[0] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + 0.06, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
-	modellingButton[1] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.04, 0.025f, 0.025f, 0.025f, 3, 0, 1, 1, 5, 5);
-	modellingButton[2] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.08, 0.025f, 0.025f, 0.025f, 4, 0, 1, 1, 5, 5);
-	modellingButton[4] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.12, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
-	modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.011f + 0.0125f, boardPos[2] + -0.16, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1, 5, 5);
+	modellingButton[0] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + 0.06, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
+	modellingButton[1] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.04, 0.025f, 0.025f, 0.025f, 3, 0, 1, 1, 5, 5);
+	modellingButton[2] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.08, 0.025f, 0.025f, 0.025f, 4, 0, 1, 1, 5, 5);
+	modellingButton[4] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.12, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
+	modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.16, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1, 5, 5);
 
 	// place modellingButton Frame
 	modellingButtonFrame = new MenuItem(0.0f, -0.01245f, 0.0f, 0.04f, 0.04f, 0, 3, 1, 1);
@@ -598,22 +599,22 @@ int Oculus::runOvr() {
 	// MenuItems representing a tool
 	const int NR_OF_TOOLS = 3;
 	menuBox tool[NR_OF_TOOLS];
-	MenuItem toolFrame(boardPos[0] + 0.2, boardPos[1] + 0.011f, boardPos[2] - 0.04, 0.04f, 0.12f, 0, 4, 1, 3);
-	MenuItem toolString(boardPos[0] + 0.2f + 0.08f, boardPos[1] + 0.011f, boardPos[2] - 0.04, 0.12f, 0.04f, 1, 4, 3, 1);
+	MenuItem toolFrame(boardPos[0] + 0.2, boardPos[1] + 0.001f, boardPos[2] - 0.04, 0.04f, 0.12f, 0, 4, 1, 3);
+	MenuItem toolString(boardPos[0] + 0.2f + 0.08f, boardPos[1] + 0.001f, boardPos[2] - 0.04, 0.12f, 0.04f, 1, 4, 3, 1);
 
 	for (int i = 0; i < NR_OF_TOOLS; i++)
-		tool[i] = menuBox(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.0125f, boardPos[2] - 0.04*(i), 0.025f, 0.025f, 0.025f, i, 0, 1, 1, 5, 5);
+		tool[i] = menuBox(boardPos[0] + 0.2, boardPos[1] + 0.001f + 0.0125f, boardPos[2] - 0.04*(i), 0.025f, 0.025f, 0.025f, i, 0, 1, 1, 5, 5);
 
-	menuBox toolSize(boardPos[0] + 0.2, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
+	menuBox toolSize(boardPos[0] + 0.2, boardPos[1] + 0.001f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
 	menuBox toolSizeFill(boardPos[0] + 0.2, boardPos[1] + 0.09 - 0.075, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolSizeFill.setDim(0.0f, toolRad * 3, 0.0f);
 	MenuItem sizeString(0.14f, -0.075f, 0.0f, 0.24f, 0.04f, 0, 2, 8, 1);
 
 
-	menuBox toolStrength(boardPos[0] + 0.16f, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
-	menuBox toolStrengthFill(boardPos[0] + 0.16f, boardPos[1] + 0.011f + 0.075f, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolStrengthFill.setDim(0.0f, toolStr, 0.0f);
+	menuBox toolStrength(boardPos[0] + 0.16f, boardPos[1] + 0.001f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
+	menuBox toolStrengthFill(boardPos[0] + 0.16f, boardPos[1] + 0.001f + 0.075f, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolStrengthFill.setDim(0.0f, toolStr, 0.0f);
 	MenuItem strengthString(0.095f, -0.075f, 0.035f, 0.24f, 0.04f, 1, 5, 9, 1);
 
-	MenuItem trackingInfo(boardPos[0], boardPos[1] + 0.0125f, boardPos[2] - 0.22f, 0.24f, 0.08f, 1, 6, 9, 2);
+	MenuItem trackingInfo(boardPos[0], boardPos[1] + 0.001f, boardPos[2] - 0.22f, 0.24f, 0.08f, 1, 6, 9, 2);
 
 	/*! tool 0 = push/pull
 	1 =
@@ -1173,22 +1174,19 @@ int Oculus::runOvr() {
 				MVstack.push();
 				MVstack.translate(board.getPosition());
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				//glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
-				glBindTexture(GL_TEXTURE_2D, groundTex.getTextureID());
+				glBindTexture(GL_TEXTURE_2D, greyTex.getTextureID());
 				board.render();
 				MVstack.pop();
 
-				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
-
-				// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
+				// Render Ground >----------------------------------------------------------------------------------------------------------------
+				glUniform4fv(locationLP, 1, LP);
 				MVstack.push();
-				MVstack.translate(trackingRange.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				glLineWidth(2.0f);
-				trackingRange.render();
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					MVstack.translate(ground.getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+					ground.render();
 				MVstack.pop();
+
 
 				// 3.4.3 Render title >----------------------------------------------------------------------------------------------------
 
@@ -1202,6 +1200,20 @@ int Oculus::runOvr() {
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 				title.render();
 				MVstack.pop();
+
+
+				glBindTexture(GL_TEXTURE_2D, whiteTex.getTextureID());
+
+				// 3.4.2 Render tracking range >-------------------------------------------------------------------------------------------
+				MVstack.push();
+				MVstack.translate(trackingRange.getPosition());
+				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(2.0f);
+				trackingRange.render();
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				MVstack.pop();
+
 				/*
 				//glUseProgram(menuShader.programID);
 				//glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(g_ProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));

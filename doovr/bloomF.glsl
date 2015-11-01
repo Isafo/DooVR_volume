@@ -13,7 +13,7 @@ const float texScaler =  1.0/texDimension;
 const float texOffset = -0.5/texDimension;
 
 const vec2 size = vec2(1536.0f, 1536.0f);
-const int samples = 16; // pixels per axis; higher = bigger glow, worse performance
+const int samples = 32; // pixels per axis; higher = bigger glow, worse performance
 const float quality = 1.0; // lower = smaller glow, better quality
 
 void main () {
@@ -32,8 +32,6 @@ void main () {
 			sum += texture(tex, invUV + offset);
 		}
 	}
-  
-	vec4 color = vec4(0.1f, 0.4f, 0.6f, 1.0f);
   
 	FragColor = ((sum / (samples * samples)) + source);
 }
