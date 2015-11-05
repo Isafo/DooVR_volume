@@ -513,6 +513,152 @@ void DynamicMesh::sphereSubdivide(float rad) {
 
 void DynamicMesh::generateMC(ScalarField _sf) {
 
+	int cubeIndex;
+
+	float xyz[8][3];
+	float vertList[12][3];
+	unsigned char val[8];
+	unsigned char dVal;
+
+	for (int x = 0; x < _sf.res[0] - 1; x++){
+		for (int y = 0; y < _sf.res[1] - 1; y++){
+			for (int z = 0; z < _sf.res[2] - 1; z++){
+				
+				xyz[0][0] = (double)(x - (_sf.res[0] / 2)) / ((double)(_sf.res[0] / 2))*_sf.dim[0];
+				xyz[0][1] = (double)(y - (_sf.res[1] / 2)) / ((double)(_sf.res[1] / 2))*_sf.dim[1];
+				xyz[0][2] = (double)(z - (_sf.res[2] / 2)) / ((double)(_sf.res[2] / 2))*_sf.dim[2];
+				val[0] = _sf.data[x][y][z];
+
+				xyz[1][0] = (double)(x+1 - (_sf.res[0] / 2)) / ((double)(_sf.res[0] / 2))*_sf.dim[0];
+				xyz[1][1] = (double)(y - (_sf.res[1] / 2)) / ((double)(_sf.res[1] / 2))*_sf.dim[1];
+				xyz[1][2] = (double)(z - (_sf.res[2] / 2)) / ((double)(_sf.res[2] / 2))*_sf.dim[2];
+				val[1] = _sf.data[x+1][y][z];
+
+				xyz[2][0] = (double)(x+1 - (_sf.res[0] / 2)) / ((double)(_sf.res[0] / 2))*_sf.dim[0];
+				xyz[2][1] = (double)(y - (_sf.res[1] / 2)) / ((double)(_sf.res[1] / 2))*_sf.dim[1];
+				xyz[2][2] = (double)(z+1 - (_sf.res[2] / 2)) / ((double)(_sf.res[2] / 2))*_sf.dim[2];
+				val[2] = _sf.data[x+1][y][z+1];
+
+				xyz[3][0] = (double)(x - (_sf.res[0] / 2)) / ((double)(_sf.res[0] / 2))*_sf.dim[0];
+				xyz[3][1] = (double)(y - (_sf.res[1] / 2)) / ((double)(_sf.res[1] / 2))*_sf.dim[1];
+				xyz[3][2] = (double)(z+1 - (_sf.res[2] / 2)) / ((double)(_sf.res[2] / 2))*_sf.dim[2];
+				val[3] = _sf.data[x][y][z+1];
+
+				xyz[4][0] = (double)(x - (_sf.res[0] / 2)) / ((double)(_sf.res[0] / 2))*_sf.dim[0];
+				xyz[4][1] = (double)(y+1 - (_sf.res[1] / 2)) / ((double)(_sf.res[1] / 2))*_sf.dim[1];
+				xyz[4][2] = (double)(z - (_sf.res[2] / 2)) / ((double)(_sf.res[2] / 2))*_sf.dim[2];
+				val[4] = _sf.data[x][y+1][z];
+
+				xyz[5][0] = (double)(x+1 - (_sf.res[0] / 2)) / ((double)(_sf.res[0] / 2))*_sf.dim[0];
+				xyz[5][1] = (double)(y+1 - (_sf.res[1] / 2)) / ((double)(_sf.res[1] / 2))*_sf.dim[1];
+				xyz[5][2] = (double)(z - (_sf.res[2] / 2)) / ((double)(_sf.res[2] / 2))*_sf.dim[2];
+				val[5] = _sf.data[x+1][y+1][z];
+
+				xyz[6][0] = (double)(x+1 - (_sf.res[0] / 2)) / ((double)(_sf.res[0] / 2))*_sf.dim[0];
+				xyz[6][1] = (double)(y+1 - (_sf.res[1] / 2)) / ((double)(_sf.res[1] / 2))*_sf.dim[1];
+				xyz[6][2] = (double)(z+1 - (_sf.res[2] / 2)) / ((double)(_sf.res[2] / 2))*_sf.dim[2];
+				val[6] = _sf.data[x+1][y+1][z+1];
+
+				xyz[7][0] = (double)(x - (_sf.res[0] / 2)) / ((double)(_sf.res[0] / 2))*_sf.dim[0];
+				xyz[7][1] = (double)(y+1 - (_sf.res[1] / 2)) / ((double)(_sf.res[1] / 2))*_sf.dim[1];
+				xyz[7][2] = (double)(z+1 - (_sf.res[2] / 2)) / ((double)(_sf.res[2] / 2))*_sf.dim[2];
+				val[7] = _sf.data[x][y+1][z+1];
+
+				cubeIndex = 0;
+				if (_sf.data[x][y][z] > _sf.isoValue) cubeIndex += 1;
+				if (_sf.data[x+1][y][z] > _sf.isoValue) cubeIndex += 2;
+				if (_sf.data[x+1][y][z+1] > _sf.isoValue) cubeIndex += 4;
+				if (_sf.data[x][y][z+1] > _sf.isoValue) cubeIndex += 8;
+
+				if (_sf.data[x][y+1][z] > _sf.isoValue) cubeIndex += 16;
+				if (_sf.data[x+1][y+1][z] > _sf.isoValue) cubeIndex += 32;
+				if (_sf.data[x+1][y+1][z+1] > _sf.isoValue) cubeIndex += 64;
+				if (_sf.data[x][y+1][z+1] > _sf.isoValue) cubeIndex += 128;
+
+				/* Cube is entirely in/out of the surface */
+				if (_sf.edgeTable[cubeIndex] == 0)
+					return;
+
+
+
+				/* Find the vertices where the surface intersects the cube */
+				if (_sf.edgeTable[cubeIndex] & 1){
+					dVal = (_sf.isoValue - val[0]) / (val[1] - val[0]);
+					vertList[0][0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
+					vertList[0][1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
+					vertList[0][2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
+						//VertexInterp(_sf.isoValue, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
+				}
+					
+				if (_sf.edgeTable[cubeIndex] & 2){
+					vertList[1] =
+						VertexInterp(_sf.isoValue, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 4){
+					vertList[2] =
+						VertexInterp(_sf.isoValue, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 8){
+					vertList[3] =
+						VertexInterp(_sf.isoValue, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 16){
+					vertList[4] =
+						VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 32){
+					vertList[5] =
+						VertexInterp(_sf.isoValue, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 64){
+					vertList[6] =
+						VertexInterp(_sf.isoValue, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 128){
+					vertList[7] =
+						VertexInterp(_sf.isoValue, grid.p[7], grid.p[4], grid.val[7], grid.val[4]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 256){
+					vertList[8] =
+						VertexInterp(_sf.isoValue, grid.p[0], grid.p[4], grid.val[0], grid.val[4]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 512){
+					vertList[9] =
+						VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 1024){
+					vertList[10] =
+						VertexInterp(_sf.isoValue, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
+
+				}
+				if (_sf.edgeTable[cubeIndex] & 2048){
+					vertList[11] =
+						VertexInterp(_sf.isoValue, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
+
+				}
+				
+
+				for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3)
+				{
+					triangleArray[triangleCap].index[0] = 0;
+					triangleArray[triangleCap].index[1] = 0;
+					triangleArray[triangleCap].index[2] = 0;
+
+					triangleCap++;
+				}
+				
+			}
+		}
+	}
 }
 
 void DynamicMesh::load(std::string fileName) {

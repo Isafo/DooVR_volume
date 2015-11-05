@@ -23,8 +23,6 @@ ScalarField::ScalarField(int rX, int rY, int rZ, int dX, int dY, int dZ)
 				data[i][j][k] = (i ) % 256;
 	isoValue = 128;
 
-
-
 }
 
 
