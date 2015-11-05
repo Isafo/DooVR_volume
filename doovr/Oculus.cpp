@@ -742,7 +742,7 @@ int Oculus::runOvr() {
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
 
-	scalarField sTest(100, 100, 100, 1, 1, 1);
+	ScalarField sTest(100, 100, 100, 1, 1, 1);
 
 	Tool* currentTool;
 	currentTool = new Push(modellingMesh, wand);
