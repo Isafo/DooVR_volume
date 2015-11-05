@@ -3,6 +3,7 @@
 #include "linAlg.h"
 #include "Mesh.h"
 #include "Wand.h"
+#include "scalarField.h"
 #include <vector>
 
 #ifndef DYNAMICMESH_H
@@ -58,12 +59,6 @@ class DynamicMesh : public Mesh{
 	void deSelect();
 
 	//dilate/erode based modelling
-	void pull(Wand* wand, float rad);
-	void push(Wand* wand, float rad);
-	void drag(Wand* wand, float rad);
-	void draw(Wand* wand, float rad);
-	void smooth(Wand* wand, float rad);
-	void markUp(Wand* wand, float rad);
 
 	void render();
 	void render(unsigned int PrimID);
@@ -73,6 +68,7 @@ class DynamicMesh : public Mesh{
 
 	//! saves the mesh as a binary file with the current date and time as file name (yyyy-mm-dd_hh-mm-ss.bin)
 	void sphereSubdivide(float rad);
+	void generateMC(ScalarField _sf);
 
 	void save();
 	void load(std::string _fileName);

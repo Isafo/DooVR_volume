@@ -19,6 +19,7 @@
 
 #include "DynamicMesh.h"
 #include "StaticMesh.h"
+#include "scalarField.h"
 
 #include "Circle.h"
 #include "Square.h"
@@ -740,6 +741,8 @@ int Oculus::runOvr() {
 	StaticMesh* placeHolder;
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
+
+	scalarField sTest(100, 100, 100, 1, 1, 1);
 
 	Tool* currentTool;
 	currentTool = new Push(modellingMesh, wand);

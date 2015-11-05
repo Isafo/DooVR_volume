@@ -511,6 +511,10 @@ void DynamicMesh::sphereSubdivide(float rad) {
 
 }
 
+void DynamicMesh::generateMC(ScalarField _sf) {
+
+}
+
 void DynamicMesh::load(std::string fileName) {
 	
 	int prevVertexCap = vertexCap;
