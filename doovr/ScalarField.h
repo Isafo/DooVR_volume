@@ -10,8 +10,9 @@ public:
 	unsigned char*** data;
 	unsigned char isoValue;
 
-	//int edgeTable[256];
-	//int triTable[256][16];
+	int edgeTable[256];
+	int triTable[256][16];
+	/*
 	int edgeTable[256] = {
 		0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 		0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
@@ -302,7 +303,7 @@ public:
 	{ 0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
 	{ 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
 	{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } };
-
+*/
 private:
 
 };

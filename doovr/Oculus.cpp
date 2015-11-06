@@ -722,13 +722,17 @@ int Oculus::runOvr() {
 	float wandRadius = 0.01f;
 	float lastRadius;
 
+	
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
+	ScalarField sTest(10, 10, 10, 1, 1, 1);
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
 	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
 	modellingMesh->setPosition(tempVec);
 	//modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
-	modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
+	//modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
+	modellingMesh->generateMC(sTest); modellingMesh->createBuffers();
+	
 	std::string currentMesh = "../Assets/Models/resetMesh.bin";
 
 	// variables for browsing saved meshes
@@ -742,7 +746,7 @@ int Oculus::runOvr() {
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
 
-	ScalarField sTest(100, 100, 100, 1, 1, 1);
+	
 
 	Tool* currentTool;
 	currentTool = new Push(modellingMesh, wand);
@@ -798,7 +802,7 @@ int Oculus::runOvr() {
 					aModellingStateIsActive--;
 				}
 				currentTool->deSelect();
-				currentTool->firstSelect(modellingMesh, wand);
+				//currentTool->firstSelect(modellingMesh, wand);
 			}
 
 			//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
