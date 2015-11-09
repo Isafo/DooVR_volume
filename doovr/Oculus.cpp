@@ -724,7 +724,7 @@ int Oculus::runOvr() {
 
 	
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
-	ScalarField sTest(10, 10, 10, 1, 1, 1);
+	ScalarField sTest(100, 100, 100, 0.1, 0.1, 0.1);
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
 	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];

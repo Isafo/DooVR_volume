@@ -518,7 +518,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 	float xyz[8][3];
 	int vertList[12];
 	unsigned char val[8];
-	unsigned char dVal;
+	double dVal;
 
 	//vertexArray = new vertex[MAX_NR_OF_VERTICES];
 
@@ -571,16 +571,17 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				xyz[7][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 				val[7] = _sf.data[x][y+1][z+1];
 
+				// get the case index
 				cubeIndex = 0;
-				if (_sf.data[x][y][z] > _sf.isoValue) cubeIndex += 1;
-				if (_sf.data[x+1][y][z] > _sf.isoValue) cubeIndex += 2;
-				if (_sf.data[x+1][y][z+1] > _sf.isoValue) cubeIndex += 4;
-				if (_sf.data[x][y][z+1] > _sf.isoValue) cubeIndex += 8;
+				if (_sf.data[x][y][z] < _sf.isoValue) cubeIndex |= 1;
+				if (_sf.data[x+1][y][z] < _sf.isoValue) cubeIndex |= 2;
+				if (_sf.data[x+1][y][z+1] < _sf.isoValue) cubeIndex |= 4;
+				if (_sf.data[x][y][z+1] < _sf.isoValue) cubeIndex |= 8;
 
-				if (_sf.data[x][y+1][z] > _sf.isoValue) cubeIndex += 16;
-				if (_sf.data[x+1][y+1][z] > _sf.isoValue) cubeIndex += 32;
-				if (_sf.data[x+1][y+1][z+1] > _sf.isoValue) cubeIndex += 64;
-				if (_sf.data[x][y+1][z+1] > _sf.isoValue) cubeIndex += 128;
+				if (_sf.data[x][y+1][z] < _sf.isoValue) cubeIndex |= 16;
+				if (_sf.data[x+1][y+1][z] < _sf.isoValue) cubeIndex |= 32;
+				if (_sf.data[x+1][y+1][z+1] < _sf.isoValue) cubeIndex |= 64;
+				if (_sf.data[x][y+1][z+1] < _sf.isoValue) cubeIndex |= 128;
 
 				/* Cube is entirely in/out of the surface */
 				if (_sf.edgeTable[cubeIndex] == 0)
@@ -590,7 +591,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 
 				/* Find the vertices where the surface intersects the cube */
 				if (_sf.edgeTable[cubeIndex] & 1) {
-					dVal = (_sf.isoValue - val[0]) / (val[1] - val[0]);
+					dVal = (double)(_sf.isoValue - val[0]) / (double)(val[1] - val[0]);
 					vertexArray[vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
@@ -600,7 +601,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				}
 					
 				if (_sf.edgeTable[cubeIndex] & 2) {
-					dVal = (_sf.isoValue - val[1]) / (val[2] - val[1]);
+					dVal = (double)(_sf.isoValue - val[1]) / (double)(val[2] - val[1]);
 					vertexArray[vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
@@ -610,7 +611,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 4) {
-					dVal = (_sf.isoValue - val[2]) / (val[3] - val[2]);
+					dVal = (double)(_sf.isoValue - val[2]) / (double)(val[3] - val[2]);
 					vertexArray[vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
@@ -620,7 +621,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 8) {
-					dVal = (_sf.isoValue - val[3]) / (val[0] - val[3]);
+					dVal = (double)(_sf.isoValue - val[3]) / (double)(val[0] - val[3]);
 					vertexArray[vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
@@ -630,7 +631,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 						//VertexInterp(_sf.isoValue, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 16) {
-					dVal = (_sf.isoValue - val[4]) / (val[5] - val[4]);
+					dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
 					vertexArray[vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
@@ -640,7 +641,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//	VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 32) {
-					dVal = (_sf.isoValue - val[5]) / (val[6] - val[5]);
+					dVal = (double)(_sf.isoValue - val[5]) / (double)(val[6] - val[5]);
 					vertexArray[vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
@@ -651,7 +652,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 
 				}
 				if (_sf.edgeTable[cubeIndex] & 64) {
-					dVal = (_sf.isoValue - val[6]) / (val[7] - val[6]);
+					dVal = (double)(_sf.isoValue - val[6]) / (double)(val[7] - val[6]);
 					vertexArray[vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
@@ -661,7 +662,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//	VertexInterp(_sf.isoValue, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 128) {
-					dVal = (_sf.isoValue - val[7]) / (val[4] - val[7]);
+					dVal = (double)(_sf.isoValue - val[7]) / (double)(val[4] - val[7]);
 					vertexArray[vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
@@ -671,7 +672,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//	VertexInterp(_sf.isoValue, grid.p[7], grid.p[4], grid.val[7], grid.val[4]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 256) {
-					dVal = (_sf.isoValue - val[0]) / (val[4] - val[0]);
+					dVal = (double)(_sf.isoValue - val[0]) / (double)(val[4] - val[0]);
 					vertexArray[vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
@@ -681,7 +682,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//	VertexInterp(_sf.isoValue, grid.p[0], grid.p[4], grid.val[0], grid.val[4]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 512) {
-					dVal = (_sf.isoValue - val[1]) / (val[5] - val[1]);
+					dVal = (double)(_sf.isoValue - val[1]) / (double)(val[5] - val[1]);
 					vertexArray[vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
@@ -691,7 +692,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 1024) {
-					dVal = (_sf.isoValue - val[2]) / (val[6] - val[2]);
+					dVal = (double)(_sf.isoValue - val[2]) / (double)(val[6] - val[2]);
 					vertexArray[vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
@@ -701,7 +702,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 2048) {
-					dVal = (_sf.isoValue - val[3]) / (val[7] - val[3]);
+					dVal = (double)(_sf.isoValue - val[3]) / (double)(val[7] - val[3]);
 					vertexArray[vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
 					vertexArray[vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
 					vertexArray[vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
@@ -713,9 +714,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				
 				// bind triangle indecies
 				for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3) {
-					triangleArray[triangleCap].index[0] = vertList[_sf.triTable[cubeIndex][i]];
+					triangleArray[triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i]];
 					triangleArray[triangleCap].index[1] = vertList[_sf.triTable[cubeIndex][i + 1]];
-					triangleArray[triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i + 2]];
+					triangleArray[triangleCap].index[0] = vertList[_sf.triTable[cubeIndex][i + 2]];
 
 					triangleCap++;
 				}

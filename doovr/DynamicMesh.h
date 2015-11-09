@@ -83,7 +83,7 @@ class DynamicMesh : public Mesh{
   private:
 
 	  //TODO: remove one zero
-	const int MAX_NR_OF_VERTICES = 1000000;
+	const int MAX_NR_OF_VERTICES = 10000000;
 	//! negative index of the latest removed vertex
 	/*! vInfoArray's edgepointer contains the negative index of an empty slot in the vertexArray*/
 	int emptyV;

@@ -2,7 +2,7 @@
 class ScalarField
 {
 public:
-	ScalarField(int rX, int rY, int rZ, int dX, int dY, int dZ);
+	ScalarField(int rX, int rY, int rZ, float dX, float dY, float dZ);
 	~ScalarField();
 
 	int res[3];
