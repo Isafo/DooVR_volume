@@ -34,11 +34,11 @@ public:
 protected:
 
 	//array that stres all vertices of the mesh
-	vertex* vertexArray;
+	vertex** vertexArray;
 	int nrofVerts;
 
 	//Array that stores all triangles of the mesh
-	triangle* triangleArray;
+	triangle** triangleArray;
 	int nrofTris;
 
 	float position[3];

@@ -18,8 +18,8 @@ BuildUp::BuildUp(DynamicMesh* mesh, Wand* wand)
 	lineOffset[1] = 0.0f;
 	lineOffset[2] = 0.1f;
 
-	mVertexArray = mesh->vertexArray;
-	mVInfoArray = mesh->vInfoArray;
+	mVertexArray = mesh->vertexArray[0];
+	mVInfoArray = mesh->vInfoArray[0];
 	mEdgeArray = mesh->e;
 	mPosition = mesh->position;
 	mOrientation = mesh->orientation;
@@ -102,7 +102,7 @@ void BuildUp::findIntersection(DynamicMesh* mesh, Wand* wand, int triIndex)
 
 	for (int i = 0; i < 3; i++)
 	{
-		index2 = mesh->triangleArray[max(triIndex - 1, 0)].index[i];
+		index2 = mesh->triangleArray[0][max(triIndex - 1, 0)].index[i];
 		tempEdge = mVInfoArray[index2].edgePtr;
 
 		do {

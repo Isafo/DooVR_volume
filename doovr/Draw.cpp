@@ -17,8 +17,8 @@ Draw::Draw(DynamicMesh* mesh, Wand* wand)
 	lineOffset[1] = 0.0f;
 	lineOffset[2] = 1.0f;
 
-	mVertexArray = mesh->vertexArray;
-	mVInfoArray = mesh->vInfoArray;
+	mVertexArray = mesh->vertexArray[0];
+	mVInfoArray = mesh->vInfoArray[0];
 	mEdgeArray = mesh->e;
 	mPosition = mesh->position;
 	mOrientation = mesh->orientation;

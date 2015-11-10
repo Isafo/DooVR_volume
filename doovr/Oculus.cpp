@@ -748,7 +748,7 @@ int Oculus::runOvr() {
 
 	
 
-	Tool* currentTool;
+	VertexTool* currentTool;
 	currentTool = new Push(modellingMesh, wand);
 	//currentTool = new Drag(modellingMesh, wand);
 

@@ -3,7 +3,7 @@
 class Octant
 {
 public:
-	Octant();
+	Octant(int _depth);
 	~Octant();
 
 private:

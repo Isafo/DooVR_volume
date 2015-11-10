@@ -1,9 +1,9 @@
 #pragma once
-#include "Tool.h"
+#include "VertexTool.h"
 #include "Line.h"
 #include "Circle.h"
 
-class Drag : public Tool
+class Drag : public VertexTool
 {
 public:
 	Drag(DynamicMesh* mesh, Wand* wand);
@@ -28,7 +28,6 @@ public:
 																	intersectionN[2] = intersection.nxyz[2]; };
 
 private:
-	float radius;
 
 	Line* pointer;
 	float lineOffset[3];

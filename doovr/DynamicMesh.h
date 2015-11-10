@@ -49,6 +49,7 @@ class DynamicMesh : public Mesh{
 	friend class Draw;
 	friend class Drag;
 	friend class BuildUp;
+	friend class Add;
 
   public:
 	DynamicMesh();
@@ -110,10 +111,10 @@ class DynamicMesh : public Mesh{
 
 	//! Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle
 	/*! An empty slot in vInfoArray and vertexArray saves the negative index of the next empty slot in the array in the edgePtr variable.*/
-	vInfo* vInfoArray;
+	vInfo** vInfoArray;
 	//! Array that exists parallell to the indexArray and contains indices to an edge that is part of the corresponding triangle
 	/*! An empty slot in triEPtr and triangleArray saves the negative index of the next empty slot in the array in triEPtr*/
-	int* triEPtr;
+	int** triEPtr;
 
 	//! Array that stores all halfEdges of the mesh
 	/*! An empty slot in the array saves the negative index of the next empty slot in the array in the nextEdge variable*/

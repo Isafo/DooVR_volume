@@ -1,6 +1,6 @@
 #pragma once
-#include "Tool.h"
-class Push : public Tool
+#include "VertexTool.h"
+class Push : public VertexTool
 {
 public:
 	Push(DynamicMesh* mesh, Wand* wand);
@@ -21,7 +21,6 @@ public:
 	void getIntersection(float* intersectionP, float* intersectionN){};
 
 private:
-	float radius;
 
 	vertex* mVertexArray;
 	halfEdge* mEdgeArray;

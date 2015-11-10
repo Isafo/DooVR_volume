@@ -1,9 +1,9 @@
 #pragma once
-#include "Tool.h"
+#include "VertexTool.h"
 #include "Line.h"
 #include "Circle.h"
 
-class Smooth : public Tool
+class Smooth : public VertexTool
 {
 public:
 	Smooth(DynamicMesh* mesh, Wand* wand);
@@ -28,8 +28,6 @@ public:
 																	intersectionN[2] = intersection.nxyz[2]; };
 
 private:
-	float radius;
-	float strength;
 
 	Line* pointer;
 	float lineOffset[3];
