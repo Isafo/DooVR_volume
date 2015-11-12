@@ -3,16 +3,18 @@
 class Octree
 {
 public:
-	Octree(double _dim[3]);
+	Octree(float _dim);
 
 	~Octree();
 
-private:
 	Octant* root;
 
 	//const int MAX_DEPTH = 8;
-	double dim[3];
+	float halfDim;
 	//int scalarRes[3];
+
+private:
+
 
 };
 

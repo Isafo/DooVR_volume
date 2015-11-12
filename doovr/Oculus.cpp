@@ -20,6 +20,7 @@
 #include "DynamicMesh.h"
 #include "StaticMesh.h"
 #include "scalarField.h"
+#include "Octree.h"
 
 #include "Circle.h"
 #include "Square.h"
@@ -32,6 +33,8 @@
 #include "Draw.h"
 #include "Drag.h"
 #include "BuildUp.h"
+//
+#include "Add.h"
 
 #include <thread>
 #include <mutex>
@@ -725,6 +728,7 @@ int Oculus::runOvr() {
 	
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
 	ScalarField sTest(100, 100, 100, 0.1, 0.1, 0.1);
+	Octree* oTest = new Octree(2.0);
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
 	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
@@ -750,6 +754,8 @@ int Oculus::runOvr() {
 
 	VertexTool* currentTool;
 	currentTool = new Push(modellingMesh, wand);
+	ScalarTool* currentSTool;
+	currentSTool = new Add;
 	//currentTool = new Drag(modellingMesh, wand);
 
 	//=======================================================================================================================================
@@ -777,7 +783,8 @@ int Oculus::runOvr() {
 
 			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_UP)) {
 				if (modellingState[0] == 2) {
-					currentTool->moveVertices(modellingMesh, wand, deltaTime);
+					//currentTool->moveVertices(modellingMesh, wand, deltaTime);
+					currentSTool->changeScalarData(modellingMesh, wand, oTest);
 
 				}
 				else if (modellingState[0] == 1) {

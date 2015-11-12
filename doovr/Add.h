@@ -11,6 +11,6 @@ public:
 	void setRadius(float rad){ radius = rad; };
 	void setStrength(float str){ strength = str; };
 
-	void changeScalarData(Wand* _wand, Octree* _ot, DynamicMesh* _mesh);
+	void changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot );
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "Tool.h"
 #include "Octree.h"
+#include "Octant.h"
 #include "DynamicMesh.h"
 class ScalarTool :
 	public Tool
@@ -14,7 +15,7 @@ public:
 	virtual void setRadius(float rad) = 0;
 	virtual void setStrength(float str) = 0;
 
-	virtual void changeScalarData(Wand* _wand, Octree* _ot, DynamicMesh* _mesh) = 0;
+	virtual void changeScalarData( DynamicMesh* _mesh, Wand* _wand, Octree* _ot) = 0;
 
 protected:
 };
