@@ -3,7 +3,7 @@
 class Octant
 {
 public:
-	Octant(int _depth, float x, float y, float z, float _hafDim);
+	Octant(int _depth, Octant* _parent, float x, float y, float z, float _hafDim);
 	~Octant();
 
 	void allocateData5();
@@ -12,10 +12,13 @@ public:
 	void allocateData6();
 	void deAllocateData6();
 
+	void partition();
+
 	float pos[3];
 	float halfDim;
 
 	Octant* child[8];
+	Octant* parent;
 	int depth;
 
 	unsigned char*** data;

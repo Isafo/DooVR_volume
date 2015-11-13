@@ -30,7 +30,8 @@ void Add::render(MatrixStack* MVstack, GLint locationMV)
 void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 {
 	//TODO: started assuming octree depth of 5, changed it to 6 might have caused bugs. check. Also make the handling of depth dynamic
-
+	//TODO: implement tests that check if child cubes can be deallocated when entire cubes are filled.
+	//TODO:	use currentOct->fillCount variable in Octant properly
 	float wPos[4]; float nwPos[4];
 	float wDirr[4]; float nwDirr[4];
 	float s, d = 0.0;
@@ -76,23 +77,10 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 		}
 	}//->
 	if (d <= radius*radius){//<- collision check rootcube -
-		while (currentOct->depth < 6){//<-- reaching depth 5 --
+		while (currentOct->depth < 6){//<-- reaching depth 6 --
 			
 			if (currentOct->child[0] == nullptr){
-
-				d = currentOct->halfDim / 2.0f;
-				octPos[0] = currentOct->pos[0]; octPos[2] = currentOct->pos[2]; octPos[2] = currentOct->pos[2];
-				tmpI = currentOct->depth + 1;
-
-				currentOct->child[0] = new Octant(tmpI, octPos[0] - d, octPos[0] - d, octPos[0] + d, d);
-				currentOct->child[1] = new Octant(tmpI, octPos[0] + d, octPos[0] - d, octPos[0] + d, d);
-				currentOct->child[2] = new Octant(tmpI, octPos[0] - d, octPos[0] - d, octPos[0] - d, d);
-				currentOct->child[3] = new Octant(tmpI, octPos[0] + d, octPos[0] - d, octPos[0] - d, d);
-				currentOct->child[4] = new Octant(tmpI, octPos[0] - d, octPos[0] + d, octPos[0] + d, d);
-				currentOct->child[5] = new Octant(tmpI, octPos[0] + d, octPos[0] + d, octPos[0] + d, d);
-				currentOct->child[6] = new Octant(tmpI, octPos[0] - d, octPos[0] + d, octPos[0] - d, d);
-				currentOct->child[7] = new Octant(tmpI, octPos[0] + d, octPos[0] + d, octPos[0] - d, d);
-
+				currentOct->partition();
 			}
 
 			for (int i = 0; i < 8; i++){//<--- collision check cubechildren ---
@@ -149,9 +137,11 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 							for (int k = 0; i < 16; k++){
 								linAlg::calculateVec(tmpPos, nwPos, tmpVec);
 
-								if (linAlg::vecLength(tmpVec) < radius)//check if point is inside sphere
+								if (linAlg::vecLength(tmpVec) < radius){//check if point is inside sphere
 									currentOct->data[i][j][k] = 255;
-
+									//TODO: change currentOct->fillCount
+								}
+									
 								tmpPos[0] += 0.001f; tmpPos[1] += 0.001f; tmpPos[2] += 0.001f;
 							}
 						}
@@ -162,6 +152,8 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 
 		olCounter = olStart;
 		while (olCounter < tmpI){ //<-- march trough selected cubes and generate triangles
+
+			
 
 		}
 
