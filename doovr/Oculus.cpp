@@ -728,7 +728,7 @@ int Oculus::runOvr() {
 
 	
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
-	ScalarField sTest(16, 16, 16, 0.1, 0.1, 0.1);
+	ScalarField sTest(128, 128, 128, 0.1, 0.1, 0.1);
 	Octree* oTest = new Octree(2.0);
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
@@ -738,11 +738,7 @@ int Oculus::runOvr() {
 	//modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
 	
 	clock_t begin = clock(); //DEBUG TEST
-	for (int i = 0; i < 10; i++)
-		for (int j = 0; j < 10; j++)
-			for (int k = 0; k < 10; k++)
-				modellingMesh->generateMC(sTest);
-
+	modellingMesh->generateMC(sTest);
 	clock_t end = clock(); //DEBUG TEST
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC; //DEBUG TEST
 	modellingMesh->createBuffers();

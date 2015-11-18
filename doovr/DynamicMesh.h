@@ -40,6 +40,12 @@ struct vInfo {
 	GLfloat selected = 0;
 };
 
+struct cacheCell {
+	bool isoBool;
+	float cornerPoint[3];
+	int vertexIndex[3];
+};
+
 #endif
 
 //! A class representing a modifiable 3D mesh 
@@ -123,6 +129,9 @@ class DynamicMesh : public Mesh{
 	//! largest index in the edgeArray where values exist 
 	int edgeCap;
 	
+	//TEMPORARY ARRAY FOR CACHING THE ISO VALUE
+	cacheCell*** isoCache;
+
 	
 	//float midPoint[3];
 
