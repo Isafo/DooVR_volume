@@ -763,8 +763,6 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			triangleCap++;
 		}
 	}
-
-
 	//first spot of first row of first layer done -------------------
 	for ( z = 1; z < _sf.res[2] - 1; z++) {
 
