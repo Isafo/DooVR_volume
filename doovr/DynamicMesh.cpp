@@ -573,9 +573,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 	xyz[4][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 	val[4] = _sf.data[x][y + 1][z];
 
-	xyz[5][0] = isoCache[0][0][0].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-	xyz[5][1] = isoCache[0][0][0].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-	xyz[5][2] = isoCache[0][0][0].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+	xyz[5][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+	xyz[5][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+	xyz[5][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 	val[5] = _sf.data[x + 1][y + 1][z];
 
 	xyz[6][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -611,9 +611,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 	else
 		cellIsoBool[4] = false;
 	if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
-		cellIsoBool[5] = isoCache[0][0][0].isoBool = true;
+		cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = true;
 	else
-		cellIsoBool[5] = isoCache[0][0][0].isoBool = false;
+		cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = false;
 	if (_sf.data[x + 1][y + 1][z + 1] < _sf.isoValue)// cubeIndex |= 64;
 		cellIsoBool[6] = true;
 	else
@@ -623,8 +623,8 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 	else
 		cellIsoBool[7] = false;
 
-	cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
-				cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+	cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 	
 	/* Cube is entirely in/out of the surface */
 	if (_sf.edgeTable[cubeIndex] != 0) {
@@ -675,7 +675,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 			vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 			vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-			isoCache[0][0][0].vertexIndex[0] = vertList[4] = vertexCap;
+			isoCache[layerIndex][y][z].vertexIndex[0] = vertList[4] = vertexCap;
 			vertexCap++;
 			//vertList[4] =
 			//	VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
@@ -685,7 +685,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 			vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 			vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-			isoCache[0][0][0].vertexIndex[1] = vertList[5] = vertexCap;
+			isoCache[layerIndex][y][z].vertexIndex[1] = vertList[5] = vertexCap;
 			vertexCap++;
 			//vertList[5] =
 			//	VertexInterp(_sf.isoValue, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
@@ -726,7 +726,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 			vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 			vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-			isoCache[0][0][0].vertexIndex[2] = vertList[9] = vertexCap;
+			isoCache[layerIndex][y][z].vertexIndex[2] = vertList[9] = vertexCap;
 			vertexCap++;
 			//vertList[9] =
 			//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
@@ -778,17 +778,19 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		val[3] = _sf.data[x][y][z + 1];
 		cellIsoBool[3] = cellIsoBool[0];
 
-		xyz[6][0] = isoCache[0][0][z - 1].cornerPoint[0];
-		xyz[6][1] = isoCache[0][0][z - 1].cornerPoint[1];
-		xyz[6][2] = isoCache[0][0][z - 1].cornerPoint[2];
-		val[6] = _sf.data[x + 1][y + 1][z + 1];
-		cellIsoBool[6] = isoCache[0][0][z - 1].isoBool;
-
 		xyz[7][0] = xyz[4][0];
 		xyz[7][1] = xyz[4][1];
 		xyz[7][2] = xyz[4][2];
 		val[7] = _sf.data[x][y + 1][z + 1];
 		cellIsoBool[7] = cellIsoBool[4];
+
+		xyz[6][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
+		xyz[6][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
+		xyz[6][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
+		val[6] = _sf.data[x + 1][y + 1][z + 1];
+		cellIsoBool[6] = isoCache[layerIndex][y][z - 1].isoBool;
+
+		
 
 		//calculate values that could not be inherited
 		xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -806,9 +808,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		xyz[4][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 		val[4] = _sf.data[x][y + 1][z];
 
-		xyz[5][0] = isoCache[0][0][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-		xyz[5][1] = isoCache[0][0][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-		xyz[5][2] = isoCache[0][0][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		xyz[5][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[5][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[5][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 		val[5] = _sf.data[x + 1][y + 1][z];
 
 
@@ -828,12 +830,12 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		else
 			cellIsoBool[4] = false;
 		if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
-			cellIsoBool[5] = isoCache[0][0][z].isoBool = true;
+			cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = true;
 		else
-			cellIsoBool[5] = isoCache[0][0][z].isoBool = false;
+			cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = false;
 
-		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
-			cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+			cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 		/* check if cube is entirely in/out of the surface */
 		if (_sf.edgeTable[cubeIndex] != 0) {
@@ -847,12 +849,12 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
 			}
 			if (_sf.edgeTable[cubeIndex] & 64) {
-				vertList[6] = isoCache[0][0][z - 1].vertexIndex[0];
+				vertList[6] = isoCache[layerIndex][y][z - 1].vertexIndex[0];
 				//vertList[6] =
 				//	VertexInterp(_sf.isoValue, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
 			}
 			if (_sf.edgeTable[cubeIndex] & 1024) {
-				vertList[10] = isoCache[0][0][z - 1].vertexIndex[2];
+				vertList[10] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
 				//vertList[10] =
 				//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
 			}
@@ -899,7 +901,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-				isoCache[0][0][z].vertexIndex[0] = vertList[4] = vertexCap;
+				isoCache[layerIndex][y][z].vertexIndex[0] = vertList[4] = vertexCap;
 				vertexCap++;
 				//vertList[4] =
 				//	VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
@@ -909,7 +911,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-				isoCache[0][0][z].vertexIndex[1] = vertList[5] = vertexCap;
+				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[5] = vertexCap;
 				vertexCap++;
 				//vertList[5] =
 				//	VertexInterp(_sf.isoValue, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
@@ -941,7 +943,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-				isoCache[0][0][z].vertexIndex[2] = vertList[9] = vertexCap;
+				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[9] = vertexCap;
 				vertexCap++;
 				//vertList[9] =
 				//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
@@ -966,11 +968,11 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		z = 0;
 		//create the first voxel of remaining rows of first layer-------------------------------
 		//inherit value from isoCache
-		xyz[1][0] = isoCache[0][y - 1][0].cornerPoint[0];
-		xyz[1][1] = isoCache[0][y - 1][0].cornerPoint[1];
-		xyz[1][2] = isoCache[0][y - 1][0].cornerPoint[2];
+		xyz[1][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
+		xyz[1][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
+		xyz[1][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
 		val[1] = _sf.data[x + 1][y][z];
-		cellIsoBool[1] = isoCache[0][y - 1][0].isoBool;
+		cellIsoBool[1] = isoCache[layerIndex][y - 1][z].isoBool;
 		
 		//calculate values that could not be inherited
 		xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -993,9 +995,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		xyz[4][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 		val[4] = _sf.data[x][y + 1][z];
 
-		xyz[5][0] = isoCache[0][y][0].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-		xyz[5][1] = isoCache[0][y][0].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-		xyz[5][2] = isoCache[0][y][0].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		xyz[5][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[5][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[5][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 		val[5] = _sf.data[x + 1][y + 1][z];
 
 		xyz[6][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -1027,9 +1029,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		else
 			cellIsoBool[4] = false;
 		if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
-			cellIsoBool[5] = isoCache[0][y][0].isoBool = true;
+			cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = true;
 		else
-			cellIsoBool[5] = isoCache[0][y][0].isoBool = false;
+			cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = false;
 		if (_sf.data[x + 1][y + 1][z + 1] < _sf.isoValue)// cubeIndex |= 64;
 			cellIsoBool[6] = true;
 		else
@@ -1039,8 +1041,8 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		else
 			cellIsoBool[7] = false;
 
-		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
-			cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+			cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 		/* Cube is entirely in/out of the surface */
 		if (_sf.edgeTable[cubeIndex] != 0) {
@@ -1049,11 +1051,11 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 
 			//inherit edges from isoCache-------------------------------------------------------
 			if (_sf.edgeTable[cubeIndex] & 1) {
-				vertList[0] = isoCache[0][y-1][0].vertexIndex[0];
+				vertList[0] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
 			}
 
 			if (_sf.edgeTable[cubeIndex] & 2) {
-				vertList[1] = isoCache[0][y - 1][0].vertexIndex[1];
+				vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
 			}
 
 			//calculate edges that could not be inherited -------------------------------------
@@ -1078,7 +1080,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-				isoCache[0][y][0].vertexIndex[0] = vertList[4] = vertexCap; // save in isoCache
+				isoCache[layerIndex][y][z].vertexIndex[0] = vertList[4] = vertexCap; // save in isoCache
 				vertexCap++;
 			}
 			if (_sf.edgeTable[cubeIndex] & 32) {
@@ -1086,7 +1088,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-				isoCache[0][y][0].vertexIndex[1] = vertList[5] = vertexCap; // save in isoCache
+				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[5] = vertexCap; // save in isoCache
 				vertexCap++;
 			}
 			if (_sf.edgeTable[cubeIndex] & 64) {
@@ -1118,7 +1120,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-				isoCache[0][y][0].vertexIndex[2] = vertList[9] = vertexCap; // save in isoCache
+				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[9] = vertexCap; // save in isoCache
 				vertexCap++;
 			}
 			if (_sf.edgeTable[cubeIndex] & 1024) {
@@ -1151,11 +1153,11 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		//create the remaining voxels of remaining rows of first layer--------------------------
 		for ( z = 1; z < _sf.res[2] - 1; z++) {
 			//inherit value from isoCache
-			xyz[1][0] = isoCache[0][y - 1][0].cornerPoint[0];
-			xyz[1][1] = isoCache[0][y - 1][0].cornerPoint[1];
-			xyz[1][2] = isoCache[0][y - 1][0].cornerPoint[2];
+			xyz[1][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
+			xyz[1][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
+			xyz[1][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
 			val[1] = _sf.data[x + 1][y][z];
-			cellIsoBool[1] = isoCache[0][y - 1][0].isoBool;
+			cellIsoBool[1] = isoCache[layerIndex][y - 1][z].isoBool;
 
 			xyz[2][0] = xyz[1][0];
 			xyz[2][1] = xyz[1][1];
@@ -1169,11 +1171,11 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			val[3] = _sf.data[x][y][z + 1];
 			cellIsoBool[3] = cellIsoBool[0];
 
-			xyz[6][0] = isoCache[0][0][z - 1].cornerPoint[0];
-			xyz[6][1] = isoCache[0][0][z - 1].cornerPoint[1];
-			xyz[6][2] = isoCache[0][0][z - 1].cornerPoint[2];
+			xyz[6][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
+			xyz[6][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
+			xyz[6][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
 			val[6] = _sf.data[x + 1][y + 1][z + 1];
-			cellIsoBool[6] = isoCache[0][0][z - 1].isoBool;
+			cellIsoBool[6] = isoCache[layerIndex][y][z - 1].isoBool;
 
 			xyz[7][0] = xyz[4][0];
 			xyz[7][1] = xyz[4][1];
@@ -1192,9 +1194,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			xyz[4][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 			val[4] = _sf.data[x][y + 1][z];
 
-			xyz[5][0] = isoCache[0][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-			xyz[5][1] = isoCache[0][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-			xyz[5][2] = isoCache[0][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			xyz[5][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[5][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[5][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 			val[5] = _sf.data[x + 1][y + 1][z];
 
 			// get the case index
@@ -1208,13 +1210,13 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			else
 				cellIsoBool[4] = false;
 			if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
-				cellIsoBool[5] = isoCache[0][y][z].isoBool = true;
+				cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = true;
 			else
-				cellIsoBool[5] = isoCache[0][y][z].isoBool = false;
+				cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = false;
 			
 
-			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
-				cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 			/* Cube is entirely in/out of the surface */
 			if (_sf.edgeTable[cubeIndex] != 0) {
@@ -1230,16 +1232,16 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				}
 				//inherit edges from isoCache-------------------------------------------
 				if (_sf.edgeTable[cubeIndex] & 1) {
-					vertList[0] = isoCache[0][y - 1][z].vertexIndex[0];
+					vertList[0] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
 				}
 				if (_sf.edgeTable[cubeIndex] & 2) {
-					vertList[1] = isoCache[0][y - 1][z].vertexIndex[1];
+					vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
 				}
 				if (_sf.edgeTable[cubeIndex] & 64) {
-					vertList[6] = isoCache[0][y][z - 1].vertexIndex[0];
+					vertList[6] = isoCache[layerIndex][y][z - 1].vertexIndex[0];
 				}
 				if (_sf.edgeTable[cubeIndex] & 1024) {
-					vertList[10] = isoCache[0][y][z - 1].vertexIndex[2];
+					vertList[10] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
 				}
 
 
@@ -1257,7 +1259,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-					isoCache[0][y][z].vertexIndex[0] = vertList[4] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[4] = vertexCap;
 					vertexCap++;
 				}
 				if (_sf.edgeTable[cubeIndex] & 32) {
@@ -1265,7 +1267,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-					isoCache[0][y][z].vertexIndex[1] = vertList[5] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[5] = vertexCap;
 					vertexCap++;
 				}
 				if (_sf.edgeTable[cubeIndex] & 128) {
@@ -1289,7 +1291,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-					isoCache[0][y][z].vertexIndex[2] = vertList[9] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[9] = vertexCap;
 					vertexCap++;
 				}
 				// bind triangle indecies
@@ -1303,7 +1305,8 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			}
 		}
 	}
-
+	
+	layerIndex++; // move to next layer
 	// create remaining layers ---------------------------------------------------------
 	for (x = 1; x < _sf.res[0] - 1; x++){
 		y = 0;
@@ -1311,11 +1314,11 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		//create first voxel of first row of remaining layers
 
 		//inherit points from isoCache
-		xyz[4][0] = isoCache[x - 1][0][0].cornerPoint[0];
-		xyz[4][1] = isoCache[x - 1][0][0].cornerPoint[1];
-		xyz[4][2] = isoCache[x - 1][0][0].cornerPoint[2];
+		xyz[4][0] = isoCache[(layerIndex + 1)%2][y][z].cornerPoint[0];
+		xyz[4][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
+		xyz[4][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
 		val[4] = _sf.data[x][y + 1][z];
-		cellIsoBool[4] = isoCache[x - 1][0][0].isoBool;
+		cellIsoBool[4] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 		//calculate points that could not be inherited
 		xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -1338,9 +1341,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		xyz[3][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 		val[3] = _sf.data[x][y][z + 1];
 
-		xyz[5][0] = isoCache[x][0][0].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-		xyz[5][1] = isoCache[x][0][0].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-		xyz[5][2] = isoCache[x][0][0].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		xyz[5][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[5][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[5][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 		val[5] = _sf.data[x + 1][y + 1][z];
 
 		xyz[6][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -1372,9 +1375,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		else
 			cellIsoBool[3] = false;
 		if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
-			cellIsoBool[5] = isoCache[x][0][0].isoBool = true;
+			cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = true;
 		else
-			cellIsoBool[5] = isoCache[x][0][0].isoBool = false;
+			cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = false;
 		if (_sf.data[x + 1][y + 1][z + 1] < _sf.isoValue)// cubeIndex |= 64;
 			cellIsoBool[6] = true;
 		else
@@ -1384,8 +1387,8 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		else
 			cellIsoBool[7] = false;
 
-		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
-			cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+			cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 		/* Cube is entirely in/out of the surface */
 		if (_sf.edgeTable[cubeIndex] != 0) {
@@ -1394,10 +1397,10 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 
 			//inherit vertex indices from isoCache------------------------------------------
 			if (_sf.edgeTable[cubeIndex] & 128) {
-				vertList[7] = isoCache[x - 1][0][0].vertexIndex[1];
+				vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[1];
 			}
 			if (_sf.edgeTable[cubeIndex] & 256) {
-				vertList[8] = isoCache[x - 1][0][0].vertexIndex[2];
+				vertList[8] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
 			}
 
 			//calculate indices that could not be inherited---------------------------------
@@ -1446,7 +1449,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-				isoCache[x][0][0].vertexIndex[0] = vertList[4] = vertexCap;
+				isoCache[layerIndex][y][z].vertexIndex[0] = vertList[4] = vertexCap;
 				vertexCap++;
 				//vertList[4] =
 				//	VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
@@ -1456,7 +1459,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-				isoCache[x][0][0].vertexIndex[1] = vertList[5] = vertexCap;
+				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[5] = vertexCap;
 				vertexCap++;
 				//vertList[5] =
 				//	VertexInterp(_sf.isoValue, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
@@ -1477,7 +1480,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-				isoCache[x][0][0].vertexIndex[2] = vertList[9] = vertexCap;
+				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[9] = vertexCap;
 				vertexCap++;
 				//vertList[9] =
 				//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
@@ -1536,17 +1539,17 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			cellIsoBool[7] = cellIsoBool[4];
 
 			//inherit points from isoCache
-			xyz[4][0] = isoCache[x - 1][0][z].cornerPoint[0];
-			xyz[4][1] = isoCache[x - 1][0][z].cornerPoint[1];
-			xyz[4][2] = isoCache[x - 1][0][z].cornerPoint[2];
+			xyz[4][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
+			xyz[4][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
+			xyz[4][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
 			val[4] = _sf.data[x][y + 1][z];
-			cellIsoBool[4] = isoCache[x - 1][0][z].isoBool;
+			cellIsoBool[4] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
-			xyz[6][0] = isoCache[x][0][z - 1].cornerPoint[0];
-			xyz[6][1] = isoCache[x][0][z - 1].cornerPoint[1];
-			xyz[6][2] = isoCache[x][0][z - 1].cornerPoint[2];
+			xyz[6][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
+			xyz[6][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
+			xyz[6][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
 			val[6] = _sf.data[x][y + 1][z];
-			cellIsoBool[6] = isoCache[x][0][z - 1].isoBool;
+			cellIsoBool[6] = isoCache[layerIndex][y][z - 1].isoBool;
 
 			//calculate points that could not be inherited
 			xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -1559,9 +1562,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			xyz[1][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 			val[1] = _sf.data[x + 1][y][z];
 
-			xyz[5][0] = isoCache[x][0][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-			xyz[5][1] = isoCache[x][0][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-			xyz[5][2] = isoCache[x][0][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			xyz[5][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[5][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[5][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 			val[5] = _sf.data[x + 1][y + 1][z];
 
 
@@ -1576,12 +1579,12 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			else
 				cellIsoBool[1] = false;
 			if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
-				cellIsoBool[5] = isoCache[x][0][z].isoBool = true;
+				cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = true;
 			else
-				cellIsoBool[5] = isoCache[x][0][z].isoBool = false;
+				cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = false;
 
-			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
-				cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 			/* Cube is entirely in/out of the surface */
 			if (_sf.edgeTable[cubeIndex] != 0) {
@@ -1594,19 +1597,19 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 
 				//inherit vertex indices from isoCache------------------------------------------
 				if (_sf.edgeTable[cubeIndex] & 64) {
-					vertList[6] = isoCache[x][0][z - 1].vertexIndex[0];
+					vertList[6] = isoCache[layerIndex][y][z - 1].vertexIndex[0];
 				}
 				if (_sf.edgeTable[cubeIndex] & 128) {
-					vertList[7] = isoCache[x - 1][0][0].vertexIndex[1];
+					vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[1];
 				}
 				if (_sf.edgeTable[cubeIndex] & 256) {
-					vertList[8] = isoCache[x - 1][0][0].vertexIndex[2];
+					vertList[8] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
 				}
 				if (_sf.edgeTable[cubeIndex] & 1024) {
-					vertList[10] = isoCache[x][0][z - 1].vertexIndex[2];
+					vertList[10] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
 				}
 				if (_sf.edgeTable[cubeIndex] & 2048) {
-					vertList[11] = isoCache[x - 1][0][z-1].vertexIndex[2];
+					vertList[11] = isoCache[(layerIndex + 1) % 2][y][z - 1].vertexIndex[2];
 				}
 
 
@@ -1647,7 +1650,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-					isoCache[x][0][z].vertexIndex[0] = vertList[4] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[4] = vertexCap;
 					vertexCap++;
 					//vertList[4] =
 					//	VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
@@ -1657,7 +1660,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-					isoCache[x][0][z].vertexIndex[1] = vertList[5] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[5] = vertexCap;
 					vertexCap++;
 					//vertList[5] =
 					//	VertexInterp(_sf.isoValue, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
@@ -1669,7 +1672,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-					isoCache[x][0][z].vertexIndex[2] = vertList[9] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[9] = vertexCap;
 					vertexCap++;
 					//vertList[9] =
 					//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
@@ -1693,23 +1696,23 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			z = 0;
 
 			//inherit points from isoCache
-			xyz[0][0] = isoCache[x - 1][y - 1][0].cornerPoint[0];
-			xyz[0][1] = isoCache[x - 1][y - 1][0].cornerPoint[1];
-			xyz[0][2] = isoCache[x - 1][y - 1][0].cornerPoint[2];
+			xyz[0][0] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[0];
+			xyz[0][1] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[1];
+			xyz[0][2] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[2];
 			val[0] = _sf.data[x][y][z];
-			cellIsoBool[0] = isoCache[x - 1][y - 1][0].isoBool;
+			cellIsoBool[0] = isoCache[(layerIndex + 1) % 2][y - 1][z].isoBool;
 
-			xyz[1][0] = isoCache[x][y - 1][0].cornerPoint[0];
-			xyz[1][1] = isoCache[x][y - 1][0].cornerPoint[1];
-			xyz[1][2] = isoCache[x][y - 1][0].cornerPoint[2];
+			xyz[1][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
+			xyz[1][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
+			xyz[1][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
 			val[1] = _sf.data[x + 1][y][z];
-			cellIsoBool[1] = isoCache[x][y - 1][0].isoBool;
+			cellIsoBool[1] = isoCache[layerIndex][y - 1][z].isoBool;
 
-			xyz[4][0] = isoCache[x - 1][y][0].cornerPoint[0];
-			xyz[4][1] = isoCache[x - 1][y][0].cornerPoint[1];
-			xyz[4][2] = isoCache[x - 1][y][0].cornerPoint[2];
+			xyz[4][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
+			xyz[4][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
+			xyz[4][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
 			val[4] = _sf.data[x][y + 1][z];
-			cellIsoBool[4] = isoCache[x - 1][y][0].isoBool;
+			cellIsoBool[4] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 			//calculate points that could not be inherited
 			xyz[2][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -1722,9 +1725,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			xyz[3][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 			val[3] = _sf.data[x][y][z + 1];
 
-			xyz[5][0] = isoCache[x][y][0].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-			xyz[5][1] = isoCache[x][y][0].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-			xyz[5][2] = isoCache[x][y][0].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			xyz[5][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[5][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[5][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 			val[5] = _sf.data[x + 1][y + 1][z];
 
 			xyz[6][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -1748,9 +1751,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			else
 				cellIsoBool[3] = false;
 			if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
-				cellIsoBool[5] = isoCache[x][y][0].isoBool = true;
+				cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = true;
 			else
-				cellIsoBool[5] = isoCache[x][y][0].isoBool = false;
+				cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = false;
 			if (_sf.data[x + 1][y + 1][z + 1] < _sf.isoValue)// cubeIndex |= 64;
 				cellIsoBool[6] = true;
 			else
@@ -1760,8 +1763,8 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			else
 				cellIsoBool[7] = false;
 
-			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
-				cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 			/* Cube is entirely in/out of the surface */
 			if (_sf.edgeTable[cubeIndex] != 0) {
@@ -1770,19 +1773,19 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 
 				//inherit vertex indices from isoCache------------------------------------------
 				if (_sf.edgeTable[cubeIndex] & 1) {
-					vertList[0] = isoCache[x][y - 1][0].vertexIndex[0];
+					vertList[0] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
 				}
 				if (_sf.edgeTable[cubeIndex] & 2) {
-					vertList[1] = isoCache[x][y - 1][0].vertexIndex[1];
+					vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
 				}
 				if (_sf.edgeTable[cubeIndex] & 8) {
-					vertList[3] = isoCache[x - 1][y - 1][0].vertexIndex[1];
+					vertList[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].vertexIndex[1];
 				}
 				if (_sf.edgeTable[cubeIndex] & 128) {
-					vertList[7] = isoCache[x - 1][y][0].vertexIndex[1];
+					vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[1];
 				}
 				if (_sf.edgeTable[cubeIndex] & 256) {
-					vertList[8] = isoCache[x - 1][y][0].vertexIndex[2];
+					vertList[8] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
 				}
 
 				//calculate indices that could not be inherited---------------------------------
@@ -1801,7 +1804,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-					isoCache[x][y][0].vertexIndex[0] = vertList[4] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[4] = vertexCap;
 					vertexCap++;
 				}
 				if (_sf.edgeTable[cubeIndex] & 32) {
@@ -1809,7 +1812,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-					isoCache[x][y][0].vertexIndex[1] = vertList[5] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[5] = vertexCap;
 					vertexCap++;
 				}
 				if (_sf.edgeTable[cubeIndex] & 64) {
@@ -1825,7 +1828,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-					isoCache[x][y][0].vertexIndex[2] = vertList[9] = vertexCap;
+					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[9] = vertexCap;
 					vertexCap++;
 				}
 				if (_sf.edgeTable[cubeIndex] & 1024) {
@@ -1859,64 +1862,64 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			for (z = 1; z < _sf.res[2] - 1; z++) {
 
 				//inherit points from isoCache
-				xyz[0][0] = isoCache[x - 1][y - 1][z].cornerPoint[0];
-				xyz[0][1] = isoCache[x - 1][y - 1][z].cornerPoint[1];
-				xyz[0][2] = isoCache[x - 1][y - 1][z].cornerPoint[2];
+				xyz[0][0] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[0];
+				xyz[0][1] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[1];
+				xyz[0][2] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[2];
 				val[0] = _sf.data[x][y][z];
-				cellIsoBool[0] = isoCache[x - 1][y - 1][z].isoBool;
+				cellIsoBool[0] = isoCache[(layerIndex + 1) % 2][y - 1][z].isoBool;
 
-				xyz[1][0] = isoCache[x][y - 1][z].cornerPoint[0];
-				xyz[1][1] = isoCache[x][y - 1][z].cornerPoint[1];
-				xyz[1][2] = isoCache[x][y - 1][z].cornerPoint[2];
+				xyz[1][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
+				xyz[1][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
+				xyz[1][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
 				val[1] = _sf.data[x + 1][y][z];
-				cellIsoBool[1] = isoCache[x][y - 1][z].isoBool;
+				cellIsoBool[1] = isoCache[layerIndex][y - 1][z].isoBool;
 
-				xyz[2][0] = isoCache[x][y - 1][z - 1].cornerPoint[0];
-				xyz[2][1] = isoCache[x][y - 1][z - 1].cornerPoint[1];
-				xyz[2][2] = isoCache[x][y - 1][z - 1].cornerPoint[2];
+				xyz[2][0] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[0];
+				xyz[2][1] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[1];
+				xyz[2][2] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[2];
 				val[2] = _sf.data[x + 1][y][z + 1];
-				cellIsoBool[2] = isoCache[x][y - 1][z - 1].isoBool;
+				cellIsoBool[2] = isoCache[layerIndex][y - 1][z - 1].isoBool;
 
-				xyz[3][0] = isoCache[x - 1][y - 1][z - 1].cornerPoint[0];
-				xyz[3][1] = isoCache[x - 1][y - 1][z - 1].cornerPoint[1];
-				xyz[3][2] = isoCache[x - 1][y - 1][z - 1].cornerPoint[2];
+				xyz[3][0] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[0];
+				xyz[3][1] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[1];
+				xyz[3][2] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[2];
 				val[3] = _sf.data[x][y][z + 1];
-				cellIsoBool[3] = isoCache[x - 1][y - 1][z - 1].isoBool;
+				cellIsoBool[3] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].isoBool;
 
-				xyz[4][0] = isoCache[x - 1][y][z].cornerPoint[0];
-				xyz[4][1] = isoCache[x - 1][y][z].cornerPoint[1];
-				xyz[4][2] = isoCache[x - 1][y][z].cornerPoint[2];
+				xyz[4][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
+				xyz[4][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
+				xyz[4][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
 				val[4] = _sf.data[x][y + 1][z];
-				cellIsoBool[4] = isoCache[x - 1][y][z].isoBool;
+				cellIsoBool[4] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
-				xyz[6][0] = isoCache[x][y][z - 1].cornerPoint[0];
-				xyz[6][1] = isoCache[x][y][z - 1].cornerPoint[1];
-				xyz[6][2] = isoCache[x][y][z - 1].cornerPoint[2];
+				xyz[6][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
+				xyz[6][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
+				xyz[6][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
 				val[6] = _sf.data[x + 1][y + 1][z + 1];
-				cellIsoBool[6] = isoCache[x][y][z - 1].isoBool;
+				cellIsoBool[6] = isoCache[layerIndex][y][z - 1].isoBool;
 
-				xyz[7][0] = isoCache[x - 1][y][z - 1].cornerPoint[0];
-				xyz[7][1] = isoCache[x - 1][y][z - 1].cornerPoint[1];
-				xyz[7][2] = isoCache[x - 1][y][z - 1].cornerPoint[2];
+				xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[0];
+				xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[1];
+				xyz[7][2] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[2];
 				val[7] = _sf.data[x][y + 1][z + 1];
-				cellIsoBool[7] = isoCache[x - 1][y][z - 1].isoBool;
+				cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z - 1].isoBool;
 
 				//calculate points that could not be inherited
 
-				xyz[5][0] = isoCache[x][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[5][1] = isoCache[x][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[5][2] = isoCache[x][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+				xyz[5][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+				xyz[5][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+				xyz[5][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
 				val[5] = _sf.data[x + 1][y + 1][z];
 
 				// get the case index
 				cubeIndex = 0;
 				if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
-					cellIsoBool[5] = isoCache[x][y][z].isoBool = true;
+					cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = true;
 				else
-					cellIsoBool[5] = isoCache[x][y][z].isoBool = false;
+					cellIsoBool[5] = isoCache[layerIndex][y][z].isoBool = false;
 
-				cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
-					cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+				cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+					cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 				/* Cube is entirely in/out of the surface */
 				if (_sf.edgeTable[cubeIndex] != 0) {
@@ -1925,32 +1928,32 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 
 					//inherit vertex indices from isoCache------------------------------------------
 					if (_sf.edgeTable[cubeIndex] & 1) {
-						vertList[0] = isoCache[x][y - 1][0].vertexIndex[0];
+						vertList[0] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
 					}
 					if (_sf.edgeTable[cubeIndex] & 2) {
-						vertList[1] = isoCache[x][y - 1][0].vertexIndex[1];
+						vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
 					}
 					if (_sf.edgeTable[cubeIndex] & 4) {
-						vertList[2] = isoCache[x][y - 1][z - 1].vertexIndex[0];
+						vertList[2] = isoCache[layerIndex][y - 1][z - 1].vertexIndex[0];
 					}
 					if (_sf.edgeTable[cubeIndex] & 8) {
-						vertList[3] = isoCache[x - 1][y - 1][0].vertexIndex[1];
+						vertList[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].vertexIndex[1];
 					}
 					if (_sf.edgeTable[cubeIndex] & 64) {
-						vertList[6] = isoCache[x][y][z - 1].vertexIndex[0];
+						vertList[6] = isoCache[layerIndex][y][z - 1].vertexIndex[0];
 					}
 					if (_sf.edgeTable[cubeIndex] & 128) {
-						vertList[7] = isoCache[x - 1][y][0].vertexIndex[1];
+						vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[1];
 					}
 					
 					if (_sf.edgeTable[cubeIndex] & 256) {
-						vertList[8] = isoCache[x - 1][y][0].vertexIndex[2];
+						vertList[8] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
 					}
 					if (_sf.edgeTable[cubeIndex] & 1024) {
-						vertList[10] = isoCache[x][y][z - 1].vertexIndex[2];
+						vertList[10] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
 					}
 					if (_sf.edgeTable[cubeIndex] & 2048) {
-						vertList[11] = isoCache[x - 1][y][z - 1].vertexIndex[2];
+						vertList[11] = isoCache[(layerIndex + 1) % 2][y][z - 1].vertexIndex[2];
 					}
 
 					//calculate indices that could not be inherited---------------------------------
@@ -1961,7 +1964,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 						vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 						vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 						vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-						isoCache[x][y][z].vertexIndex[0] = vertList[4] = vertexCap;
+						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[4] = vertexCap;
 						vertexCap++;
 					}
 					if (_sf.edgeTable[cubeIndex] & 32) {
@@ -1969,7 +1972,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 						vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 						vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 						vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-						isoCache[x][y][z].vertexIndex[1] = vertList[5] = vertexCap;
+						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[5] = vertexCap;
 						vertexCap++;
 					}
 					
@@ -1978,7 +1981,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 						vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 						vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 						vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-						isoCache[x][y][z].vertexIndex[2] = vertList[9] = vertexCap;
+						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[9] = vertexCap;
 						vertexCap++;
 					}
 					
@@ -1994,6 +1997,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				}
 			}
 		}
+		layerIndex = (layerIndex + 1) % 2;
 	}
 	//debugpoint
 	std::cout << "finished";
