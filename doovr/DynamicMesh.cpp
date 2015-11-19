@@ -540,14 +540,14 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 	triangleCap = 1;
 
 	int x, y, z;
+	int layerIndex = 0;
 
-	//first layer.
+	//create the first layer
 	x = 0;
-	//first row
 	y = 0;
-	//first spot
 	z = 0;
 
+	// create the first voxel ---------------------------------------------------------
 	xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
 	xyz[0][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
 	xyz[0][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
@@ -627,10 +627,8 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
 	
 	/* Cube is entirely in/out of the surface */
-	if (_sf.edgeTable[cubeIndex] == 0) {
-		
-	}
-	else {
+	if (_sf.edgeTable[cubeIndex] != 0) {
+
 		/* Find the vertices where the surface intersects the cube */
 		if (_sf.edgeTable[cubeIndex] & 1) {
 			dVal = (double)(_sf.isoValue - val[0]) / (double)(val[1] - val[0]);
@@ -763,115 +761,856 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			triangleCap++;
 		}
 	}
-	//first spot of first row of first layer done -------------------
+
+	//create the remaining voxels of first row of first layer -----------------------------------
 	for ( z = 1; z < _sf.res[2] - 1; z++) {
 
+		//inherited from previous cell by the local variable xyz[]
+		xyz[2][0] = xyz[1][0];
+		xyz[2][1] = xyz[1][1];
+		xyz[2][2] = xyz[1][2];
+		val[2] = _sf.data[x + 1][y][z + 1];
+		cellIsoBool[2] = cellIsoBool[1];
+
+		xyz[3][0] = xyz[0][0];
+		xyz[3][1] = xyz[0][1];
+		xyz[3][2] = xyz[0][2];
+		val[3] = _sf.data[x][y][z + 1];
+		cellIsoBool[3] = cellIsoBool[0];
+
+		xyz[6][0] = isoCache[0][0][z - 1].cornerPoint[0];
+		xyz[6][1] = isoCache[0][0][z - 1].cornerPoint[1];
+		xyz[6][2] = isoCache[0][0][z - 1].cornerPoint[2];
+		val[6] = _sf.data[x + 1][y + 1][z + 1];
+		cellIsoBool[6] = isoCache[0][0][z - 1].isoBool;
+
+		xyz[7][0] = xyz[4][0];
+		xyz[7][1] = xyz[4][1];
+		xyz[7][2] = xyz[4][2];
+		val[7] = _sf.data[x][y + 1][z + 1];
+		cellIsoBool[7] = cellIsoBool[4];
+
+		//calculate values that could not be inherited
+		xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[0][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[0][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[0] = _sf.data[x][y][z];
+
+		xyz[1][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[1][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[1][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[1] = _sf.data[x + 1][y][z];
+
+		xyz[4][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[4][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[4][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[4] = _sf.data[x][y + 1][z];
+
+		xyz[5][0] = isoCache[0][0][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[5][1] = isoCache[0][0][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[5][2] = isoCache[0][0][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[5] = _sf.data[x + 1][y + 1][z];
+
+
+
+		// get the case index
+		cubeIndex = 0;
+		if (_sf.data[x][y][z] < _sf.isoValue)			// cubeIndex |= 1;
+			cellIsoBool[0] = true;
+		else
+			cellIsoBool[0] = false;
+		if (_sf.data[x + 1][y][z] < _sf.isoValue)		// cubeIndex |= 2;
+			cellIsoBool[1] = true;
+		else
+			cellIsoBool[1] = false;
+		if (_sf.data[x][y + 1][z] < _sf.isoValue)		//cubeIndex |= 16;
+			cellIsoBool[4] = true;
+		else
+			cellIsoBool[4] = false;
+		if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
+			cellIsoBool[5] = isoCache[0][0][z].isoBool = true;
+		else
+			cellIsoBool[5] = isoCache[0][0][z].isoBool = false;
+
+		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
+			cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+
+		/* check if cube is entirely in/out of the surface */
+		if (_sf.edgeTable[cubeIndex] != 0) {
+			/* Find the vertices where the surface intersects the cube */
+
+
+			//inherited vertex indices----------------------------------------
+			if (_sf.edgeTable[cubeIndex] & 4) {
+				vertList[2] = vertList[0];
+				//vertList[2] =
+				//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 64) {
+				vertList[6] = isoCache[0][0][z - 1].vertexIndex[0];
+				//vertList[6] =
+				//	VertexInterp(_sf.isoValue, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 1024) {
+				vertList[10] = isoCache[0][0][z - 1].vertexIndex[2];
+				//vertList[10] =
+				//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 2048) {
+				vertList[11] = vertList[8];
+				//vertList[11] =
+				//	VertexInterp(_sf.isoValue, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
+			}
+
+			//calculate indices that cannot be inherited ----------------------------
+			if (_sf.edgeTable[cubeIndex] & 1) {
+				dVal = (double)(_sf.isoValue - val[0]) / (double)(val[1] - val[0]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
+				vertList[0] = vertexCap;
+				vertexCap++;
+				//VertexInterp(_sf.isoValue, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
+			}
+
+			if (_sf.edgeTable[cubeIndex] & 2) {
+				dVal = (double)(_sf.isoValue - val[1]) / (double)(val[2] - val[1]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
+				vertList[1] = vertexCap;
+				vertexCap++;
+				//vertList[1] =
+				//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
+			}
+
+			if (_sf.edgeTable[cubeIndex] & 8) {
+				dVal = (double)(_sf.isoValue - val[3]) / (double)(val[0] - val[3]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+				vertList[3] = vertexCap;
+				vertexCap++;
+				//vertList[3] =
+				//VertexInterp(_sf.isoValue, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 16) {
+				dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+				isoCache[0][0][z].vertexIndex[0] = vertList[4] = vertexCap;
+				vertexCap++;
+				//vertList[4] =
+				//	VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 32) {
+				dVal = (double)(_sf.isoValue - val[5]) / (double)(val[6] - val[5]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+				isoCache[0][0][z].vertexIndex[1] = vertList[5] = vertexCap;
+				vertexCap++;
+				//vertList[5] =
+				//	VertexInterp(_sf.isoValue, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
+
+			}
+
+			if (_sf.edgeTable[cubeIndex] & 128) {
+				dVal = (double)(_sf.isoValue - val[7]) / (double)(val[4] - val[7]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+				vertList[7] = vertexCap;
+				vertexCap++;
+				//vertList[7] =
+				//	VertexInterp(_sf.isoValue, grid.p[7], grid.p[4], grid.val[7], grid.val[4]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 256) {
+				dVal = (double)(_sf.isoValue - val[0]) / (double)(val[4] - val[0]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+				vertList[8] = vertexCap;
+				vertexCap++;
+				//vertList[8] =
+				//	VertexInterp(_sf.isoValue, grid.p[0], grid.p[4], grid.val[0], grid.val[4]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 512) {
+				dVal = (double)(_sf.isoValue - val[1]) / (double)(val[5] - val[1]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+				isoCache[0][0][z].vertexIndex[2] = vertList[9] = vertexCap;
+				vertexCap++;
+				//vertList[9] =
+				//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
+			}
+
+
+			// bind triangle indecies
+			for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3) {
+				triangleArray[0][triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i]];
+				triangleArray[0][triangleCap].index[1] = vertList[_sf.triTable[cubeIndex][i + 1]];
+				triangleArray[0][triangleCap].index[0] = vertList[_sf.triTable[cubeIndex][i + 2]];
+
+				triangleCap++;
+			}
+		}
 
 	}
 
-	//first row of first layer done
+	//create the remaining rows of the first layer----------------------------------------------
 	for ( y = 1; y < _sf.res[1] - 1; y++) {
-		//first spot
+		
 		z = 0;
+		//create the first voxel of remaining rows of first layer-------------------------------
+		//inherit value from isoCache
+		xyz[1][0] = isoCache[0][y - 1][0].cornerPoint[0];
+		xyz[1][1] = isoCache[0][y - 1][0].cornerPoint[1];
+		xyz[1][2] = isoCache[0][y - 1][0].cornerPoint[2];
+		val[1] = _sf.data[x + 1][y][z];
+		cellIsoBool[1] = isoCache[0][y - 1][0].isoBool;
+		
+		//calculate values that could not be inherited
+		xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[0][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[0][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[0] = _sf.data[x][y][z];
 
+		xyz[2][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[2][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[2][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[2] = _sf.data[x + 1][y][z + 1];
+
+		xyz[3][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[3][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[3][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[3] = _sf.data[x][y][z + 1];
+
+		xyz[4][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[4][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[4][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[4] = _sf.data[x][y + 1][z];
+
+		xyz[5][0] = isoCache[0][y][0].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[5][1] = isoCache[0][y][0].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[5][2] = isoCache[0][y][0].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[5] = _sf.data[x + 1][y + 1][z];
+
+		xyz[6][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[6][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[6][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[6] = _sf.data[x + 1][y + 1][z + 1];
+
+		xyz[7][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[7][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[7][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[7] = _sf.data[x][y + 1][z + 1];
+
+		// get the case index
+		cubeIndex = 0;
+		if (_sf.data[x][y][z] < _sf.isoValue)			// cubeIndex |= 1;
+			cellIsoBool[0] = true;
+		else
+			cellIsoBool[0] = false;
+		if (_sf.data[x + 1][y][z + 1] < _sf.isoValue)	// cubeIndex |= 4;
+			cellIsoBool[2] = true;
+		else
+			cellIsoBool[2] = false;
+		if (_sf.data[x][y][z + 1] < _sf.isoValue)		// cubeIndex |= 8;
+			cellIsoBool[3] = true;
+		else
+			cellIsoBool[3] = false;
+		if (_sf.data[x][y + 1][z] < _sf.isoValue)		//cubeIndex |= 16;
+			cellIsoBool[4] = true;
+		else
+			cellIsoBool[4] = false;
+		if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
+			cellIsoBool[5] = isoCache[0][y][0].isoBool = true;
+		else
+			cellIsoBool[5] = isoCache[0][y][0].isoBool = false;
+		if (_sf.data[x + 1][y + 1][z + 1] < _sf.isoValue)// cubeIndex |= 64;
+			cellIsoBool[6] = true;
+		else
+			cellIsoBool[6] = false;
+		if (_sf.data[x][y + 1][z + 1] < _sf.isoValue)	// cubeIndex |= 128;
+			cellIsoBool[7] = true;
+		else
+			cellIsoBool[7] = false;
+
+		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
+			cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+
+		/* Cube is entirely in/out of the surface */
+		if (_sf.edgeTable[cubeIndex] != 0) {
+
+			/* Find the vertices where the surface intersects the cube */
+
+			//inherit edges from isoCache-------------------------------------------------------
+			if (_sf.edgeTable[cubeIndex] & 1) {
+				vertList[0] = isoCache[0][y-1][0].vertexIndex[0];
+			}
+
+			if (_sf.edgeTable[cubeIndex] & 2) {
+				vertList[1] = isoCache[0][y - 1][0].vertexIndex[1];
+			}
+
+			//calculate edges that could not be inherited -------------------------------------
+			if (_sf.edgeTable[cubeIndex] & 4) {
+				dVal = (double)(_sf.isoValue - val[2]) / (double)(val[3] - val[2]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+				vertList[2] = vertexCap;
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 8) {
+				dVal = (double)(_sf.isoValue - val[3]) / (double)(val[0] - val[3]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+				vertList[3] = vertexCap;
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 16) {
+				dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+				isoCache[0][y][0].vertexIndex[0] = vertList[4] = vertexCap; // save in isoCache
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 32) {
+				dVal = (double)(_sf.isoValue - val[5]) / (double)(val[6] - val[5]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+				isoCache[0][y][0].vertexIndex[1] = vertList[5] = vertexCap; // save in isoCache
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 64) {
+				dVal = (double)(_sf.isoValue - val[6]) / (double)(val[7] - val[6]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+				vertList[6] = vertexCap;
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 128) {
+				dVal = (double)(_sf.isoValue - val[7]) / (double)(val[4] - val[7]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+				vertList[7] = vertexCap;
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 256) {
+				dVal = (double)(_sf.isoValue - val[0]) / (double)(val[4] - val[0]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+				vertList[8] = vertexCap;
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 512) {
+				dVal = (double)(_sf.isoValue - val[1]) / (double)(val[5] - val[1]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+				isoCache[0][y][0].vertexIndex[2] = vertList[9] = vertexCap; // save in isoCache
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 1024) {
+				dVal = (double)(_sf.isoValue - val[2]) / (double)(val[6] - val[2]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+				vertList[10] = vertexCap;
+				vertexCap++;
+			}
+			if (_sf.edgeTable[cubeIndex] & 2048) {
+				dVal = (double)(_sf.isoValue - val[3]) / (double)(val[7] - val[3]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+				vertList[11] = vertexCap;
+				vertexCap++;
+			}
+
+			// bind triangle indecies
+			for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3) {
+				triangleArray[0][triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i]];
+				triangleArray[0][triangleCap].index[1] = vertList[_sf.triTable[cubeIndex][i + 1]];
+				triangleArray[0][triangleCap].index[0] = vertList[_sf.triTable[cubeIndex][i + 2]];
+
+				triangleCap++;
+			}
+		}
+
+		//create the remaining voxels of remaining rows of first layer--------------------------
 		for ( z = 1; z < _sf.res[2] - 1; z++) {
-				
+			//inherit value from isoCache
+			xyz[1][0] = isoCache[0][y - 1][0].cornerPoint[0];
+			xyz[1][1] = isoCache[0][y - 1][0].cornerPoint[1];
+			xyz[1][2] = isoCache[0][y - 1][0].cornerPoint[2];
+			val[1] = _sf.data[x + 1][y][z];
+			cellIsoBool[1] = isoCache[0][y - 1][0].isoBool;
+
+			xyz[2][0] = xyz[1][0];
+			xyz[2][1] = xyz[1][1];
+			xyz[2][2] = xyz[1][2];
+			val[2] = _sf.data[x + 1][y][z + 1];
+			cellIsoBool[2] = cellIsoBool[1];
+
+			xyz[3][0] = xyz[0][0];
+			xyz[3][1] = xyz[0][1];
+			xyz[3][2] = xyz[0][2];
+			val[3] = _sf.data[x][y][z + 1];
+			cellIsoBool[3] = cellIsoBool[0];
+
+			xyz[6][0] = isoCache[0][0][z - 1].cornerPoint[0];
+			xyz[6][1] = isoCache[0][0][z - 1].cornerPoint[1];
+			xyz[6][2] = isoCache[0][0][z - 1].cornerPoint[2];
+			val[6] = _sf.data[x + 1][y + 1][z + 1];
+			cellIsoBool[6] = isoCache[0][0][z - 1].isoBool;
+
+			xyz[7][0] = xyz[4][0];
+			xyz[7][1] = xyz[4][1];
+			xyz[7][2] = xyz[4][2];
+			val[7] = _sf.data[x][y + 1][z + 1];
+			cellIsoBool[7] = cellIsoBool[4];
+
+			//calculate values that could not be inherited
+			xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[0][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[0][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[0] = _sf.data[x][y][z];
+
+			xyz[4][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[4][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[4][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[4] = _sf.data[x][y + 1][z];
+
+			xyz[5][0] = isoCache[0][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[5][1] = isoCache[0][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[5][2] = isoCache[0][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[5] = _sf.data[x + 1][y + 1][z];
+
+			// get the case index
+			cubeIndex = 0;
+			if (_sf.data[x][y][z] < _sf.isoValue)			// cubeIndex |= 1;
+				cellIsoBool[0] = true;
+			else
+				cellIsoBool[0] = false;
+			if (_sf.data[x][y + 1][z] < _sf.isoValue)		//cubeIndex |= 16;
+				cellIsoBool[4] = true;
+			else
+				cellIsoBool[4] = false;
+			if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
+				cellIsoBool[5] = isoCache[0][y][z].isoBool = true;
+			else
+				cellIsoBool[5] = isoCache[0][y][z].isoBool = false;
 			
-		}
-	}
 
-	//first layer done
-	for (x = 1; x < _sf.res[0] - 1; x++){
-		//first row
-		y = 0;
-		//first spot
-		z = 0;
+			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
+				cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
 
-		//first spot of first row of first layer done
-		for (z = 1; z < _sf.res[2] - 1; z++) {
+			/* Cube is entirely in/out of the surface */
+			if (_sf.edgeTable[cubeIndex] != 0) {
+
+				/* Find the vertices where the surface intersects the cube */
+
+				//inherit edges from local variable------------------------------------
+				if (_sf.edgeTable[cubeIndex] & 4) {
+					vertList[2] = vertList[0];
+				}
+				if (_sf.edgeTable[cubeIndex] & 2048) {
+					vertList[11] = vertList[8];
+				}
+				//inherit edges from isoCache-------------------------------------------
+				if (_sf.edgeTable[cubeIndex] & 1) {
+					vertList[0] = isoCache[0][y - 1][z].vertexIndex[0];
+				}
+				if (_sf.edgeTable[cubeIndex] & 2) {
+					vertList[1] = isoCache[0][y - 1][z].vertexIndex[1];
+				}
+				if (_sf.edgeTable[cubeIndex] & 64) {
+					vertList[6] = isoCache[0][y][z - 1].vertexIndex[0];
+				}
+				if (_sf.edgeTable[cubeIndex] & 1024) {
+					vertList[10] = isoCache[0][y][z - 1].vertexIndex[2];
+				}
 
 
-		}
-		//first row of x layer done
-		for (y = 1; y < _sf.res[1] - 1; y++) {
-			//first spot
-			z = 0;
+				//calculate edges that could not be inherited -------------------------------------
+				if (_sf.edgeTable[cubeIndex] & 8) {
+					dVal = (double)(_sf.isoValue - val[3]) / (double)(val[0] - val[3]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+					vertList[3] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 16) {
+					dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+					isoCache[0][y][z].vertexIndex[0] = vertList[4] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 32) {
+					dVal = (double)(_sf.isoValue - val[5]) / (double)(val[6] - val[5]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+					isoCache[0][y][z].vertexIndex[1] = vertList[5] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 128) {
+					dVal = (double)(_sf.isoValue - val[7]) / (double)(val[4] - val[7]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+					vertList[7] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 256) {
+					dVal = (double)(_sf.isoValue - val[0]) / (double)(val[4] - val[0]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+					vertList[8] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 512) {
+					dVal = (double)(_sf.isoValue - val[1]) / (double)(val[5] - val[1]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+					isoCache[0][y][z].vertexIndex[2] = vertList[9] = vertexCap;
+					vertexCap++;
+				}
+				// bind triangle indecies
+				for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3) {
+					triangleArray[0][triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i]];
+					triangleArray[0][triangleCap].index[1] = vertList[_sf.triTable[cubeIndex][i + 1]];
+					triangleArray[0][triangleCap].index[0] = vertList[_sf.triTable[cubeIndex][i + 2]];
 
-			//first spot of y row of x layer done
-			for (z = 1; z < _sf.res[2] - 1; z++) {
-
-
+					triangleCap++;
+				}
 			}
 		}
 	}
 
+	// create remaining layers ---------------------------------------------------------
+	for (x = 1; x < _sf.res[0] - 1; x++){
+		y = 0;
+		z = 0;
+		//create first voxel of first row of remaining layers
 
-	// -----------------------------------------------------------------------------
-	for ( x = 0; x < _sf.res[0] - 1; x++) {
+		//inherit points from isoCache
+		xyz[4][0] = isoCache[x - 1][0][0].cornerPoint[0];
+		xyz[4][1] = isoCache[x - 1][0][0].cornerPoint[1];
+		xyz[4][2] = isoCache[x - 1][0][0].cornerPoint[2];
+		val[4] = _sf.data[x][y + 1][z];
+		cellIsoBool[4] = isoCache[x - 1][0][0].isoBool;
+
+		//calculate points that could not be inherited
+		xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[0][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[0][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[0] = _sf.data[x][y][z];
+
+		xyz[1][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[1][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[1][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[1] = _sf.data[x + 1][y][z];
+
+		xyz[2][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[2][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[2][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[2] = _sf.data[x + 1][y][z + 1];
+
+		xyz[3][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[3][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[3][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[3] = _sf.data[x][y][z + 1];
+
+		xyz[5][0] = isoCache[x][0][0].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[5][1] = isoCache[x][0][0].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[5][2] = isoCache[x][0][0].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[5] = _sf.data[x + 1][y + 1][z];
+
+		xyz[6][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[6][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[6][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[6] = _sf.data[x + 1][y + 1][z + 1];
+
+		xyz[7][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+		xyz[7][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+		xyz[7][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+		val[7] = _sf.data[x][y + 1][z + 1];
+
+		// get the case index
+		cubeIndex = 0;
+		if (_sf.data[x][y][z] < _sf.isoValue)			// cubeIndex |= 1;
+			cellIsoBool[0] = true;
+		else
+			cellIsoBool[0] = false;
+		if (_sf.data[x + 1][y][z] < _sf.isoValue)		// cubeIndex |= 2;
+			cellIsoBool[1] = true;
+		else
+			cellIsoBool[1] = false;
+		if (_sf.data[x + 1][y][z + 1] < _sf.isoValue)	// cubeIndex |= 4;
+			cellIsoBool[2] = true;
+		else
+			cellIsoBool[2] = false;
+		if (_sf.data[x][y][z + 1] < _sf.isoValue)		// cubeIndex |= 8;
+			cellIsoBool[3] = true;
+		else
+			cellIsoBool[3] = false;
+		if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
+			cellIsoBool[5] = isoCache[x][0][0].isoBool = true;
+		else
+			cellIsoBool[5] = isoCache[x][0][0].isoBool = false;
+		if (_sf.data[x + 1][y + 1][z + 1] < _sf.isoValue)// cubeIndex |= 64;
+			cellIsoBool[6] = true;
+		else
+			cellIsoBool[6] = false;
+		if (_sf.data[x][y + 1][z + 1] < _sf.isoValue)	// cubeIndex |= 128;
+			cellIsoBool[7] = true;
+		else
+			cellIsoBool[7] = false;
+
+		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
+			cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+
+		/* Cube is entirely in/out of the surface */
+		if (_sf.edgeTable[cubeIndex] != 0) {
+
+			/* Find the vertices where the surface intersects the cube */
+
+			//inherit vertex indices from isoCache------------------------------------------
+			if (_sf.edgeTable[cubeIndex] & 128) {
+				vertList[7] = isoCache[x - 1][0][0].vertexIndex[1];
+			}
+			if (_sf.edgeTable[cubeIndex] & 256) {
+				vertList[8] = isoCache[x - 1][0][0].vertexIndex[2];
+			}
+
+			//calculate indices that could not be inherited---------------------------------
+			if (_sf.edgeTable[cubeIndex] & 1) {
+				dVal = (double)(_sf.isoValue - val[0]) / (double)(val[1] - val[0]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
+				vertList[0] = vertexCap;
+				vertexCap++;
+				//VertexInterp(_sf.isoValue, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
+			}
+
+			if (_sf.edgeTable[cubeIndex] & 2) {
+				dVal = (double)(_sf.isoValue - val[1]) / (double)(val[2] - val[1]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
+				vertList[1] = vertexCap;
+				vertexCap++;
+				//vertList[1] =
+				//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 4) {
+				dVal = (double)(_sf.isoValue - val[2]) / (double)(val[3] - val[2]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+				vertList[2] = vertexCap;
+				vertexCap++;
+				//vertList[2] =
+				//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 8) {
+				dVal = (double)(_sf.isoValue - val[3]) / (double)(val[0] - val[3]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+				vertList[3] = vertexCap;
+				vertexCap++;
+				//vertList[3] =
+				//VertexInterp(_sf.isoValue, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 16) {
+				dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+				isoCache[x][0][0].vertexIndex[0] = vertList[4] = vertexCap;
+				vertexCap++;
+				//vertList[4] =
+				//	VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 32) {
+				dVal = (double)(_sf.isoValue - val[5]) / (double)(val[6] - val[5]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+				isoCache[x][0][0].vertexIndex[1] = vertList[5] = vertexCap;
+				vertexCap++;
+				//vertList[5] =
+				//	VertexInterp(_sf.isoValue, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
+
+			}
+			if (_sf.edgeTable[cubeIndex] & 64) {
+				dVal = (double)(_sf.isoValue - val[6]) / (double)(val[7] - val[6]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+				vertList[6] = vertexCap;
+				vertexCap++;
+				//vertList[6] =
+				//	VertexInterp(_sf.isoValue, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 512) {
+				dVal = (double)(_sf.isoValue - val[1]) / (double)(val[5] - val[1]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+				isoCache[x][0][0].vertexIndex[2] = vertList[9] = vertexCap;
+				vertexCap++;
+				//vertList[9] =
+				//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 1024) {
+				dVal = (double)(_sf.isoValue - val[2]) / (double)(val[6] - val[2]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+				vertList[10] = vertexCap;
+				vertexCap++;
+				//vertList[10] =
+				//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
+			}
+			if (_sf.edgeTable[cubeIndex] & 2048) {
+				dVal = (double)(_sf.isoValue - val[3]) / (double)(val[7] - val[3]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+				vertList[11] = vertexCap;
+				vertexCap++;
+				//vertList[11] =
+				//	VertexInterp(_sf.isoValue, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
+			}
+
+			// bind triangle indecies
+			for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3) {
+				triangleArray[0][triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i]];
+				triangleArray[0][triangleCap].index[1] = vertList[_sf.triTable[cubeIndex][i + 1]];
+				triangleArray[0][triangleCap].index[0] = vertList[_sf.triTable[cubeIndex][i + 2]];
+
+				triangleCap++;
+			}
+		}
+
+		//create remaining voxels of first row of remaining layers
+		for (z = 1; z < _sf.res[2] - 1; z++) {
+			
+			//inherit points from local variable
+			xyz[2][0] = xyz[1][0];
+			xyz[2][1] = xyz[1][1];
+			xyz[2][2] = xyz[1][2];
+			val[2] = _sf.data[x + 1][y][z + 1];
+			cellIsoBool[2] = cellIsoBool[1];
+
+			xyz[3][0] = xyz[0][0];
+			xyz[3][1] = xyz[0][1];
+			xyz[3][2] = xyz[0][2];
+			val[3] = _sf.data[x][y][z + 1];
+			cellIsoBool[3] = cellIsoBool[0];
+
+			xyz[7][0] = xyz[4][0];
+			xyz[7][1] = xyz[4][1];
+			xyz[7][2] = xyz[4][2];
+			val[7] = _sf.data[x][y + 1][z + 1];
+			cellIsoBool[7] = cellIsoBool[4];
+
+			//inherit points from isoCache
+			xyz[4][0] = isoCache[x - 1][0][z].cornerPoint[0];
+			xyz[4][1] = isoCache[x - 1][0][z].cornerPoint[1];
+			xyz[4][2] = isoCache[x - 1][0][z].cornerPoint[2];
+			val[4] = _sf.data[x][y + 1][z];
+			cellIsoBool[4] = isoCache[x - 1][0][z].isoBool;
+
+			xyz[6][0] = isoCache[x][0][z - 1].cornerPoint[0];
+			xyz[6][1] = isoCache[x][0][z - 1].cornerPoint[1];
+			xyz[6][2] = isoCache[x][0][z - 1].cornerPoint[2];
+			val[6] = _sf.data[x][y + 1][z];
+			cellIsoBool[6] = isoCache[x][0][z - 1].isoBool;
+
+			//calculate points that could not be inherited
+			xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[0][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[0][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[0] = _sf.data[x][y][z];
+
+			xyz[1][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[1][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[1][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[1] = _sf.data[x + 1][y][z];
+
+			xyz[5][0] = isoCache[x][0][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[5][1] = isoCache[x][0][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[5][2] = isoCache[x][0][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[5] = _sf.data[x + 1][y + 1][z];
 
 
-		for ( y = 0; y < _sf.res[1] - 1; y++) {
-			for ( z = 0; z < _sf.res[2] - 1; z++) {
-				
-				xyz[0][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[0][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[0][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
-				val[0] = _sf.data[x][y][z];
+			// get the case index
+			cubeIndex = 0;
+			if (_sf.data[x][y][z] < _sf.isoValue)			// cubeIndex |= 1;
+				cellIsoBool[0] = true;
+			else
+				cellIsoBool[0] = false;
+			if (_sf.data[x + 1][y][z] < _sf.isoValue)		// cubeIndex |= 2;
+				cellIsoBool[1] = true;
+			else
+				cellIsoBool[1] = false;
+			if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
+				cellIsoBool[5] = isoCache[x][0][z].isoBool = true;
+			else
+				cellIsoBool[5] = isoCache[x][0][z].isoBool = false;
 
-				xyz[1][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[1][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[1][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
-				val[1] = _sf.data[x+1][y][z];
+			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
+				cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
 
-				xyz[2][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[2][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[2][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
-				val[2] = _sf.data[x+1][y][z+1];
-
-				xyz[3][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[3][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[3][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
-				val[3] = _sf.data[x][y][z+1];
-
-				xyz[4][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[4][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[4][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
-				val[4] = _sf.data[x][y+1][z];
-
-				xyz[5][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[5][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[5][2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
-				val[5] = _sf.data[x+1][y+1][z];
-
-				xyz[6][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[6][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[6][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
-				val[6] = _sf.data[x+1][y+1][z+1];
-
-				xyz[7][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
-				xyz[7][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
-				xyz[7][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
-				val[7] = _sf.data[x][y+1][z+1];
-
-				// get the case index
-				cubeIndex = 0;
-				if (_sf.data[x][y][z] < _sf.isoValue) cubeIndex |= 1;
-				if (_sf.data[x+1][y][z] < _sf.isoValue) cubeIndex |= 2;
-				if (_sf.data[x+1][y][z+1] < _sf.isoValue) cubeIndex |= 4;
-				if (_sf.data[x][y][z+1] < _sf.isoValue) cubeIndex |= 8;
-
-				if (_sf.data[x][y+1][z] < _sf.isoValue) cubeIndex |= 16;
-				if (_sf.data[x+1][y+1][z] < _sf.isoValue) cubeIndex |= 32;
-				if (_sf.data[x+1][y+1][z+1] < _sf.isoValue) cubeIndex |= 64;
-				if (_sf.data[x][y+1][z+1] < _sf.isoValue) cubeIndex |= 128;
-
-				/* Cube is entirely in/out of the surface */
-				if (_sf.edgeTable[cubeIndex] == 0)
-					continue;
-
-
+			/* Cube is entirely in/out of the surface */
+			if (_sf.edgeTable[cubeIndex] != 0) {
 
 				/* Find the vertices where the surface intersects the cube */
+				//inherit vertex indice from local variable
+				if (_sf.edgeTable[cubeIndex] & 4) {
+					vertList[2] = vertList[0];
+				}
+
+				//inherit vertex indices from isoCache------------------------------------------
+				if (_sf.edgeTable[cubeIndex] & 64) {
+					vertList[6] = isoCache[x][0][z - 1].vertexIndex[0];
+				}
+				if (_sf.edgeTable[cubeIndex] & 128) {
+					vertList[7] = isoCache[x - 1][0][0].vertexIndex[1];
+				}
+				if (_sf.edgeTable[cubeIndex] & 256) {
+					vertList[8] = isoCache[x - 1][0][0].vertexIndex[2];
+				}
+				if (_sf.edgeTable[cubeIndex] & 1024) {
+					vertList[10] = isoCache[x][0][z - 1].vertexIndex[2];
+				}
+				if (_sf.edgeTable[cubeIndex] & 2048) {
+					vertList[11] = isoCache[x - 1][0][z-1].vertexIndex[2];
+				}
+
+
+				//calculate indices that could not be inherited---------------------------------
 				if (_sf.edgeTable[cubeIndex] & 1) {
 					dVal = (double)(_sf.isoValue - val[0]) / (double)(val[1] - val[0]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
@@ -879,9 +1618,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
 					vertList[0] = vertexCap;
 					vertexCap++;
-						//VertexInterp(_sf.isoValue, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
+					//VertexInterp(_sf.isoValue, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
 				}
-					
+
 				if (_sf.edgeTable[cubeIndex] & 2) {
 					dVal = (double)(_sf.isoValue - val[1]) / (double)(val[2] - val[1]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
@@ -892,16 +1631,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					//vertList[1] =
 					//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
 				}
-				if (_sf.edgeTable[cubeIndex] & 4) {
-					dVal = (double)(_sf.isoValue - val[2]) / (double)(val[3] - val[2]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
-					vertList[2] = vertexCap;
-					vertexCap++;
-					//vertList[2] =
-					//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
-				}
+
 				if (_sf.edgeTable[cubeIndex] & 8) {
 					dVal = (double)(_sf.isoValue - val[3]) / (double)(val[0] - val[3]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
@@ -910,14 +1640,14 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertList[3] = vertexCap;
 					vertexCap++;
 					//vertList[3] =
-						//VertexInterp(_sf.isoValue, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
+					//VertexInterp(_sf.isoValue, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
 				}
 				if (_sf.edgeTable[cubeIndex] & 16) {
 					dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-					vertList[4] = vertexCap;
+					isoCache[x][0][z].vertexIndex[0] = vertList[4] = vertexCap;
 					vertexCap++;
 					//vertList[4] =
 					//	VertexInterp(_sf.isoValue, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
@@ -927,73 +1657,24 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-					vertList[5] = vertexCap;
+					isoCache[x][0][z].vertexIndex[1] = vertList[5] = vertexCap;
 					vertexCap++;
 					//vertList[5] =
 					//	VertexInterp(_sf.isoValue, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
 
 				}
-				if (_sf.edgeTable[cubeIndex] & 64) {
-					dVal = (double)(_sf.isoValue - val[6]) / (double)(val[7] - val[6]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-					vertList[6] = vertexCap;
-					vertexCap++;
-					//vertList[6] =
-					//	VertexInterp(_sf.isoValue, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
-				}
-				if (_sf.edgeTable[cubeIndex] & 128) {
-					dVal = (double)(_sf.isoValue - val[7]) / (double)(val[4] - val[7]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-					vertList[7] = vertexCap;
-					vertexCap++;
-					//vertList[7] =
-					//	VertexInterp(_sf.isoValue, grid.p[7], grid.p[4], grid.val[7], grid.val[4]);
-				}
-				if (_sf.edgeTable[cubeIndex] & 256) {
-					dVal = (double)(_sf.isoValue - val[0]) / (double)(val[4] - val[0]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
-					vertList[8] = vertexCap;
-					vertexCap++;
-					//vertList[8] =
-					//	VertexInterp(_sf.isoValue, grid.p[0], grid.p[4], grid.val[0], grid.val[4]);
-				}
+
 				if (_sf.edgeTable[cubeIndex] & 512) {
 					dVal = (double)(_sf.isoValue - val[1]) / (double)(val[5] - val[1]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-					vertList[9] = vertexCap;
+					isoCache[x][0][z].vertexIndex[2] = vertList[9] = vertexCap;
 					vertexCap++;
 					//vertList[9] =
 					//	VertexInterp(_sf.isoValue, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
 				}
-				if (_sf.edgeTable[cubeIndex] & 1024) {
-					dVal = (double)(_sf.isoValue - val[2]) / (double)(val[6] - val[2]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-					vertList[10] = vertexCap;
-					vertexCap++;
-					//vertList[10] =
-					//	VertexInterp(_sf.isoValue, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
-				}
-				if (_sf.edgeTable[cubeIndex] & 2048) {
-					dVal = (double)(_sf.isoValue - val[3]) / (double)(val[7] - val[3]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-					vertList[11] = vertexCap;
-					vertexCap++;
-					//vertList[11] =
-					//	VertexInterp(_sf.isoValue, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
-				}
-				
+
 				// bind triangle indecies
 				for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3) {
 					triangleArray[0][triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i]];
@@ -1002,7 +1683,315 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 
 					triangleCap++;
 				}
+			}
+
+		}
+		//create remaining rows of remaining layers
+		for (y = 1; y < _sf.res[1] - 1; y++) {
+			
+			//create first voxel of remaining rows of remaining layers
+			z = 0;
+
+			//inherit points from isoCache
+			xyz[0][0] = isoCache[x - 1][y - 1][0].cornerPoint[0];
+			xyz[0][1] = isoCache[x - 1][y - 1][0].cornerPoint[1];
+			xyz[0][2] = isoCache[x - 1][y - 1][0].cornerPoint[2];
+			val[0] = _sf.data[x][y][z];
+			cellIsoBool[0] = isoCache[x - 1][y - 1][0].isoBool;
+
+			xyz[1][0] = isoCache[x][y - 1][0].cornerPoint[0];
+			xyz[1][1] = isoCache[x][y - 1][0].cornerPoint[1];
+			xyz[1][2] = isoCache[x][y - 1][0].cornerPoint[2];
+			val[1] = _sf.data[x + 1][y][z];
+			cellIsoBool[1] = isoCache[x][y - 1][0].isoBool;
+
+			xyz[4][0] = isoCache[x - 1][y][0].cornerPoint[0];
+			xyz[4][1] = isoCache[x - 1][y][0].cornerPoint[1];
+			xyz[4][2] = isoCache[x - 1][y][0].cornerPoint[2];
+			val[4] = _sf.data[x][y + 1][z];
+			cellIsoBool[4] = isoCache[x - 1][y][0].isoBool;
+
+			//calculate points that could not be inherited
+			xyz[2][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[2][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[2][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[2] = _sf.data[x + 1][y][z + 1];
+
+			xyz[3][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[3][1] = (float)((y - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[3][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[3] = _sf.data[x][y][z + 1];
+
+			xyz[5][0] = isoCache[x][y][0].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[5][1] = isoCache[x][y][0].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[5][2] = isoCache[x][y][0].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[5] = _sf.data[x + 1][y + 1][z];
+
+			xyz[6][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[6][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[6][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[6] = _sf.data[x + 1][y + 1][z + 1];
+
+			xyz[7][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+			xyz[7][1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+			xyz[7][2] = (float)((z + 1 - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+			val[7] = _sf.data[x][y + 1][z + 1];
+
+			// get the case index
+			cubeIndex = 0;
+			if (_sf.data[x + 1][y][z + 1] < _sf.isoValue)	// cubeIndex |= 4;
+				cellIsoBool[2] = true;
+			else
+				cellIsoBool[2] = false;
+			if (_sf.data[x][y][z + 1] < _sf.isoValue)		// cubeIndex |= 8;
+				cellIsoBool[3] = true;
+			else
+				cellIsoBool[3] = false;
+			if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
+				cellIsoBool[5] = isoCache[x][y][0].isoBool = true;
+			else
+				cellIsoBool[5] = isoCache[x][y][0].isoBool = false;
+			if (_sf.data[x + 1][y + 1][z + 1] < _sf.isoValue)// cubeIndex |= 64;
+				cellIsoBool[6] = true;
+			else
+				cellIsoBool[6] = false;
+			if (_sf.data[x][y + 1][z + 1] < _sf.isoValue)	// cubeIndex |= 128;
+				cellIsoBool[7] = true;
+			else
+				cellIsoBool[7] = false;
+
+			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
+				cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+
+			/* Cube is entirely in/out of the surface */
+			if (_sf.edgeTable[cubeIndex] != 0) {
+
+				/* Find the vertices where the surface intersects the cube */
+
+				//inherit vertex indices from isoCache------------------------------------------
+				if (_sf.edgeTable[cubeIndex] & 1) {
+					vertList[0] = isoCache[x][y - 1][0].vertexIndex[0];
+				}
+				if (_sf.edgeTable[cubeIndex] & 2) {
+					vertList[1] = isoCache[x][y - 1][0].vertexIndex[1];
+				}
+				if (_sf.edgeTable[cubeIndex] & 8) {
+					vertList[3] = isoCache[x - 1][y - 1][0].vertexIndex[1];
+				}
+				if (_sf.edgeTable[cubeIndex] & 128) {
+					vertList[7] = isoCache[x - 1][y][0].vertexIndex[1];
+				}
+				if (_sf.edgeTable[cubeIndex] & 256) {
+					vertList[8] = isoCache[x - 1][y][0].vertexIndex[2];
+				}
+
+				//calculate indices that could not be inherited---------------------------------
 				
+				if (_sf.edgeTable[cubeIndex] & 4) {
+					dVal = (double)(_sf.isoValue - val[2]) / (double)(val[3] - val[2]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+					vertList[2] = vertexCap;
+					vertexCap++;
+				}
+				
+				if (_sf.edgeTable[cubeIndex] & 16) {
+					dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+					isoCache[x][y][0].vertexIndex[0] = vertList[4] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 32) {
+					dVal = (double)(_sf.isoValue - val[5]) / (double)(val[6] - val[5]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+					isoCache[x][y][0].vertexIndex[1] = vertList[5] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 64) {
+					dVal = (double)(_sf.isoValue - val[6]) / (double)(val[7] - val[6]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+					vertList[6] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 512) {
+					dVal = (double)(_sf.isoValue - val[1]) / (double)(val[5] - val[1]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+					isoCache[x][y][0].vertexIndex[2] = vertList[9] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 1024) {
+					dVal = (double)(_sf.isoValue - val[2]) / (double)(val[6] - val[2]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+					vertList[10] = vertexCap;
+					vertexCap++;
+				}
+				if (_sf.edgeTable[cubeIndex] & 2048) {
+					dVal = (double)(_sf.isoValue - val[3]) / (double)(val[7] - val[3]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+					vertList[11] = vertexCap;
+					vertexCap++;
+				}
+
+				// bind triangle indecies
+				for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3) {
+					triangleArray[0][triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i]];
+					triangleArray[0][triangleCap].index[1] = vertList[_sf.triTable[cubeIndex][i + 1]];
+					triangleArray[0][triangleCap].index[0] = vertList[_sf.triTable[cubeIndex][i + 2]];
+
+					triangleCap++;
+				}
+			}
+
+			//create remaining voxels of remaining rows of remaining layers
+			for (z = 1; z < _sf.res[2] - 1; z++) {
+
+				//inherit points from isoCache
+				xyz[0][0] = isoCache[x - 1][y - 1][z].cornerPoint[0];
+				xyz[0][1] = isoCache[x - 1][y - 1][z].cornerPoint[1];
+				xyz[0][2] = isoCache[x - 1][y - 1][z].cornerPoint[2];
+				val[0] = _sf.data[x][y][z];
+				cellIsoBool[0] = isoCache[x - 1][y - 1][z].isoBool;
+
+				xyz[1][0] = isoCache[x][y - 1][z].cornerPoint[0];
+				xyz[1][1] = isoCache[x][y - 1][z].cornerPoint[1];
+				xyz[1][2] = isoCache[x][y - 1][z].cornerPoint[2];
+				val[1] = _sf.data[x + 1][y][z];
+				cellIsoBool[1] = isoCache[x][y - 1][z].isoBool;
+
+				xyz[2][0] = isoCache[x][y - 1][z - 1].cornerPoint[0];
+				xyz[2][1] = isoCache[x][y - 1][z - 1].cornerPoint[1];
+				xyz[2][2] = isoCache[x][y - 1][z - 1].cornerPoint[2];
+				val[2] = _sf.data[x + 1][y][z + 1];
+				cellIsoBool[2] = isoCache[x][y - 1][z - 1].isoBool;
+
+				xyz[3][0] = isoCache[x - 1][y - 1][z - 1].cornerPoint[0];
+				xyz[3][1] = isoCache[x - 1][y - 1][z - 1].cornerPoint[1];
+				xyz[3][2] = isoCache[x - 1][y - 1][z - 1].cornerPoint[2];
+				val[3] = _sf.data[x][y][z + 1];
+				cellIsoBool[3] = isoCache[x - 1][y - 1][z - 1].isoBool;
+
+				xyz[4][0] = isoCache[x - 1][y][z].cornerPoint[0];
+				xyz[4][1] = isoCache[x - 1][y][z].cornerPoint[1];
+				xyz[4][2] = isoCache[x - 1][y][z].cornerPoint[2];
+				val[4] = _sf.data[x][y + 1][z];
+				cellIsoBool[4] = isoCache[x - 1][y][z].isoBool;
+
+				xyz[6][0] = isoCache[x][y][z - 1].cornerPoint[0];
+				xyz[6][1] = isoCache[x][y][z - 1].cornerPoint[1];
+				xyz[6][2] = isoCache[x][y][z - 1].cornerPoint[2];
+				val[6] = _sf.data[x + 1][y + 1][z + 1];
+				cellIsoBool[6] = isoCache[x][y][z - 1].isoBool;
+
+				xyz[7][0] = isoCache[x - 1][y][z - 1].cornerPoint[0];
+				xyz[7][1] = isoCache[x - 1][y][z - 1].cornerPoint[1];
+				xyz[7][2] = isoCache[x - 1][y][z - 1].cornerPoint[2];
+				val[7] = _sf.data[x][y + 1][z + 1];
+				cellIsoBool[7] = isoCache[x - 1][y][z - 1].isoBool;
+
+				//calculate points that could not be inherited
+
+				xyz[5][0] = isoCache[x][y][z].cornerPoint[0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
+				xyz[5][1] = isoCache[x][y][z].cornerPoint[1] = (float)((y + 1 - (_sf.res[1] / 2)) / ((float)(_sf.res[1] / 2)))*_sf.dim[1];
+				xyz[5][2] = isoCache[x][y][z].cornerPoint[2] = (float)((z - (_sf.res[2] / 2)) / ((float)(_sf.res[2] / 2)))*_sf.dim[2];
+				val[5] = _sf.data[x + 1][y + 1][z];
+
+				// get the case index
+				cubeIndex = 0;
+				if (_sf.data[x + 1][y + 1][z] < _sf.isoValue)	// cubeIndex |= 32;
+					cellIsoBool[5] = isoCache[x][y][z].isoBool = true;
+				else
+					cellIsoBool[5] = isoCache[x][y][z].isoBool = false;
+
+				cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[0] * 2 + cellIsoBool[0] * 4 + cellIsoBool[0] * 8 +
+					cellIsoBool[0] * 16 + cellIsoBool[0] * 32 + cellIsoBool[0] * 64 + cellIsoBool[0] * 128;
+
+				/* Cube is entirely in/out of the surface */
+				if (_sf.edgeTable[cubeIndex] != 0) {
+
+					/* Find the vertices where the surface intersects the cube */
+
+					//inherit vertex indices from isoCache------------------------------------------
+					if (_sf.edgeTable[cubeIndex] & 1) {
+						vertList[0] = isoCache[x][y - 1][0].vertexIndex[0];
+					}
+					if (_sf.edgeTable[cubeIndex] & 2) {
+						vertList[1] = isoCache[x][y - 1][0].vertexIndex[1];
+					}
+					if (_sf.edgeTable[cubeIndex] & 4) {
+						vertList[2] = isoCache[x][y - 1][z - 1].vertexIndex[0];
+					}
+					if (_sf.edgeTable[cubeIndex] & 8) {
+						vertList[3] = isoCache[x - 1][y - 1][0].vertexIndex[1];
+					}
+					if (_sf.edgeTable[cubeIndex] & 64) {
+						vertList[6] = isoCache[x][y][z - 1].vertexIndex[0];
+					}
+					if (_sf.edgeTable[cubeIndex] & 128) {
+						vertList[7] = isoCache[x - 1][y][0].vertexIndex[1];
+					}
+					
+					if (_sf.edgeTable[cubeIndex] & 256) {
+						vertList[8] = isoCache[x - 1][y][0].vertexIndex[2];
+					}
+					if (_sf.edgeTable[cubeIndex] & 1024) {
+						vertList[10] = isoCache[x][y][z - 1].vertexIndex[2];
+					}
+					if (_sf.edgeTable[cubeIndex] & 2048) {
+						vertList[11] = isoCache[x - 1][y][z - 1].vertexIndex[2];
+					}
+
+					//calculate indices that could not be inherited---------------------------------
+
+
+					if (_sf.edgeTable[cubeIndex] & 16) {
+						dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+						isoCache[x][y][z].vertexIndex[0] = vertList[4] = vertexCap;
+						vertexCap++;
+					}
+					if (_sf.edgeTable[cubeIndex] & 32) {
+						dVal = (double)(_sf.isoValue - val[5]) / (double)(val[6] - val[5]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+						isoCache[x][y][z].vertexIndex[1] = vertList[5] = vertexCap;
+						vertexCap++;
+					}
+					
+					if (_sf.edgeTable[cubeIndex] & 512) {
+						dVal = (double)(_sf.isoValue - val[1]) / (double)(val[5] - val[1]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+						isoCache[x][y][z].vertexIndex[2] = vertList[9] = vertexCap;
+						vertexCap++;
+					}
+					
+
+					// bind triangle indecies
+					for (int i = 0; _sf.triTable[cubeIndex][i] != -1; i += 3) {
+						triangleArray[0][triangleCap].index[2] = vertList[_sf.triTable[cubeIndex][i]];
+						triangleArray[0][triangleCap].index[1] = vertList[_sf.triTable[cubeIndex][i + 1]];
+						triangleArray[0][triangleCap].index[0] = vertList[_sf.triTable[cubeIndex][i + 2]];
+
+						triangleCap++;
+					}
+				}
 			}
 		}
 	}
