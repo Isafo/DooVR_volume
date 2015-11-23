@@ -731,8 +731,8 @@ void DynamicMesh::save() {
 
 		// write edges
 		file.seekp(bitCount);
-		file.write((char*)&e[0], sizeof(halfEdge) * (edgeCap + 1));
-		bitCount += sizeof(halfEdge) * (edgeCap + 1);
+		file.write((char*)&e[0], sizeof(halfEdge) * edgeCap);
+		bitCount += sizeof(halfEdge) * edgeCap;
 
 		// write vertex edge pointers
 		file.seekp(bitCount);

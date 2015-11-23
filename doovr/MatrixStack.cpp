@@ -126,7 +126,7 @@ void MatrixStack::translate(float pos[3]) {
 
 void MatrixStack::multiply(float M[]) {
 	float t_mtx[16] = { 0 };
-	t_mtx[0] =M[0];
+	t_mtx[0] = M[0];
 	t_mtx[1] = M[1];
 	t_mtx[2] = M[2];
 	t_mtx[3] = M[3];
