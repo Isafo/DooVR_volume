@@ -776,7 +776,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
 		xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
 		val[5] = _sf.data[x + 1][y + 1][z];
-		cellIsoBool[0] = isoCache[layerIndex][y][z - 1].isoBool;
+		cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
 		//calculate corner values that could not be inherited
 		xyz[2][0] = (float)((x + 1 - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -927,7 +927,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		//inherit corner values from local variable -----------------------------------------
 
 		//inherit corner values from isoCache -----------------------------------------------
-		xyz[2][0] = isoCache[layerIndex][y-1][z].cornerPoint[0];
+		xyz[2][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
 		xyz[2][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
 		xyz[2][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
 		val[2] = _sf.data[x + 1][y][z + 1];
@@ -1014,7 +1014,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
 			}
 			if (_sf.edgeTable[cubeIndex] & 4) {
-				vertList[2] = isoCache[layerIndex][y-1][z].vertexIndex[1];
+				vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
 			}
 
 			//calculate indices that could not be inherited ------------------------------
@@ -1141,7 +1141,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
 			xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
 			val[5] = _sf.data[x + 1][y + 1][z];
-			cellIsoBool[0] = isoCache[layerIndex][y][z - 1].isoBool;
+			cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
 			//calculate corner values that could not be inherited
 			xyz[3][0] = (float)((x - (_sf.res[0] / 2)) / ((float)(_sf.res[0] / 2)))*_sf.dim[0];
@@ -1488,7 +1488,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
 			xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
 			val[5] = _sf.data[x + 1][y + 1][z];
-			cellIsoBool[0] = isoCache[layerIndex][y][z - 1].isoBool;
+			cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
 			xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
 			xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
@@ -1628,7 +1628,6 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			//create the first voxel of remaining rows of first layer=============================
 
 			//inherit corner values from local variable -----------------------------------------
-
 
 			//inherit corner values from isoCache -----------------------------------------------
 			xyz[2][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
@@ -1833,7 +1832,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
 				xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
 				val[5] = _sf.data[x + 1][y + 1][z];
-				cellIsoBool[0] = isoCache[layerIndex][y][z - 1].isoBool;
+				cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
 				xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
 				xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
@@ -1890,7 +1889,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 						vertList[9] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
 					}
 					if (_sf.edgeTable[cubeIndex] & 2048) {
-						vertList[11] = vertList[9] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
+						vertList[11] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
 					}
 
 					//calculate indices that could not be inherited ------------------------------			
