@@ -131,7 +131,8 @@ class DynamicMesh : public Mesh{
 	
 	//TEMPORARY ARRAY FOR CACHING THE ISO VALUE
 	cacheCell*** isoCache;
-
+	int z0Cache;
+	int* y0Cache;
 	
 	//float midPoint[3];
 

@@ -20,11 +20,16 @@ ScalarField::ScalarField(int rX, int rY, int rZ, float dX, float dY, float dZ)
 	for (int i = 0; i < res[0]; i++){
 		for (int j = 0; j < res[1]; j++){
 			for (int k = 0; k < res[2]; k++){
-				//if (i >(res[0] / 2) - 5 && i < (res[0] / 2) + 5 && j >(res[1] / 2) - 5 && j < (res[1] / 2) + 5 && k >(res[2] / 2) - 5 && k < (res[2] / 2) + 5)
-				//	data[i][j][k] = 255;
-				//else
-				//	data[i][j][k] = 0;
-				data[i][j][k] = (sqrt((float)(i*i + j*j + k*k)) / (float)(res[0]))*256.0f;
+				if (i >(res[0] / 2) - 50 && i < (res[0] / 2) + 50 && j >(res[1] / 2) - 50 && j < (res[1] / 2) + 50 && k >(res[2] / 2) - 50 && k < (res[2] / 2) + 50)
+					data[i][j][k] = 255;
+				else
+					data[i][j][k] = 0;
+				//data[i][j][k] = (sqrt((float)(i*i + j*j + k*k)) / (float)(res[0]))*256.0f;
+				/*if (i > res[0] / 2)
+					data[i][j][k] = 255;
+				else
+					data[i][j][k] = 0;
+*/
 			}
 		}
 	

@@ -32,6 +32,9 @@ DynamicMesh::DynamicMesh() {
 	for (int i = 0; i < 2; i++)
 		for (int j = 0; j < 128; j++) 
 			isoCache[i][j] = new cacheCell[128];
+
+	y0Cache = new int[128];
+
 	// _______________________________________________________
 
 	//sTail = new sVert;
@@ -679,7 +682,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 			vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 			vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-			vertList[4] = vertexCap;
+			vertList[4] = z0Cache = vertexCap;
 			vertexCap++;
 		}
 		if (_sf.edgeTable[cubeIndex] & 32) {
@@ -703,7 +706,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
 			vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
 			vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-			vertList[7] = vertexCap;
+			vertList[7] = y0Cache[z] = vertexCap;
 			vertexCap++;
 		}
 		if (_sf.edgeTable[cubeIndex] & 256) {
@@ -750,7 +753,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 	}
 
 	//create the remaining voxels of first row of first layer ======================================
-	for ( z = 1; z < _sf.res[2] - 1; z++) {
+	for (z = 1; z < _sf.res[2] - 1; z++) {
 
 		//inherit corner values from local variable
 		xyz[0][0] = xyz[3][0];
@@ -887,7 +890,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-				vertList[7] = vertexCap;
+				vertList[7] = y0Cache[z] = vertexCap;
 				vertexCap++;
 			}
 			if (_sf.edgeTable[cubeIndex] & 1024) {
@@ -1008,6 +1011,12 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			// Find the vertices where the surface intersects the cube--------------------
 
 			//inherit vertex indices from local variable ---------------------------------
+			if (_sf.edgeTable[cubeIndex] & 1) {
+				vertList[0] = z0Cache;
+			}
+			if (_sf.edgeTable[cubeIndex] & 8) {
+				vertList[3] = y0Cache[z];
+			}
 
 			//inherit vertex indices from isoCache ---------------------------------------
 			if (_sf.edgeTable[cubeIndex] & 2) {
@@ -1018,28 +1027,13 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			}
 
 			//calculate indices that could not be inherited ------------------------------
-			if (_sf.edgeTable[cubeIndex] & 1) {
-				dVal = (double)(_sf.isoValue - val[0]) / (double)(val[1] - val[0]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
-				vertList[0] = vertexCap;
-				vertexCap++;
-			}
-			if (_sf.edgeTable[cubeIndex] & 8) {
-				dVal = (double)(_sf.isoValue - val[3]) / (double)(val[0] - val[3]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-				vertList[3] = vertexCap;
-				vertexCap++;
-			}
+	
 			if (_sf.edgeTable[cubeIndex] & 16) {
 				dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
 				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-				vertList[4] = vertexCap;
+				vertList[4] = z0Cache = vertexCap;
 				vertexCap++;
 			}
 			if (_sf.edgeTable[cubeIndex] & 32) {
@@ -1063,7 +1057,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-				vertList[7] = vertexCap;
+				vertList[7] = y0Cache[z] = vertexCap;
 				vertexCap++;
 			}
 			if (_sf.edgeTable[cubeIndex] & 256) {
@@ -1110,7 +1104,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		}
 
 		//create the remaining voxels of remaining rows of first layer=============================
-		for ( z = 1; z < _sf.res[2] - 1; z++) {
+		for (z = 1; z < _sf.res[2] - 1; z++) {
 			//inherit corner values from local variable
 			xyz[0][0] = xyz[3][0];
 			xyz[0][1] = xyz[3][1];
@@ -1182,6 +1176,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				// Find the vertices where the surface intersects the cube--------------------
 
 				//inherit vertex indices from local variable ---------------------------------
+				if (_sf.edgeTable[cubeIndex] & 8) {
+					vertList[3] = y0Cache[z];
+				}
 				if (_sf.edgeTable[cubeIndex] & 256) {
 					vertList[8] = vertList[11];
 				}
@@ -1203,15 +1200,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
 				}
 
-				//calculate indices that could not be inherited ------------------------------			
-				if (_sf.edgeTable[cubeIndex] & 8) {
-					dVal = (double)(_sf.isoValue - val[3]) / (double)(val[0] - val[3]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-					vertList[3] = vertexCap;
-					vertexCap++;
-				}
+				//calculate indices that could not be inherited ------------------------------
 
 				if (_sf.edgeTable[cubeIndex] & 32) {
 					dVal = (double)(_sf.isoValue - val[5]) / (double)(val[6] - val[5]);
@@ -1234,7 +1223,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 					vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-					vertList[7] = vertexCap;
+					vertList[7] = y0Cache[z] = vertexCap;
 					vertexCap++;
 				}
 				if (_sf.edgeTable[cubeIndex] & 1024) {
@@ -1265,7 +1254,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 			}
 		}
 	}
-	//TODO
+	
 	layerIndex++; // move to next layer
 	// create remaining layers ============================================================================
 	for (x = 1; x < _sf.res[0] - 1; x++) {
@@ -1273,7 +1262,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 		z = 0;
 		//create first voxel of first row of remaining layers ---------------------------------------------
 
+
 		//inherit corner values from local variable -------------------------------------------------------
+
 
 		//inherit corner values from isoCache -------------------------------------------------------------
 		xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
@@ -1406,7 +1397,7 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-				vertList[4] = vertexCap;
+				vertList[4] = z0Cache = vertexCap;
 				vertexCap++;
 			}
 			if (_sf.edgeTable[cubeIndex] & 32) {
@@ -1705,6 +1696,9 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				// Find the vertices where the surface intersects the cube--------------------
 
 				//inherit vertex indices from local variable ---------------------------------
+				if (_sf.edgeTable[cubeIndex] & 1) {
+					vertList[0] = z0Cache;
+				}
 
 				//inherit vertex indices from isoCache ---------------------------------------
 				if (_sf.edgeTable[cubeIndex] & 2) {
@@ -1724,21 +1718,14 @@ void DynamicMesh::generateMC(ScalarField _sf) {
 				}
 
 				//calculate indices that could not be inherited ------------------------------
-				if (_sf.edgeTable[cubeIndex] & 1) {
-					dVal = (double)(_sf.isoValue - val[0]) / (double)(val[1] - val[0]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
-					vertList[0] = vertexCap;
-					vertexCap++;
-				}
+				
 				
 				if (_sf.edgeTable[cubeIndex] & 16) {
 					dVal = (double)(_sf.isoValue - val[4]) / (double)(val[5] - val[4]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-					vertList[4] = vertexCap;
+					vertList[4] = z0Cache = vertexCap;
 					vertexCap++;
 				}
 				if (_sf.edgeTable[cubeIndex] & 32) {
