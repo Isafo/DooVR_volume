@@ -6,6 +6,8 @@ public:
 	Octant(int _depth, Octant* _parent, float x, float y, float z, float _hafDim);
 	~Octant();
 
+	void deAllocate();
+
 	void allocateData5();
 	void deAllocateData5();
 
@@ -22,7 +24,6 @@ public:
 	int depth;
 
 	unsigned char*** data;
-	bool detailed;
 	int fillCount;
 
 private:

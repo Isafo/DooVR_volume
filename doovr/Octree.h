@@ -9,7 +9,7 @@ public:
 
 	Octant* root;
 
-	//const int MAX_DEPTH = 8;
+	const int MAX_DEPTH = 6;
 	float halfDim;
 	//int scalarRes[3];
 

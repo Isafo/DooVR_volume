@@ -66,38 +66,51 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	int olStart;
 
 	//<- check if we are inside root of octree
-	for (int i = 0; i < 3; i++){
-		if (nwPos[i] < -currentOct->halfDim){
+	for (int i = 0; i < 3; i++) {
+		if (nwPos[i] < -currentOct->halfDim) {
 			s = nwPos[i] + currentOct->halfDim;
 			d += s*s;
 		}
-		else if (nwPos[i] > currentOct->halfDim){
+		else if (nwPos[i] > currentOct->halfDim) {
 			s = nwPos[i] - currentOct->halfDim;
 			d += s*s;
 		}
 	}//->
-	if (d <= radius*radius){//<- collision check rootcube -
-		while (currentOct->depth < 6){//<-- reaching depth 6 --
+	if (d <= radius*radius) {//<- collision check rootcube -
+		while (currentOct->depth < 6) {//<-- reaching depth 6 -- //TODO: do the collision check properly
 			
-			if (currentOct->child[0] == nullptr){
+			if (currentOct->child[0] == nullptr) {
 				currentOct->partition();
 			}
 
-			for (int i = 0; i < 8; i++){//<--- collision check cubechildren ---
-				for (int i = 0; i < 3; i++){
-					if (nwPos[i] < -currentOct->halfDim){
-						s = nwPos[i] + currentOct->halfDim;
+			for (int i = 0; i < 8; i++) {//<--- collision check cubechildren ---
+				for (int j = 0; j < 3; j++) {
+					if (nwPos[j] < -currentOct->halfDim) {
+						s = nwPos[j] + currentOct->halfDim;
 						d += s*s;
 					}
-					else if (nwPos[i] > currentOct->halfDim){
-						s = nwPos[i] - currentOct->halfDim;
+					else if (nwPos[j] > currentOct->halfDim) {
+						s = nwPos[j] - currentOct->halfDim;
 						d += s*s;
 					}
 				}
-				if (d <= radius*radius){
-					octList.push_back(currentOct->child[i]);
-				}
+				if (d <= radius*radius) {
 
+					tmpPos[0] = currentOct->pos[0] + (currentOct->pos[0] > nwPos[0] ? currentOct->halfDim : -currentOct->halfDim);
+					tmpPos[1] = currentOct->pos[1] + (currentOct->pos[1] > nwPos[1] ? currentOct->halfDim : -currentOct->halfDim);
+					tmpPos[2] = currentOct->pos[2] + (currentOct->pos[2] > nwPos[2] ? currentOct->halfDim : -currentOct->halfDim);
+
+					linAlg::calculateVec(tmpPos, nwPos, tmpVec);
+					if (linAlg::vecLength(tmpVec) < radius) {//<--- check if cube is entirely inside sphere --	
+						
+						currentOct->data[0][0][0] = 255;
+						currentOct->fillCount = std::pow(std::pow(2, _ot->MAX_DEPTH - currentOct->depth),3);
+						
+					}// --->
+					else {
+						octList.push_back(currentOct->child[i]);
+					}
+				}
 			}// --->
 			currentOct = octList[olCounter];
 			olCounter++;
@@ -107,51 +120,36 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 		olCounter--;
 		olStart = olCounter;
 		tmpI = octList.size();
-		while (olCounter < tmpI){
+		while (olCounter < tmpI) {
 			currentOct = octList[olCounter];
 
-			tmpPos[0] = currentOct->pos[0] + (currentOct->pos[0] > nwPos[0] ? currentOct->halfDim : -currentOct->halfDim);
-			tmpPos[1] = currentOct->pos[1] + (currentOct->pos[1] > nwPos[1] ? currentOct->halfDim : -currentOct->halfDim);
-			tmpPos[2] = currentOct->pos[2] + (currentOct->pos[2] > nwPos[2] ? currentOct->halfDim : -currentOct->halfDim);
+			if (!currentOct->detailed) {
+				if (currentOct->data[0][0][0] != 255)
+					currentOct->allocateData6();
+			}
+			else { //<---- search detailed data and change it
+				tmpPos[0] = currentOct->pos[0] - currentOct->halfDim + 0.001f;
+				tmpPos[1] = currentOct->pos[1] - currentOct->halfDim + 0.001f;
+				tmpPos[2] = currentOct->pos[2] - currentOct->halfDim + 0.001f;
+				for (int i = 0; i < 16; i++) {
+					for (int j = 0; j < 16; j++) {
+						for (int k = 0; i < 16; k++) {
+							linAlg::calculateVec(tmpPos, nwPos, tmpVec);
 
-			linAlg::calculateVec(tmpPos, nwPos, tmpVec);
-			if (linAlg::vecLength(tmpVec) < radius) {//<--- check if cube is entirely inside sphere --	
-				if (!currentOct->detailed)
-					currentOct->data[0][0][0] = 255;
-				else{
-					currentOct->deAllocateData6();
-					currentOct->data[0][0][0] = 255;
-				}
-			}// --->
-			else{//<--- cube was not entirely inside sphere
-				if (!currentOct->detailed){
-					if (currentOct->data[0][0][0] != 255)
-						currentOct->allocateData6();
-				}
-				else{ //<---- search detailed data and change it
-					tmpPos[0] = currentOct->pos[0] - currentOct->halfDim + 0.001f;
-					tmpPos[1] = currentOct->pos[1] - currentOct->halfDim + 0.001f;
-					tmpPos[2] = currentOct->pos[2] - currentOct->halfDim + 0.001f;
-					for (int i = 0; i < 16; i++){
-						for (int j = 0; j < 16; j++){
-							for (int k = 0; i < 16; k++){
-								linAlg::calculateVec(tmpPos, nwPos, tmpVec);
-
-								if (linAlg::vecLength(tmpVec) < radius){//check if point is inside sphere
-									currentOct->data[i][j][k] = 255;
-									//TODO: change currentOct->fillCount
-								}
-									
-								tmpPos[0] += 0.001f; tmpPos[1] += 0.001f; tmpPos[2] += 0.001f;
+							if (linAlg::vecLength(tmpVec) < radius) {//check if point is inside sphere
+								currentOct->data[i][j][k] = 255;
+								//TODO: change currentOct->fillCount
 							}
+									
+							tmpPos[0] += 0.001f; tmpPos[1] += 0.001f; tmpPos[2] += 0.001f;
 						}
 					}
-				}// ---->					
-			}// --->
+				}
+			}// ---->					
 		}// -->
 
 		olCounter = olStart;
-		while (olCounter < tmpI){ //<-- march trough selected cubes and generate triangles
+		while (olCounter < tmpI) { //<-- march trough selected cubes and generate triangles
 
 			
 
