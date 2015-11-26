@@ -792,8 +792,8 @@ int Oculus::runOvr() {
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
-					currentTool->deSelect();
-					currentTool->firstSelect(modellingMesh, wand);
+					//currentTool->deSelect();
+					//currentTool->firstSelect(modellingMesh, wand);
 				}
 				else if (modellingState[0] == 0)
 				{
@@ -808,10 +808,10 @@ int Oculus::runOvr() {
 				}
 				else if (modellingState[0] != 0) {
 					modellingState[0] = 3;
-					currentTool->deSelect();
+					//currentTool->deSelect();
 					aModellingStateIsActive--;
 				}
-				currentTool->deSelect();
+				//currentTool->deSelect();
 				//currentTool->firstSelect(modellingMesh, wand);
 			}
 
@@ -1011,7 +1011,9 @@ int Oculus::runOvr() {
 							else if (i == 2)
 								currentTool = new BuildUp(modellingMesh, wand);
 
+							//TODO: REMOVE THIS UGGGLY TEMP
 							currentTool->setRadius(toolRad);
+							currentSTool->setRadius(toolRad);
 							currentTool->setStrength(toolStr);
 						}
 						break;
@@ -1025,7 +1027,9 @@ int Oculus::runOvr() {
 					&& wandPos[2] < toolSize.getPosition()[2] + toolSize.getDim()[2] / 2.f) {
 					tempVecPtr = toolSizeFill.getPosition();
 					toolSizeFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
-					currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f;
+					//TODO: REMOVE THIS UGGGLY TEMP
+					currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f; 
+					currentSTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f;
 				}
 				else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
 					&& wandPos[0] > toolStrength.getPosition()[0] - toolStrength.getDim()[0] / 2.f

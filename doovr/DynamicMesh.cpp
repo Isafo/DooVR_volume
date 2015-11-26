@@ -23,6 +23,8 @@ DynamicMesh::DynamicMesh() {
 	triEPtr[1] = new int[MAX_NR_OF_TRIANGLES];
 
 	e = new halfEdge[MAX_NR_OF_EDGES];
+	vertexCap = 1;
+	triangleCap = 1;
 
 	// TEMPORARY __________________________________________
 	isoCache = new cacheCell**[2];
@@ -63,7 +65,7 @@ DynamicMesh::DynamicMesh() {
 
 
 	// Tables for MC
-	const int edgeTable[256] = {
+	int tempEdgeTable[256] = {
 		0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 		0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
 		0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -96,8 +98,7 @@ DynamicMesh::DynamicMesh() {
 		0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99, 0x190,
 		0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
 		0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0 };
-
-	const int triTable[256][16] =
+	int tempTriTable[256][16] =
 	{ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
 	{ 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
 	{ 0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
@@ -354,6 +355,14 @@ DynamicMesh::DynamicMesh() {
 	{ 0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
 	{ 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
 	{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } };
+
+	for (int i = 0; i < 256; i++)
+	{
+		edgeTable[i] = tempEdgeTable[i];
+
+		for (int j = 0; j < 16; j++)
+			triTable[i][j] = tempTriTable[i][j];
+	}
 
 
 }
@@ -839,8 +848,8 @@ void DynamicMesh::generateMC(Octant* _octant) {
 	bool cellIsoBool[8];
 	double dVal;
 
-	vertexCap = 1;
-	triangleCap = 1;
+	//vertexCap = 1;
+	//triangleCap = 1;
 
 	int x, y, z;
 	int layerIndex = 0;
@@ -860,54 +869,54 @@ void DynamicMesh::generateMC(Octant* _octant) {
 	//inherit corner values from isoCache
 
 	//calculate corner values that could not be inherited
-	xyz[0][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[0][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[0][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 	val[0] = _octant->data[x][y][z];
 	if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
 		cellIsoBool[0] = true;
 	else
 		cellIsoBool[0] = false;
 
-	xyz[1][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[1][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[1][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 	val[1] = _octant->data[x + 1][y][z];
 	if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
 		cellIsoBool[1] = true;
 	else
 		cellIsoBool[1] = false;
 
-	xyz[2][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[2][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[2][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 	val[2] = _octant->data[x + 1][y][z + 1];
 	if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
 		cellIsoBool[2] = true;
 	else
 		cellIsoBool[2] = false;
 
-	xyz[3][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[3][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[3][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 	val[3] = _octant->data[x][y][z + 1];
 	if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
 		cellIsoBool[3] = true;
 	else
 		cellIsoBool[3] = false;
 
-	xyz[4][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[4][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[4][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 	val[4] = _octant->data[x][y + 1][z];
 	if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
 		cellIsoBool[4] = true;
 	else
 		cellIsoBool[4] = false;
 
-	xyz[5][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[5][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[5][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 	val[5] = _octant->data[x + 1][y + 1][z];
 	if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
 		cellIsoBool[5] = true;
@@ -915,18 +924,18 @@ void DynamicMesh::generateMC(Octant* _octant) {
 		cellIsoBool[5] = false;
 
 	//save the sixth corner values to isoCache
-	xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 	val[6] = _octant->data[x + 1][y + 1][z + 1];
 	if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
 		cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
 	else
 		cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
-	xyz[7][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[7][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[7][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+	xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 	val[7] =_octant->data[x][y + 1][z + 1];
 	if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
 		cellIsoBool[7] = true;
@@ -1085,18 +1094,18 @@ void DynamicMesh::generateMC(Octant* _octant) {
 		cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
 		//calculate corner values that could not be inherited
-		xyz[2][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[2][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[2][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[2] = _octant->data[x + 1][y][z + 1];
 		if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
 			cellIsoBool[2] = true;
 		else
 			cellIsoBool[2] = false;
 
-		xyz[3][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[3] = _octant->data[x][y][z + 1];
 		if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
 			cellIsoBool[3] = true;
@@ -1104,18 +1113,18 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			cellIsoBool[3] = false;
 
 		//save the sixth corner values to isoCache
-		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[6] = _octant->data[x + 1][y + 1][z + 1];
 		if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
 			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
 		else
 			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
-		xyz[7][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[7] = _octant->data[x][y + 1][z + 1];
 		if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
 			cellIsoBool[7] = true;
@@ -1240,45 +1249,45 @@ void DynamicMesh::generateMC(Octant* _octant) {
 		cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
 
 		//calculate corner values that could not be inherited ---------------------------------
-		xyz[0][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[0][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[0][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 		val[0] = _octant->data[x][y][z];
 		if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
 			cellIsoBool[0] = true;
 		else
 			cellIsoBool[0] = false;
 
-		xyz[1][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[1][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[1][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 		val[1] = _octant->data[x + 1][y][z];
 		if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
 			cellIsoBool[1] = true;
 		else
 			cellIsoBool[1] = false;
 
-		xyz[3][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[3] = _octant->data[x][y][z + 1];
 		if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
 			cellIsoBool[3] = true;
 		else
 			cellIsoBool[3] = false;
 
-		xyz[4][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[4][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[4][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 		val[4] = _octant->data[x][y + 1][z];
 		if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
 			cellIsoBool[4] = true;
 		else
 			cellIsoBool[4] = false;
 
-		xyz[5][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[5][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[5][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 		val[5] = _octant->data[x + 1][y + 1][z];
 		if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
 			cellIsoBool[5] = true;
@@ -1286,18 +1295,18 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			cellIsoBool[5] = false;
 
 		//save the sixth corner values to isoCache
-		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[6] = _octant->data[x + 1][y + 1][z + 1];
 		if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
 			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
 		else
 			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
-		xyz[7][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[7] = _octant->data[x][y + 1][z + 1];
 		if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
 			cellIsoBool[7] = true;
@@ -1441,9 +1450,9 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
 			//calculate corner values that could not be inherited
-			xyz[3][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[3][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[3][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 			val[3] = _octant->data[x][y][z + 1];
 			if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
 				cellIsoBool[3] = true;
@@ -1451,18 +1460,18 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				cellIsoBool[3] = false;
 
 			//save the sixth corner values to isoCache
-			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 			val[6] = _octant->data[x + 1][y + 1][z + 1];
 			if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
 			else
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
-			xyz[7][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[7][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[7][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 			val[7] = _octant->data[x][y + 1][z + 1];
 			if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
 				cellIsoBool[7] = true;
@@ -1577,54 +1586,54 @@ void DynamicMesh::generateMC(Octant* _octant) {
 		cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 		//calculate corner values that could not be inherited
-		xyz[0][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[0][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[0][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 		val[0] = _octant->data[x][y][z];
 		if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
 			cellIsoBool[0] = true;
 		else
 			cellIsoBool[0] = false;
 
-		xyz[1][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[1][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[1][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 		val[1] = _octant->data[x + 1][y][z];
 		if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
 			cellIsoBool[1] = true;
 		else
 			cellIsoBool[1] = false;
 
-		xyz[2][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[2][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[2][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[2] = _octant->data[x + 1][y][z + 1];
 		if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
 			cellIsoBool[2] = true;
 		else
 			cellIsoBool[2] = false;
 
-		xyz[3][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[3] = _octant->data[x][y][z + 1];
 		if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
 			cellIsoBool[3] = true;
 		else
 			cellIsoBool[3] = false;
 
-		xyz[4][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[4][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[4][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 		val[4] = _octant->data[x][y + 1][z];
 		if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
 			cellIsoBool[4] = true;
 		else
 			cellIsoBool[4] = false;
 
-		xyz[5][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[5][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[5][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 		val[5] = _octant->data[x + 1][y + 1][z];
 		if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
 			cellIsoBool[5] = true;
@@ -1632,9 +1641,9 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			cellIsoBool[5] = false;
 
 		//save the sixth corner values to isoCache
-		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 		val[6] = _octant->data[x + 1][y + 1][z + 1];
 		if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
 			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
@@ -1791,18 +1800,18 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 			//calculate corner values that could not be inherited ---------------------------
-			xyz[2][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[2][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[2][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 			val[2] = _octant->data[x + 1][y][z + 1];
 			if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
 				cellIsoBool[2] = true;
 			else
 				cellIsoBool[2] = false;
 
-			xyz[3][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[3][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[3][2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 			val[3] = _octant->data[x][y][z + 1];
 			if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
 				cellIsoBool[3] = true;
@@ -1810,9 +1819,9 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				cellIsoBool[3] = false;
 
 			//save the sixth corner values to isoCache
-			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 			val[6] = _octant->data[x + 1][y + 1][z + 1];
 			if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
@@ -1943,36 +1952,36 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 			//calculate corner values that could not be inherited ---------------------------------
-			xyz[0][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[0][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[0][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 			val[0] = _octant->data[x][y][z];
 			if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
 				cellIsoBool[0] = true;
 			else
 				cellIsoBool[0] = false;
 
-			xyz[1][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[1][1] = (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[1][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 			val[1] = _octant->data[x + 1][y][z];
 			if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
 				cellIsoBool[1] = true;
 			else
 				cellIsoBool[1] = false;
 
-			xyz[4][0] = (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[4][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[4][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 			val[4] = _octant->data[x][y + 1][z];
 			if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
 				cellIsoBool[4] = true;
 			else
 				cellIsoBool[4] = false;
 
-			xyz[5][0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[5][1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[5][2] = (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
 			val[5] = _octant->data[x + 1][y + 1][z];
 			if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
 				cellIsoBool[5] = true;
@@ -1980,9 +1989,9 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				cellIsoBool[5] = false;
 
 			//save the sixth corner values to isoCache
-			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 			val[6] = _octant->data[x + 1][y + 1][z + 1];
 			if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
@@ -2132,9 +2141,9 @@ void DynamicMesh::generateMC(Octant* _octant) {
 
 				//calculate corner values that could not be inherited -------------------------------------------------
 				//save the sixth corner values to isoCache
-				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 				val[6] = _octant->data[x + 1][y + 1][z + 1];
 				if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
 					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;

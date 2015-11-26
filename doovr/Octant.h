@@ -8,11 +8,8 @@ public:
 
 	void deAllocate();
 
-	void allocateData5();
-	void deAllocateData5();
-
-	void allocateData6();
-	void deAllocateData6();
+	void allocateData();
+	void deAllocateData();
 
 	void partition();
 

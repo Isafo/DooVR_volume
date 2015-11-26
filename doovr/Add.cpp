@@ -80,7 +80,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 		return;
 	}
 
-	while (currentOct->depth < _ot->MAX_DEPTH) {//<-- reaching depth 6 -- //TODO: do the collision check properly
+	while (currentOct->depth < _ot->MAX_DEPTH) {//<-- reaching depth 6 --
 			
 		if (currentOct->child[0] == nullptr) {
 			currentOct->partition();
@@ -154,8 +154,12 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 					 tmpPos[2] += 0.001f;
 				}
 				tmpPos[1] += 0.001f;
+				tmpPos[2] = currentOct->pos[2] - currentOct->halfDim;
 			}
 			tmpPos[0] += 0.001f;
+			tmpPos[1] = currentOct->pos[1] - currentOct->halfDim;
+			tmpPos[2] = currentOct->pos[2] - currentOct->halfDim;
+
 		}		
 		olCounter++;
 	}// -->
