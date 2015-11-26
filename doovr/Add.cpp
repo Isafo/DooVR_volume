@@ -34,7 +34,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	//TODO:	use currentOct->fillCount variable in Octant properly
 	float wPos[4]; float nwPos[4];
 	float wDirr[4]; float nwDirr[4];
-	float s, d = 0.0;
+	float s, d = 0.0f, childDim = 0.0f;
 	float octPos[3];
 	float tmpPos[3];
 	float tmpVec[3];
@@ -64,101 +64,108 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	int olCounter = 0;
 	int tmpI;
 	int olStart;
+	int scalarNR = std::pow(2, 10 - _ot->MAX_DEPTH);
 
-	//<- check if we are inside root of octree
-	for (int i = 0; i < 3; i++) {
-		if (nwPos[i] < -currentOct->halfDim) {
-			s = nwPos[i] + currentOct->halfDim;
+	for (int j = 0; j < 3; j++) {
+		if (nwPos[j] <  -currentOct->halfDim) {
+			s = nwPos[j] + currentOct->halfDim;
 			d += s*s;
 		}
-		else if (nwPos[i] > currentOct->halfDim) {
-			s = nwPos[i] - currentOct->halfDim;
+		else if (nwPos[j] > currentOct->halfDim) {
+			s = nwPos[j] - currentOct->halfDim;
 			d += s*s;
 		}
-	}//->
-	if (d <= radius*radius) {//<- collision check rootcube -
-		while (currentOct->depth < 6) {//<-- reaching depth 6 -- //TODO: do the collision check properly
+	}
+	if (d > radius*radius) {
+		return;
+	}
+
+	while (currentOct->depth < _ot->MAX_DEPTH) {//<-- reaching depth 6 -- //TODO: do the collision check properly
 			
-			if (currentOct->child[0] == nullptr) {
-				currentOct->partition();
-			}
+		if (currentOct->child[0] == nullptr) {
+			currentOct->partition();
+		}
 
-			for (int i = 0; i < 8; i++) {//<--- collision check cubechildren ---
-				for (int j = 0; j < 3; j++) {
-					if (nwPos[j] < -currentOct->halfDim) {
-						s = nwPos[j] + currentOct->halfDim;
-						d += s*s;
-					}
-					else if (nwPos[j] > currentOct->halfDim) {
-						s = nwPos[j] - currentOct->halfDim;
-						d += s*s;
-					}
+		childDim = currentOct->child[0]->halfDim;
+		for (int i = 0; i < 8; i++) {//<--- collision check cubechildren ---
+			childOct = currentOct->child[i];
+			tmpPos[0] = nwPos[0] - childOct->pos[0];
+			tmpPos[1] = nwPos[1] - childOct->pos[1];
+			tmpPos[2] = nwPos[2] - childOct->pos[2];
+			d = 0.0f;
+
+			for (int j = 0; j < 3; j++) {
+				if (tmpPos[j] <  -childDim) {
+					s = tmpPos[j] + childDim;
+					d += s*s;
 				}
-				if (d <= radius*radius) {
+				else if (tmpPos[j] > childDim) {
+					s = tmpPos[j] - childDim;
+					d += s*s;
+				}
+			}
+			if (d <= radius*radius) {
+				//find corner furthest away from sphere center
+				tmpVec[0] = (0.0f > tmpPos[0] ? childDim : -childDim);
+				tmpVec[1] = (0.0f > tmpPos[1] ? childDim : -childDim);
+				tmpVec[2] = (0.0f > tmpPos[2] ? childDim : -childDim);
 
-					tmpPos[0] = currentOct->pos[0] + (currentOct->pos[0] > nwPos[0] ? currentOct->halfDim : -currentOct->halfDim);
-					tmpPos[1] = currentOct->pos[1] + (currentOct->pos[1] > nwPos[1] ? currentOct->halfDim : -currentOct->halfDim);
-					tmpPos[2] = currentOct->pos[2] + (currentOct->pos[2] > nwPos[2] ? currentOct->halfDim : -currentOct->halfDim);
+				linAlg::calculateVec(tmpVec, tmpPos, tmpVec);
+				if (linAlg::vecLength(tmpVec) < radius) {//<--- check if cube is entirely inside sphere --	
+						
+					if (childOct->child[0] != nullptr)
+						childOct->deAllocate();
 
+					childOct->data[0][0][0] = 255;
+					childOct->fillCount = std::pow(std::pow(2, _ot->MAX_DEPTH - childOct->depth), 3);
+				}// --->
+				else {
+					octList.push_back(childOct);
+				}
+			}
+		}// --->
+		currentOct = octList[olCounter];
+		olCounter++;
+	}// -->
+
+	//<-- change selected iso values --
+	olCounter--;
+	olStart = olCounter;
+	tmpI = octList.size();
+	while (olCounter < tmpI) {
+		currentOct = octList[olCounter];
+
+		tmpPos[0] = currentOct->pos[0] - currentOct->halfDim;
+		tmpPos[1] = currentOct->pos[1] - currentOct->halfDim;
+		tmpPos[2] = currentOct->pos[2] - currentOct->halfDim;
+
+		for (int i = 0; i < scalarNR; i++) {
+			for (int j = 0; j < scalarNR; j++) {
+				for (int k = 0; k < scalarNR; k++) {
 					linAlg::calculateVec(tmpPos, nwPos, tmpVec);
-					if (linAlg::vecLength(tmpVec) < radius) {//<--- check if cube is entirely inside sphere --	
-						
-						currentOct->data[0][0][0] = 255;
-						currentOct->fillCount = std::pow(std::pow(2, _ot->MAX_DEPTH - currentOct->depth),3);
-						
-					}// --->
-					else {
-						octList.push_back(currentOct->child[i]);
-					}
-				}
-			}// --->
-			currentOct = octList[olCounter];
-			olCounter++;
-		}// -->
 
-		//<-- change selected iso values --
-		olCounter--;
-		olStart = olCounter;
-		tmpI = octList.size();
-		while (olCounter < tmpI) {
-			currentOct = octList[olCounter];
-
-			if (!currentOct->detailed) {
-				if (currentOct->data[0][0][0] != 255)
-					currentOct->allocateData6();
-			}
-			else { //<---- search detailed data and change it
-				tmpPos[0] = currentOct->pos[0] - currentOct->halfDim + 0.001f;
-				tmpPos[1] = currentOct->pos[1] - currentOct->halfDim + 0.001f;
-				tmpPos[2] = currentOct->pos[2] - currentOct->halfDim + 0.001f;
-				for (int i = 0; i < 16; i++) {
-					for (int j = 0; j < 16; j++) {
-						for (int k = 0; i < 16; k++) {
-							linAlg::calculateVec(tmpPos, nwPos, tmpVec);
-
-							if (linAlg::vecLength(tmpVec) < radius) {//check if point is inside sphere
-								currentOct->data[i][j][k] = 255;
-								//TODO: change currentOct->fillCount
-							}
-									
-							tmpPos[0] += 0.001f; tmpPos[1] += 0.001f; tmpPos[2] += 0.001f;
+					if (linAlg::vecLength(tmpVec) < radius) {//check if point is inside sphere
+						if (currentOct->data[i][j][k] != 255) {
+							currentOct->data[i][j][k] = 255;
+							currentOct->fillCount++;
 						}
 					}
+									
+					 tmpPos[2] += 0.001f;
 				}
-			}// ---->					
-		}// -->
+				tmpPos[1] += 0.001f;
+			}
+			tmpPos[0] += 0.001f;
+		}		
+		olCounter++;
+	}// -->
 
-		olCounter = olStart;
-		while (olCounter < tmpI) { //<-- march trough selected cubes and generate triangles
+	olCounter = olStart;
+	while (olCounter < tmpI) { //<-- march trough selected cubes and generate triangles
 
-			
-
-		}
-
-
-	}// ->
-
-
-
+		_mesh->generateMC(octList[olCounter]);
+		olCounter++;
+	}
+	_mesh->updateOGLData();
 }
 

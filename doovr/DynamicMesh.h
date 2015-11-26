@@ -4,6 +4,8 @@
 #include "Mesh.h"
 #include "Wand.h"
 #include "scalarField.h"
+#include "Octant.h"
+
 #include <vector>
 
 #ifndef DYNAMICMESH_H
@@ -75,7 +77,7 @@ class DynamicMesh : public Mesh{
 
 	//! saves the mesh as a binary file with the current date and time as file name (yyyy-mm-dd_hh-mm-ss.bin)
 	void sphereSubdivide(float rad);
-	void generateMC(ScalarField _sf);
+	void generateMC(Octant* _octant);
 
 	void save();
 	void load(std::string _fileName);
@@ -133,6 +135,8 @@ class DynamicMesh : public Mesh{
 	cacheCell*** isoCache;
 	int z0Cache;
 	int* y0Cache;
+
+	unsigned char isoValue = 128;
 	
 	//float midPoint[3];
 
@@ -157,4 +161,8 @@ class DynamicMesh : public Mesh{
 
 	//! updates the changed vertecies normal 
 	void updateNormals(int* changeList, int listSize);
+	
+	int edgeTable[256];
+	int triTable[256][16];
+
 };

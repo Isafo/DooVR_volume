@@ -729,7 +729,7 @@ int Oculus::runOvr() {
 	
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
 	ScalarField sTest(128, 128, 128, 0.1, 0.1, 0.1);
-	Octree* oTest = new Octree(2.0);
+	Octree* oTest = new Octree(1.0f);
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
 	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
@@ -738,11 +738,10 @@ int Oculus::runOvr() {
 	//modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
 	
 	clock_t begin = clock(); //DEBUG TEST
-	modellingMesh->generateMC(sTest);
+	//modellingMesh->generateMC(oTest->root);
 	clock_t end = clock(); //DEBUG TEST
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC; //DEBUG TEST
 	modellingMesh->createBuffers();
-	
 	
 	std::string currentMesh = "../Assets/Models/resetMesh.bin";
 
@@ -756,8 +755,6 @@ int Oculus::runOvr() {
 	StaticMesh* placeHolder;
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
-
-	
 
 	VertexTool* currentTool;
 	currentTool = new Push(modellingMesh, wand);
@@ -792,7 +789,6 @@ int Oculus::runOvr() {
 				if (modellingState[0] == 2) {
 					//currentTool->moveVertices(modellingMesh, wand, deltaTime);
 					currentSTool->changeScalarData(modellingMesh, wand, oTest);
-
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;

@@ -4,12 +4,33 @@
 
 Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim)
 {
-	data = new unsigned char**[1];
-	data[0] = new unsigned char*[1];
-	data[0][0] = new unsigned char[1];
-	data[0][0][0] = 0;
+	if (_depth != MAX_DEPTH)
+	{
+		data = new unsigned char**[1];
+		data[0] = new unsigned char*[1];
+		data[0][0] = new unsigned char[1];
+		data[0][0][0] = 0;
+	}
+	else{
+
+		int scalarNR = std::pow(2, 10 - _depth);
+
+		data = new unsigned char**[scalarNR];
+		for (int i = 0; i < scalarNR; i++)
+			data[i] = new unsigned char*[32];
+
+		for (int i = 0; i < scalarNR; i++)
+			for (int j = 0; j < scalarNR; j++)
+				data[i][j] = new unsigned char[scalarNR];
+
+		for (int i = 0; i < scalarNR; i++)
+			for (int j = 0; j < scalarNR; j++)
+				for (int k = 0; k < scalarNR; k++)
+					data[i][j][k] = 0;
+	}
 	fillCount = 0;
 
+	parent = _parent;
 	depth = _depth;
 	pos[0] = x; pos[1] = y; pos[2] = z;
 	halfDim = _halfDim;
@@ -18,67 +39,77 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 
 
 Octant::~Octant() {
+
+	if (depth == MAX_DEPTH)
+	{
+		int scalarNR = std::pow(2, (10 - depth));
+
+		for (int i = 0; i < scalarNR; i++)
+			for (int j = 0; j < scalarNR; j++)
+				delete data[i][j];
+
+		for (int i = 0; i < scalarNR; i++)
+			delete data[i];
+
+		delete data;
+	}
+	else
+	{
+		if (child[0] != nullptr)
+		{
+			delete child[0];
+			delete child[1];
+			delete child[2];
+			delete child[3];
+			delete child[4];
+			delete child[5];
+			delete child[6];
+			delete child[7];
+		}
+
+		delete data[0][0];
+		delete data[0];
+		delete data;
+
+	}
 	
 }
 
 
 void Octant::partition()
 {
+	//delete data[0][0];
+	//delete data[0];
+	//delete data;
+
 	float d = halfDim / 2.0f;
-	child[0] = new Octant(depth + 1, this, pos[0] - d, pos[0] - d, pos[0] + d, d);
-	child[1] = new Octant(depth + 1, this, pos[0] + d, pos[0] - d, pos[0] + d, d);
-	child[2] = new Octant(depth + 1, this, pos[0] - d, pos[0] - d, pos[0] - d, d);
-	child[3] = new Octant(depth + 1, this, pos[0] + d, pos[0] - d, pos[0] - d, d);
-	child[4] = new Octant(depth + 1, this, pos[0] - d, pos[0] + d, pos[0] + d, d);
-	child[5] = new Octant(depth + 1, this, pos[0] + d, pos[0] + d, pos[0] + d, d);
-	child[6] = new Octant(depth + 1, this, pos[0] - d, pos[0] + d, pos[0] - d, d);
-	child[7] = new Octant(depth + 1, this, pos[0] + d, pos[0] + d, pos[0] - d, d);
+	child[0] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] - d, d);
+	child[1] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] + d, d);
+	child[2] = new Octant(depth + 1, this, pos[0] - d, pos[1] + d, pos[2] - d, d);
+	child[3] = new Octant(depth + 1, this, pos[0] - d, pos[1] + d, pos[2] + d, d);
+	child[4] = new Octant(depth + 1, this, pos[0] + d, pos[1] - d, pos[2] - d, d);
+	child[5] = new Octant(depth + 1, this, pos[0] + d, pos[1] - d, pos[2] + d, d);
+	child[6] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] - d, d);
+	child[7] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] + d, d);
 }
 
 void Octant::deAllocate() {
+	
+	delete child[0];
+	delete child[1];
+	delete child[2];
+	delete child[3];
+	delete child[4];
+	delete child[5];
+	delete child[6];
+	delete child[7];
 
-	delete this->child[0];
-
-	std::vector<Octant*> childList;
-	childList.reserve(256);
-
-	if (this->child[0] != nullptr) { 
-
-		childList.push_back(child[0]);
-		childList.push_back(child[1]);
-		childList.push_back(child[2]);
-		childList.push_back(child[3]);
-		childList.push_back(child[4]);
-		childList.push_back(child[5]);
-		childList.push_back(child[6]);
-		childList.push_back(child[7]);
-		
-		int octCounter = 0;
-		while (octCounter < childList.size()) {
-
-			if (childList[octCounter]->child[0] != nullptr)
-			{
-				childList.push_back(childList[octCounter]->child[0]);
-				childList.push_back(childList[octCounter]->child[1]);
-				childList.push_back(childList[octCounter]->child[2]);
-				childList.push_back(childList[octCounter]->child[3]);
-				childList.push_back(childList[octCounter]->child[4]);
-				childList.push_back(childList[octCounter]->child[5]);
-				childList.push_back(childList[octCounter]->child[6]);
-				childList.push_back(childList[octCounter]->child[7]);
-			}
-			delete childList[octCounter]->data;
-			delete childList[octCounter];
-
-			octCounter++;
-		}
-
-
-		
+	//data = new unsigned char**[1];
+	//data[0] = new unsigned char*[1];
+	//data[0][0] = new unsigned char[1];
 }
 
-void Octant::allocateData5()
-{
+void Octant::allocateData5() {
 	//unsigned char tmpIso = data[0][0][0];
 	delete data[0][0];
 	delete data[0];

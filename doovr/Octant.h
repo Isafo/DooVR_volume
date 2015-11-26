@@ -34,5 +34,7 @@ private:
 	int vCount;
 	int triCount;
 
+	static const int MAX_DEPTH = 6;
+
 };
 
