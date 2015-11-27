@@ -167,7 +167,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	olCounter = olStart;
 	while (olCounter < tmpI) { //<-- march trough selected cubes and generate triangles
 
-		_mesh->generateMC(octList[olCounter]);
+		_mesh->generateMC(&octList, olStart );
 		olCounter++;
 	}
 	_mesh->updateOGLData();

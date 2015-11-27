@@ -18,7 +18,6 @@ struct dBufferData {
 	GLfloat nx;
 	GLfloat ny;
 	GLfloat nz;
-	GLfloat selected;
 };
 
 //! HalfEdge data structure. HalfEdge points to the next edge in the triangle counter clockwise.
@@ -77,7 +76,7 @@ class DynamicMesh : public Mesh{
 
 	//! saves the mesh as a binary file with the current date and time as file name (yyyy-mm-dd_hh-mm-ss.bin)
 	void sphereSubdivide(float rad);
-	void generateMC(Octant* _octant);
+	void generateMC(std::vector<Octant*>* _octList, int _olStart);
 
 	void save();
 	void load(std::string _fileName);

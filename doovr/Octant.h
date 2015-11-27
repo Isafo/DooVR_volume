@@ -25,8 +25,8 @@ public:
 
 private:
 
-	vertex* vertices;
-	triangle* triangles;
+	int* vertices;
+	int* triangles;
 	
 	int vCount;
 	int triCount;

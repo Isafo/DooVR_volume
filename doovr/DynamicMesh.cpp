@@ -12,49 +12,8 @@
 #define EPSILON 0.000001
 
 DynamicMesh::DynamicMesh() {
-	vertexArray = new vertex*[1];
-	vertexArray[0] = new vertex[MAX_NR_OF_VERTICES];
-	vInfoArray = new vInfo*[1];
-	vInfoArray[0] = new vInfo[MAX_NR_OF_VERTICES];
 
-	triangleArray = new triangle*[1];
-	triangleArray[0] = new triangle[MAX_NR_OF_TRIANGLES];
-	triEPtr = new int*[1];
-	triEPtr[1] = new int[MAX_NR_OF_TRIANGLES];
 
-	e = new halfEdge[MAX_NR_OF_EDGES];
-	vertexCap = 1;
-	triangleCap = 1;
-
-	// TEMPORARY __________________________________________
-	isoCache = new cacheCell**[2];
-
-	//TODO: GET MAX DEPTH PROPERLY
-	int scalarNR = std::pow(2, 10 - 6);
-
-	for (int i = 0; i < 2; i++)
-		isoCache[i] = new cacheCell*[scalarNR];
-	
-	for (int i = 0; i < 2; i++)
-		for (int j = 0; j < scalarNR; j++)
-			isoCache[i][j] = new cacheCell[scalarNR];
-
-	y0Cache = new int[scalarNR];
-
-	// _______________________________________________________
-
-	//sTail = new sVert;
-	/*sHead = new sVert;
-	sTail->next = sHead;
-	sTail->vec[0] = 100.0f;
-	sTail->vec[1] = 100.0f;
-	sTail->vec[2] = 100.0f;
-	sHead->next = sTail;
-	sHead->vec[0] = 100.0f;
-	sHead->vec[1] = 100.0f;
-	sHead->vec[2] = 100.0f;
-	*///sMid = sHead;
-	//sNR = 0;
 
 	position[0] = 0.0f; position[1] = -0.3f; position[2] = 0.0f;
 
@@ -62,6 +21,42 @@ DynamicMesh::DynamicMesh() {
 	orientation[4] = 0.0f; orientation[5] = 1.0f; orientation[6] = 0.0f; orientation[7] = 0.0f;
 	orientation[8] = 0.0f; orientation[9] = 0.0f; orientation[10] = 1.0f; orientation[11] = 0.0f;
 	orientation[12] = 0.0f; orientation[13] = 0.0f; orientation[14] = 0.0f; orientation[15] = 1.0f;
+	
+	// TEMPORARY __________________________________________
+	int tmpMAX_DEPTH = 6;
+	//nr of preallocated vertices per octant = scalarNR*scalarNR*4
+	//nr of preallocated triangles per octant = scalarNR*scalarNR*2*4
+
+	isoCache = new cacheCell**[2];
+
+	//TODO: GET MAX DEPTH PROPERLY
+	int scalarNR = std::pow(2, 10 - tmpMAX_DEPTH);
+
+	for (int i = 0; i < 2; i++)
+		isoCache[i] = new cacheCell*[scalarNR];
+
+	for (int i = 0; i < 2; i++)
+		for (int j = 0; j < scalarNR; j++)
+			isoCache[i][j] = new cacheCell[scalarNR];
+
+	y0Cache = new int[scalarNR];
+
+	vertexArray = new vertex*[MAX_NR_OF_VERTICES/(scalarNR*scalarNR*4)];
+	//vertexArray[0] = new vertex[MAX_NR_OF_VERTICES];
+	//vInfoArray = new vInfo*[1];
+	//vInfoArray[0] = new vInfo[MAX_NR_OF_VERTICES];
+
+
+	triangleArray = new triangle*[MAX_NR_OF_TRIANGLES/(scalarNR*scalarNR * 2 * 4)];
+	//triangleArray[0] = new triangle[MAX_NR_OF_TRIANGLES];
+	//triEPtr = new int*[1];
+	//triEPtr[1] = new int[MAX_NR_OF_TRIANGLES];
+
+	e = new halfEdge[MAX_NR_OF_EDGES];
+	vertexCap = 1;
+	triangleCap = 1;
+
+	// _______________________________________________________
 
 
 	// Tables for MC
@@ -412,20 +407,18 @@ void DynamicMesh::createBuffers() {
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	for (int i = 0; i < MAX_NR_OF_VERTICES; i++) {
-		vertexP[i].x = vertexArray[0][i].xyz[0];
-		vertexP[i].y = vertexArray[0][i].xyz[1];
-		vertexP[i].z = vertexArray[0][i].xyz[2];
-		vertexP[i].nx = vertexArray[0][i].nxyz[0];
-		vertexP[i].ny = vertexArray[0][i].nxyz[1];
-		vertexP[i].nz = vertexArray[0][i].nxyz[2];
-		vertexP[i].selected = vInfoArray[0][i].selected;
+		vertexP[i].x = 0.0f;
+		vertexP[i].y = 0.0f;
+		vertexP[i].z = 0.0f;
+		vertexP[i].nx = 0.0f;
+		vertexP[i].ny = 0.0f;
+		vertexP[i].nz = 0.0f;
 	}
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	// Specify how many attribute arrays we have in our VAO
 	glEnableVertexAttribArray(0); // Vertex coordinates
 	glEnableVertexAttribArray(1); // Normals
-	glEnableVertexAttribArray(2); // Selected
 	// Specify how OpenGL should interpret the vertex buffer data:
 	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
 	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
@@ -437,8 +430,6 @@ void DynamicMesh::createBuffers() {
 		sizeof(dBufferData), (void*)0); // xyz coordinates
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
 		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
-		sizeof(dBufferData), (void*)(6 * sizeof(GLfloat))); // normals
 
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
@@ -450,9 +441,9 @@ void DynamicMesh::createBuffers() {
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	for (int i = 0; i < MAX_NR_OF_TRIANGLES; i++) {
-		indexP[i].index[0] = triangleArray[0][i].index[0];
-		indexP[i].index[1] = triangleArray[0][i].index[1];
-		indexP[i].index[2] = triangleArray[0][i].index[2];
+		indexP[i].index[0] = 0;
+		indexP[i].index[1] = 0;
+		indexP[i].index[2] = 0;
 	}
 
 	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
@@ -484,14 +475,12 @@ void DynamicMesh::updateOGLData() {
 		vertexP[i].nx = vertexArray[0][i].nxyz[0];
 		vertexP[i].ny = vertexArray[0][i].nxyz[1];
 		vertexP[i].nz = vertexArray[0][i].nxyz[2];
-		vertexP[i].selected = vInfoArray[0][i].selected;
 	}
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	// Specify how many attribute arrays we have in our VAO
 	glEnableVertexAttribArray(0); // Vertex coordinates
 	glEnableVertexAttribArray(1); // Normals
-	glEnableVertexAttribArray(2); // selected
 
 	// Specify how OpenGL should interpret the vertex buffer data:
 	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
@@ -504,8 +493,7 @@ void DynamicMesh::updateOGLData() {
 		sizeof(dBufferData), (void*)0); // xyz coordinates
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
 		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
-		sizeof(dBufferData), (void*)(6 * sizeof(GLfloat))); // selected
+
 
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
@@ -552,7 +540,6 @@ void DynamicMesh::cleanBuffer() {
 			vertexP[i].nx = 0;
 			vertexP[i].ny = 0;
 			vertexP[i].nz = -1;
-			vertexP[i].selected = 0;
 		}
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 
@@ -838,7 +825,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 
 }
 
-void DynamicMesh::generateMC(Octant* _octant) {
+void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 	int cubeIndex;
 
@@ -847,743 +834,34 @@ void DynamicMesh::generateMC(Octant* _octant) {
 	unsigned char val[8];
 	bool cellIsoBool[8];
 	double dVal;
+	Octant* _octant;
 
 	//vertexCap = 1;
 	//triangleCap = 1;
 
 	int x, y, z;
-	int layerIndex = 0;
+	int layerIndex;
 
-	float dim = (_octant->halfDim * 2);
-	int res = std::pow(2, 10 - _octant->depth);
+	float dim = (*_octList)[0]->halfDim * 2.0f;
+	int res = std::pow(2, 10 - (*_octList)[0]->depth);
 
-	//create the first layer
-	x = 0;
-	y = 0;
-	z = 0;
+	int olEnd = (*_octList).size();
 
-	// create the first voxel ============================================================
+	while (_olStart < olEnd){
+		_octant = (*_octList)[_olStart];
 
-	//inherit corner values from local variable
+		layerIndex = 0;
 
-	//inherit corner values from isoCache
-
-	//calculate corner values that could not be inherited
-	xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-	val[0] = _octant->data[x][y][z];
-	if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
-		cellIsoBool[0] = true;
-	else
-		cellIsoBool[0] = false;
-
-	xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-	val[1] = _octant->data[x + 1][y][z];
-	if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
-		cellIsoBool[1] = true;
-	else
-		cellIsoBool[1] = false;
-
-	xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	val[2] = _octant->data[x + 1][y][z + 1];
-	if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
-		cellIsoBool[2] = true;
-	else
-		cellIsoBool[2] = false;
-
-	xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	val[3] = _octant->data[x][y][z + 1];
-	if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
-		cellIsoBool[3] = true;
-	else
-		cellIsoBool[3] = false;
-
-	xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-	val[4] = _octant->data[x][y + 1][z];
-	if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
-		cellIsoBool[4] = true;
-	else
-		cellIsoBool[4] = false;
-
-	xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-	val[5] = _octant->data[x + 1][y + 1][z];
-	if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
-		cellIsoBool[5] = true;
-	else
-		cellIsoBool[5] = false;
-
-	//save the sixth corner values to isoCache
-	xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	val[6] = _octant->data[x + 1][y + 1][z + 1];
-	if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
-		cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
-	else
-		cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
-
-	xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-	val[7] =_octant->data[x][y + 1][z + 1];
-	if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
-		cellIsoBool[7] = true;
-	else
-		cellIsoBool[7] = false;
-
-	// get the case index
-	cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
-				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
-	
-	// check if cube is entirely in or out of the surface ----------------------------
-	if (edgeTable[cubeIndex] != 0) {
-
-		// Find the vertices where the surface intersects the cube--------------------
-
-		//inherit vertex indices from local variable ---------------------------------
-
-		//inherit vertex indices from isoCache ---------------------------------------
-
-		//calculate indices that could not be inherited ------------------------------
-		if (edgeTable[cubeIndex] & 1) {
-			dVal = (double)(isoValue - val[0]) / (double)(val[1] - val[0]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
-			vertList[0] = vertexCap;
-			vertexCap++;
-		}
-
-		if (edgeTable[cubeIndex] & 2) {
-			dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
-			vertList[1] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 4) {
-			dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
-			vertList[2] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 8) {
-			dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-			vertList[3] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 16) {
-			dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-			vertList[4] = z0Cache = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 32) {
-			dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-			isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 64) {
-			dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-			isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 128) {
-			dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-			vertList[7] = y0Cache[z] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 256) {
-			dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
-			vertList[8] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 512) {
-			dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-			vertList[9] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 1024) {
-			dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-			isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-			vertexCap++;
-		}
-		if (edgeTable[cubeIndex] & 2048) {
-			dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-			vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-			vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-			vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-			vertList[11] = vertexCap;
-			vertexCap++;
-		}
-
-		// bind triangle indecies
-		for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-			triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-			triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-			triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
-
-			triangleCap++;
-		}
-	}
-
-	//create the remaining voxels of first row of first layer ======================================
-	for (z = 1; z < res - 1; z++) {
-
-		//inherit corner values from local variable
-		xyz[0][0] = xyz[3][0];
-		xyz[0][1] = xyz[3][1];
-		xyz[0][2] = xyz[3][2];
-		val[0] = _octant->data[x][y][z];
-		cellIsoBool[0] = cellIsoBool[3];
-
-		xyz[1][0] = xyz[2][0];
-		xyz[1][1] = xyz[2][1];
-		xyz[1][2] = xyz[2][2];
-		val[1] = _octant->data[x + 1][y][z];
-		cellIsoBool[1] = cellIsoBool[2];
-
-		xyz[4][0] = xyz[7][0];
-		xyz[4][1] = xyz[7][1];
-		xyz[4][2] = xyz[7][2];
-		val[4] = _octant->data[x][y + 1][z];
-		cellIsoBool[4] = cellIsoBool[7];
-
-		//inherit corner values from isoCache
-		xyz[5][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
-		xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
-		xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
-		val[5] = _octant->data[x + 1][y + 1][z];
-		cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
-
-		//calculate corner values that could not be inherited
-		xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[2] = _octant->data[x + 1][y][z + 1];
-		if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
-			cellIsoBool[2] = true;
-		else
-			cellIsoBool[2] = false;
-
-		xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[3] = _octant->data[x][y][z + 1];
-		if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
-			cellIsoBool[3] = true;
-		else
-			cellIsoBool[3] = false;
-
-		//save the sixth corner values to isoCache
-		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[6] = _octant->data[x + 1][y + 1][z + 1];
-		if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
-			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
-		else
-			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
-
-		xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[7] = _octant->data[x][y + 1][z + 1];
-		if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
-			cellIsoBool[7] = true;
-		else
-			cellIsoBool[7] = false;
-
-		// get the case index
-		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
-			cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
-
-		// check if cube is entirely in or out of the surface ----------------------------
-		if (edgeTable[cubeIndex] != 0) {
-
-			// Find the vertices where the surface intersects the cube--------------------
-
-			//inherit vertex indices from local variable ---------------------------------
-			if (edgeTable[cubeIndex] & 1) {
-				vertList[0] = vertList[2];
-			}
-			if (edgeTable[cubeIndex] & 256) {
-				vertList[8] = vertList[11];
-			}
-
-			//inherit vertex indices from isoCache ---------------------------------------
-			if (edgeTable[cubeIndex] & 16) {
-				vertList[4] = isoCache[layerIndex][y][z - 1].vertexIndex[1];
-			}
-			if (edgeTable[cubeIndex] & 512) {
-				vertList[9] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
-			}
-			//calculate indices that could not be inherited ------------------------------
-			if (edgeTable[cubeIndex] & 2) {
-				dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
-				vertList[1] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 4) {
-				dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
-				vertList[2] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 8) {
-				dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-				vertList[3] = vertexCap;
-				vertexCap++;
-			}
-
-			if (edgeTable[cubeIndex] & 32) {
-				dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-				isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 64) {
-				dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 128) {
-				dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-				vertList[7] = y0Cache[z] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 1024) {
-				dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 2048) {
-				dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-				vertList[11] = vertexCap;
-				vertexCap++;
-			}
-
-			// bind triangle indecies
-			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-				triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-				triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-				triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
-
-				triangleCap++;
-			}
-		}
-	}
-
-	//create the remaining rows of the first layer=============================================
-	for ( y = 1; y < res - 1; y++) {
-		
-		z = 0;
-		//create the first voxel of remaining rows of first layer=============================
-		
-		//inherit corner values from local variable -----------------------------------------
-
-		//inherit corner values from isoCache -----------------------------------------------
-		xyz[2][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
-		xyz[2][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
-		xyz[2][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
-		val[2] = _octant->data[x + 1][y][z + 1];
-		cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
-
-		//calculate corner values that could not be inherited ---------------------------------
-		xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-		val[0] = _octant->data[x][y][z];
-		if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
-			cellIsoBool[0] = true;
-		else
-			cellIsoBool[0] = false;
-
-		xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-		val[1] = _octant->data[x + 1][y][z];
-		if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
-			cellIsoBool[1] = true;
-		else
-			cellIsoBool[1] = false;
-
-		xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[3] = _octant->data[x][y][z + 1];
-		if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
-			cellIsoBool[3] = true;
-		else
-			cellIsoBool[3] = false;
-
-		xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-		val[4] = _octant->data[x][y + 1][z];
-		if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
-			cellIsoBool[4] = true;
-		else
-			cellIsoBool[4] = false;
-
-		xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-		val[5] = _octant->data[x + 1][y + 1][z];
-		if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
-			cellIsoBool[5] = true;
-		else
-			cellIsoBool[5] = false;
-
-		//save the sixth corner values to isoCache
-		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[6] = _octant->data[x + 1][y + 1][z + 1];
-		if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
-			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
-		else
-			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
-
-		xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[7] = _octant->data[x][y + 1][z + 1];
-		if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
-			cellIsoBool[7] = true;
-		else
-			cellIsoBool[7] = false;
-
-		// get the case index
-		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
-			cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
-
-		// check if cube is entirely in or out of the surface ----------------------------
-		if (edgeTable[cubeIndex] != 0) {
-
-			// Find the vertices where the surface intersects the cube--------------------
-
-			//inherit vertex indices from local variable ---------------------------------
-			if (edgeTable[cubeIndex] & 1) {
-				vertList[0] = z0Cache;
-			}
-			if (edgeTable[cubeIndex] & 8) {
-				vertList[3] = y0Cache[z];
-			}
-
-			//inherit vertex indices from isoCache ---------------------------------------
-			if (edgeTable[cubeIndex] & 2) {
-				vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
-			}
-			if (edgeTable[cubeIndex] & 4) {
-				vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
-			}
-
-			//calculate indices that could not be inherited ------------------------------
-	
-			if (edgeTable[cubeIndex] & 16) {
-				dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-				vertList[4] = z0Cache = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 32) {
-				dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-				isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 64) {
-				dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 128) {
-				dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-				vertList[7] = y0Cache[z] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 256) {
-				dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
-				vertList[8] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 512) {
-				dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-				vertList[9] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 1024) {
-				dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-				vertexCap++;
-			}
-			if (edgeTable[cubeIndex] & 2048) {
-				dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-				vertList[11] = vertexCap;
-				vertexCap++;
-			}
-
-			// bind triangle indecies
-			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-				triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-				triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-				triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
-
-				triangleCap++;
-			}
-		}
-
-		//create the remaining voxels of remaining rows of first layer=============================
-		for (z = 1; z < res - 1; z++) {
-			//inherit corner values from local variable
-			xyz[0][0] = xyz[3][0];
-			xyz[0][1] = xyz[3][1];
-			xyz[0][2] = xyz[3][2];
-			val[0] = _octant->data[x][y][z];
-			cellIsoBool[0] = cellIsoBool[3];
-
-			xyz[4][0] = xyz[7][0];
-			xyz[4][1] = xyz[7][1];
-			xyz[4][2] = xyz[7][2];
-			val[4] = _octant->data[x][y + 1][z];
-			cellIsoBool[4] = cellIsoBool[7];
-
-			//inherit corner values from isoCache
-			xyz[1][0] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[0];
-			xyz[1][1] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[1];
-			xyz[1][2] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[2];
-			val[1] = _octant->data[x + 1][y][z];
-			cellIsoBool[1] = isoCache[layerIndex][y - 1][z - 1].isoBool;
-
-			xyz[2][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
-			xyz[2][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
-			xyz[2][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
-			val[2] = _octant->data[x + 1][y][z + 1];
-			cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
-
-			xyz[5][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
-			xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
-			xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
-			val[5] = _octant->data[x + 1][y + 1][z];
-			cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
-
-			//calculate corner values that could not be inherited
-			xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			val[3] = _octant->data[x][y][z + 1];
-			if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
-				cellIsoBool[3] = true;
-			else
-				cellIsoBool[3] = false;
-
-			//save the sixth corner values to isoCache
-			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			val[6] = _octant->data[x + 1][y + 1][z + 1];
-			if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
-				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
-			else
-				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
-
-			xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-			val[7] = _octant->data[x][y + 1][z + 1];
-			if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
-				cellIsoBool[7] = true;
-			else
-				cellIsoBool[7] = false;
-
-			// get the case index
-			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
-				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
-
-			// check if cube is entirely in or out of the surface ----------------------------
-			if (edgeTable[cubeIndex] != 0) {
-
-				// Find the vertices where the surface intersects the cube--------------------
-
-				//inherit vertex indices from local variable ---------------------------------
-				if (edgeTable[cubeIndex] & 8) {
-					vertList[3] = y0Cache[z];
-				}
-				if (edgeTable[cubeIndex] & 256) {
-					vertList[8] = vertList[11];
-				}
-
-				//inherit vertex indices from isoCache ---------------------------------------
-				if (edgeTable[cubeIndex] & 1) {
-					vertList[0] = isoCache[layerIndex][y - 1][z - 1].vertexIndex[1];
-				}
-				if (edgeTable[cubeIndex] & 16) {
-					vertList[4] = isoCache[layerIndex][y][z - 1].vertexIndex[1];
-				}
-				if (edgeTable[cubeIndex] & 512) {
-					vertList[9] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
-				}
-				if (edgeTable[cubeIndex] & 2) {
-					vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
-				}
-				if (edgeTable[cubeIndex] & 4) {
-					vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
-				}
-
-				//calculate indices that could not be inherited ------------------------------
-
-				if (edgeTable[cubeIndex] & 32) {
-					dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-					vertexCap++;
-				}
-				if (edgeTable[cubeIndex] & 64) {
-					dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-					vertexCap++;
-				}
-				if (edgeTable[cubeIndex] & 128) {
-					dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-					vertList[7] = y0Cache[z] = vertexCap;
-					vertexCap++;
-				}
-				if (edgeTable[cubeIndex] & 1024) {
-					dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-					vertexCap++;
-				}
-				if (edgeTable[cubeIndex] & 2048) {
-					dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-					vertList[11] = vertexCap;
-					vertexCap++;
-				}
-
-				// bind triangle indecies
-				for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-					triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-					triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-					triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
-
-					triangleCap++;
-				}
-			}
-		}
-	}
-	
-	layerIndex++; // move to next layer
-	// create remaining layers ============================================================================
-	for (x = 1; x < res - 1; x++) {
+		//create the first layer
+		x = 0;
 		y = 0;
 		z = 0;
-		//create first voxel of first row of remaining layers ---------------------------------------------
 
+		// create the first voxel ============================================================
 
-		//inherit corner values from local variable -------------------------------------------------------
+		//inherit corner values from local variable
 
-
-		//inherit corner values from isoCache -------------------------------------------------------------
-		xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
-		xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
-		xyz[7][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
-		val[7] = _octant->data[x][y + 1][z + 1];
-		cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
+		//inherit corner values from isoCache
 
 		//calculate corner values that could not be inherited
 		xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
@@ -1650,25 +928,27 @@ void DynamicMesh::generateMC(Octant* _octant) {
 		else
 			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
+		xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+		val[7] =_octant->data[x][y + 1][z + 1];
+		if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
+			cellIsoBool[7] = true;
+		else
+			cellIsoBool[7] = false;
+
 		// get the case index
 		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
-			cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
-
-		// check if cube is entirely in or out of the surface -----------------------------------------------
+					cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
+	
+		// check if cube is entirely in or out of the surface ----------------------------
 		if (edgeTable[cubeIndex] != 0) {
 
-			// Find the vertices where the surface intersects the cube---------------------------------------
+			// Find the vertices where the surface intersects the cube--------------------
 
-			//inherit vertex indices from local variable ----------------------------------------------------
+			//inherit vertex indices from local variable ---------------------------------
 
-			//inherit vertex indices from isoCache ----------------------------------------------------------
-			if (edgeTable[cubeIndex] & 128) {
-				vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[0];
-			}
-
-			if (edgeTable[cubeIndex] & 2048) {
-				vertList[11] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
-			}
+			//inherit vertex indices from isoCache ---------------------------------------
 
 			//calculate indices that could not be inherited ------------------------------
 			if (edgeTable[cubeIndex] & 1) {
@@ -1728,7 +1008,14 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
 				vertexCap++;
 			}
-			
+			if (edgeTable[cubeIndex] & 128) {
+				dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+				vertList[7] = y0Cache[z] = vertexCap;
+				vertexCap++;
+			}
 			if (edgeTable[cubeIndex] & 256) {
 				dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
 				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
@@ -1753,6 +1040,14 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
 				vertexCap++;
 			}
+			if (edgeTable[cubeIndex] & 2048) {
+				dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
+				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+				vertList[11] = vertexCap;
+				vertexCap++;
+			}
 
 			// bind triangle indecies
 			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
@@ -1764,10 +1059,10 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			}
 		}
 
-		//create remaining voxels of first row of remaining layers ===========================
+		//create the remaining voxels of first row of first layer ======================================
 		for (z = 1; z < res - 1; z++) {
 
-			//inherit corner values from local variable --------------------------------------
+			//inherit corner values from local variable
 			xyz[0][0] = xyz[3][0];
 			xyz[0][1] = xyz[3][1];
 			xyz[0][2] = xyz[3][2];
@@ -1780,26 +1075,20 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			val[1] = _octant->data[x + 1][y][z];
 			cellIsoBool[1] = cellIsoBool[2];
 
-			//inherit corner values from isoCache --------------------------------------------
-			xyz[4][0] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[0];
-			xyz[4][1] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[1];
-			xyz[4][2] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[2];
+			xyz[4][0] = xyz[7][0];
+			xyz[4][1] = xyz[7][1];
+			xyz[4][2] = xyz[7][2];
 			val[4] = _octant->data[x][y + 1][z];
-			cellIsoBool[4] = isoCache[(layerIndex + 1) % 2][y][z - 1].isoBool;
+			cellIsoBool[4] = cellIsoBool[7];
 
+			//inherit corner values from isoCache
 			xyz[5][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
 			xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
 			xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
 			val[5] = _octant->data[x + 1][y + 1][z];
 			cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
-			xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
-			xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
-			xyz[7][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
-			val[7] = _octant->data[x][y + 1][z + 1];
-			cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
-
-			//calculate corner values that could not be inherited ---------------------------
+			//calculate corner values that could not be inherited
 			xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 			xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
 			xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
@@ -1828,9 +1117,18 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			else
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
+			xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			val[7] = _octant->data[x][y + 1][z + 1];
+			if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
+				cellIsoBool[7] = true;
+			else
+				cellIsoBool[7] = false;
+
 			// get the case index
 			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
-						cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
+				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 			// check if cube is entirely in or out of the surface ----------------------------
 			if (edgeTable[cubeIndex] != 0) {
@@ -1841,25 +1139,17 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				if (edgeTable[cubeIndex] & 1) {
 					vertList[0] = vertList[2];
 				}
-				
+				if (edgeTable[cubeIndex] & 256) {
+					vertList[8] = vertList[11];
+				}
 
 				//inherit vertex indices from isoCache ---------------------------------------
 				if (edgeTable[cubeIndex] & 16) {
 					vertList[4] = isoCache[layerIndex][y][z - 1].vertexIndex[1];
 				}
-				if (edgeTable[cubeIndex] & 128) {
-					vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[0];
-				}
-				if (edgeTable[cubeIndex] & 256) {
-					vertList[8] = isoCache[(layerIndex + 1) % 2][y][z - 1].vertexIndex[2];
-				}
 				if (edgeTable[cubeIndex] & 512) {
 					vertList[9] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
 				}
-				if (edgeTable[cubeIndex] & 2048) {
-					vertList[11] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
-				}
-
 				//calculate indices that could not be inherited ------------------------------
 				if (edgeTable[cubeIndex] & 2) {
 					dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
@@ -1902,12 +1192,28 @@ void DynamicMesh::generateMC(Octant* _octant) {
 					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
 					vertexCap++;
 				}
+				if (edgeTable[cubeIndex] & 128) {
+					dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+					vertList[7] = y0Cache[z] = vertexCap;
+					vertexCap++;
+				}
 				if (edgeTable[cubeIndex] & 1024) {
 					dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
 					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
 					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
 					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 2048) {
+					dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+					vertList[11] = vertexCap;
 					vertexCap++;
 				}
 
@@ -1922,14 +1228,12 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			}
 		}
 
-		//create remaining rows of remaining layers ==============================================
-		for (y = 1; y < res - 1; y++) {
-			
-			//create first voxel of remaining rows of remaining layers
+		//create the remaining rows of the first layer=============================================
+		for ( y = 1; y < res - 1; y++) {
+		
 			z = 0;
-
 			//create the first voxel of remaining rows of first layer=============================
-
+		
 			//inherit corner values from local variable -----------------------------------------
 
 			//inherit corner values from isoCache -----------------------------------------------
@@ -1938,18 +1242,6 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			xyz[2][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
 			val[2] = _octant->data[x + 1][y][z + 1];
 			cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
-
-			xyz[3][0] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[0];
-			xyz[3][1] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[1];
-			xyz[3][2] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[2];
-			val[3] = _octant->data[x][y][z + 1];
-			cellIsoBool[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].isoBool;
-
-			xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
-			xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
-			xyz[7][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
-			val[7] = _octant->data[x][y + 1][z + 1];
-			cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 			//calculate corner values that could not be inherited ---------------------------------
 			xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
@@ -1969,6 +1261,361 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				cellIsoBool[1] = true;
 			else
 				cellIsoBool[1] = false;
+
+			xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			val[3] = _octant->data[x][y][z + 1];
+			if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
+				cellIsoBool[3] = true;
+			else
+				cellIsoBool[3] = false;
+
+			xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+			val[4] = _octant->data[x][y + 1][z];
+			if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
+				cellIsoBool[4] = true;
+			else
+				cellIsoBool[4] = false;
+
+			xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+			val[5] = _octant->data[x + 1][y + 1][z];
+			if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
+				cellIsoBool[5] = true;
+			else
+				cellIsoBool[5] = false;
+
+			//save the sixth corner values to isoCache
+			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			val[6] = _octant->data[x + 1][y + 1][z + 1];
+			if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
+				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
+			else
+				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
+
+			xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			val[7] = _octant->data[x][y + 1][z + 1];
+			if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
+				cellIsoBool[7] = true;
+			else
+				cellIsoBool[7] = false;
+
+			// get the case index
+			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
+
+			// check if cube is entirely in or out of the surface ----------------------------
+			if (edgeTable[cubeIndex] != 0) {
+
+				// Find the vertices where the surface intersects the cube--------------------
+
+				//inherit vertex indices from local variable ---------------------------------
+				if (edgeTable[cubeIndex] & 1) {
+					vertList[0] = z0Cache;
+				}
+				if (edgeTable[cubeIndex] & 8) {
+					vertList[3] = y0Cache[z];
+				}
+
+				//inherit vertex indices from isoCache ---------------------------------------
+				if (edgeTable[cubeIndex] & 2) {
+					vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
+				}
+				if (edgeTable[cubeIndex] & 4) {
+					vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
+				}
+
+				//calculate indices that could not be inherited ------------------------------
+	
+				if (edgeTable[cubeIndex] & 16) {
+					dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+					vertList[4] = z0Cache = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 32) {
+					dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 64) {
+					dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 128) {
+					dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+					vertList[7] = y0Cache[z] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 256) {
+					dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+					vertList[8] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 512) {
+					dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+					vertList[9] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 1024) {
+					dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 2048) {
+					dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+					vertList[11] = vertexCap;
+					vertexCap++;
+				}
+
+				// bind triangle indecies
+				for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
+					triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
+					triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
+					triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+
+					triangleCap++;
+				}
+			}
+
+			//create the remaining voxels of remaining rows of first layer=============================
+			for (z = 1; z < res - 1; z++) {
+				//inherit corner values from local variable
+				xyz[0][0] = xyz[3][0];
+				xyz[0][1] = xyz[3][1];
+				xyz[0][2] = xyz[3][2];
+				val[0] = _octant->data[x][y][z];
+				cellIsoBool[0] = cellIsoBool[3];
+
+				xyz[4][0] = xyz[7][0];
+				xyz[4][1] = xyz[7][1];
+				xyz[4][2] = xyz[7][2];
+				val[4] = _octant->data[x][y + 1][z];
+				cellIsoBool[4] = cellIsoBool[7];
+
+				//inherit corner values from isoCache
+				xyz[1][0] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[0];
+				xyz[1][1] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[1];
+				xyz[1][2] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[2];
+				val[1] = _octant->data[x + 1][y][z];
+				cellIsoBool[1] = isoCache[layerIndex][y - 1][z - 1].isoBool;
+
+				xyz[2][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
+				xyz[2][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
+				xyz[2][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
+				val[2] = _octant->data[x + 1][y][z + 1];
+				cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
+
+				xyz[5][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
+				xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
+				xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
+				val[5] = _octant->data[x + 1][y + 1][z];
+				cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
+
+				//calculate corner values that could not be inherited
+				xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				val[3] = _octant->data[x][y][z + 1];
+				if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
+					cellIsoBool[3] = true;
+				else
+					cellIsoBool[3] = false;
+
+				//save the sixth corner values to isoCache
+				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				val[6] = _octant->data[x + 1][y + 1][z + 1];
+				if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
+					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
+				else
+					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
+
+				xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				val[7] = _octant->data[x][y + 1][z + 1];
+				if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
+					cellIsoBool[7] = true;
+				else
+					cellIsoBool[7] = false;
+
+				// get the case index
+				cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+					cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
+
+				// check if cube is entirely in or out of the surface ----------------------------
+				if (edgeTable[cubeIndex] != 0) {
+
+					// Find the vertices where the surface intersects the cube--------------------
+
+					//inherit vertex indices from local variable ---------------------------------
+					if (edgeTable[cubeIndex] & 8) {
+						vertList[3] = y0Cache[z];
+					}
+					if (edgeTable[cubeIndex] & 256) {
+						vertList[8] = vertList[11];
+					}
+
+					//inherit vertex indices from isoCache ---------------------------------------
+					if (edgeTable[cubeIndex] & 1) {
+						vertList[0] = isoCache[layerIndex][y - 1][z - 1].vertexIndex[1];
+					}
+					if (edgeTable[cubeIndex] & 16) {
+						vertList[4] = isoCache[layerIndex][y][z - 1].vertexIndex[1];
+					}
+					if (edgeTable[cubeIndex] & 512) {
+						vertList[9] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
+					}
+					if (edgeTable[cubeIndex] & 2) {
+						vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
+					}
+					if (edgeTable[cubeIndex] & 4) {
+						vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
+					}
+
+					//calculate indices that could not be inherited ------------------------------
+
+					if (edgeTable[cubeIndex] & 32) {
+						dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 64) {
+						dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 128) {
+						dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+						vertList[7] = y0Cache[z] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 1024) {
+						dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 2048) {
+						dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+						vertList[11] = vertexCap;
+						vertexCap++;
+					}
+
+					// bind triangle indecies
+					for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
+						triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
+						triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
+						triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+
+						triangleCap++;
+					}
+				}
+			}
+		}
+	
+		layerIndex++; // move to next layer
+		// create remaining layers ============================================================================
+		for (x = 1; x < res - 1; x++) {
+			y = 0;
+			z = 0;
+			//create first voxel of first row of remaining layers ---------------------------------------------
+
+
+			//inherit corner values from local variable -------------------------------------------------------
+
+
+			//inherit corner values from isoCache -------------------------------------------------------------
+			xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
+			xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
+			xyz[7][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
+			val[7] = _octant->data[x][y + 1][z + 1];
+			cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
+
+			//calculate corner values that could not be inherited
+			xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+			val[0] = _octant->data[x][y][z];
+			if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
+				cellIsoBool[0] = true;
+			else
+				cellIsoBool[0] = false;
+
+			xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+			val[1] = _octant->data[x + 1][y][z];
+			if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
+				cellIsoBool[1] = true;
+			else
+				cellIsoBool[1] = false;
+
+			xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			val[2] = _octant->data[x + 1][y][z + 1];
+			if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
+				cellIsoBool[2] = true;
+			else
+				cellIsoBool[2] = false;
+
+			xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+			xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+			val[3] = _octant->data[x][y][z + 1];
+			if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
+				cellIsoBool[3] = true;
+			else
+				cellIsoBool[3] = false;
 
 			xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
 			xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
@@ -2002,36 +1649,56 @@ void DynamicMesh::generateMC(Octant* _octant) {
 			cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
 				cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
-			// check if cube is entirely in or out of the surface ----------------------------
+			// check if cube is entirely in or out of the surface -----------------------------------------------
 			if (edgeTable[cubeIndex] != 0) {
 
-				// Find the vertices where the surface intersects the cube--------------------
+				// Find the vertices where the surface intersects the cube---------------------------------------
 
-				//inherit vertex indices from local variable ---------------------------------
-				if (edgeTable[cubeIndex] & 1) {
-					vertList[0] = z0Cache;
-				}
+				//inherit vertex indices from local variable ----------------------------------------------------
 
-				//inherit vertex indices from isoCache ---------------------------------------
-				if (edgeTable[cubeIndex] & 2) {
-					vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
-				}
-				if (edgeTable[cubeIndex] & 4) {
-					vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
-				}
-				if (edgeTable[cubeIndex] & 8) {
-					vertList[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].vertexIndex[0];
-				}
+				//inherit vertex indices from isoCache ----------------------------------------------------------
 				if (edgeTable[cubeIndex] & 128) {
 					vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[0];
 				}
+
 				if (edgeTable[cubeIndex] & 2048) {
 					vertList[11] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
 				}
 
 				//calculate indices that could not be inherited ------------------------------
-				
-				
+				if (edgeTable[cubeIndex] & 1) {
+					dVal = (double)(isoValue - val[0]) / (double)(val[1] - val[0]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
+					vertList[0] = vertexCap;
+					vertexCap++;
+				}
+
+				if (edgeTable[cubeIndex] & 2) {
+					dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
+					vertList[1] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 4) {
+					dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+					vertList[2] = vertexCap;
+					vertexCap++;
+				}
+				if (edgeTable[cubeIndex] & 8) {
+					dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
+					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+					vertList[3] = vertexCap;
+					vertexCap++;
+				}
 				if (edgeTable[cubeIndex] & 16) {
 					dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
@@ -2056,7 +1723,7 @@ void DynamicMesh::generateMC(Octant* _octant) {
 					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
 					vertexCap++;
 				}
-				
+			
 				if (edgeTable[cubeIndex] & 256) {
 					dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
 					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
@@ -2081,7 +1748,7 @@ void DynamicMesh::generateMC(Octant* _octant) {
 					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
 					vertexCap++;
 				}
-				
+
 				// bind triangle indecies
 				for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
 					triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
@@ -2092,35 +1759,23 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				}
 			}
 
-			//create remaining voxels of remaining rows of remaining layers ==================
-			for (z = 1; z < res - 1; z++) {  
-				//inherit corner values from local variable -----------------------------------
-				
-				//inherit corner values from isoCache -----------------------------------------
-				xyz[0][0] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[0];
-				xyz[0][1] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[1];
-				xyz[0][2] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[2];
+			//create remaining voxels of first row of remaining layers ===========================
+			for (z = 1; z < res - 1; z++) {
+
+				//inherit corner values from local variable --------------------------------------
+				xyz[0][0] = xyz[3][0];
+				xyz[0][1] = xyz[3][1];
+				xyz[0][2] = xyz[3][2];
 				val[0] = _octant->data[x][y][z];
-				cellIsoBool[0] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].isoBool;
+				cellIsoBool[0] = cellIsoBool[3];
 
-				xyz[1][0] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[0];
-				xyz[1][1] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[1];
-				xyz[1][2] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[2];
+				xyz[1][0] = xyz[2][0];
+				xyz[1][1] = xyz[2][1];
+				xyz[1][2] = xyz[2][2];
 				val[1] = _octant->data[x + 1][y][z];
-				cellIsoBool[1] = isoCache[layerIndex][y - 1][z - 1].isoBool;
+				cellIsoBool[1] = cellIsoBool[2];
 
-				xyz[2][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
-				xyz[2][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
-				xyz[2][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
-				val[2] = _octant->data[x + 1][y][z + 1];
-				cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
-
-				xyz[3][0] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[0];
-				xyz[3][1] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[1];
-				xyz[3][2] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[2];
-				val[3] = _octant->data[x][y][z + 1];
-				cellIsoBool[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].isoBool;
-
+				//inherit corner values from isoCache --------------------------------------------
 				xyz[4][0] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[0];
 				xyz[4][1] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[1];
 				xyz[4][2] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[2];
@@ -2139,7 +1794,25 @@ void DynamicMesh::generateMC(Octant* _octant) {
 				val[7] = _octant->data[x][y + 1][z + 1];
 				cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
-				//calculate corner values that could not be inherited -------------------------------------------------
+				//calculate corner values that could not be inherited ---------------------------
+				xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				val[2] = _octant->data[x + 1][y][z + 1];
+				if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
+					cellIsoBool[2] = true;
+				else
+					cellIsoBool[2] = false;
+
+				xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				val[3] = _octant->data[x][y][z + 1];
+				if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
+					cellIsoBool[3] = true;
+				else
+					cellIsoBool[3] = false;
+
 				//save the sixth corner values to isoCache
 				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
 				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
@@ -2152,7 +1825,7 @@ void DynamicMesh::generateMC(Octant* _octant) {
 
 				// get the case index
 				cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
-					cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
+							cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 				// check if cube is entirely in or out of the surface ----------------------------
 				if (edgeTable[cubeIndex] != 0) {
@@ -2160,21 +1833,12 @@ void DynamicMesh::generateMC(Octant* _octant) {
 					// Find the vertices where the surface intersects the cube--------------------
 
 					//inherit vertex indices from local variable ---------------------------------
-					
+					if (edgeTable[cubeIndex] & 1) {
+						vertList[0] = vertList[2];
+					}
+				
 
 					//inherit vertex indices from isoCache ---------------------------------------
-					if (edgeTable[cubeIndex] & 1) {
-						vertList[0] = isoCache[layerIndex][y - 1][z - 1].vertexIndex[1];
-					}
-					if (edgeTable[cubeIndex] & 2) {
-						vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
-					}
-					if (edgeTable[cubeIndex] & 4) {
-						vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
-					}
-					if (edgeTable[cubeIndex] & 8) {
-						vertList[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].vertexIndex[0];
-					}
 					if (edgeTable[cubeIndex] & 16) {
 						vertList[4] = isoCache[layerIndex][y][z - 1].vertexIndex[1];
 					}
@@ -2191,8 +1855,31 @@ void DynamicMesh::generateMC(Octant* _octant) {
 						vertList[11] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
 					}
 
-					//calculate indices that could not be inherited ------------------------------			
-					
+					//calculate indices that could not be inherited ------------------------------
+					if (edgeTable[cubeIndex] & 2) {
+						dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
+						vertList[1] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 4) {
+						dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+						vertList[2] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 8) {
+						dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+						vertList[3] = vertexCap;
+						vertexCap++;
+					}
 
 					if (edgeTable[cubeIndex] & 32) {
 						dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
@@ -2229,11 +1916,321 @@ void DynamicMesh::generateMC(Octant* _octant) {
 					}
 				}
 			}
+
+			//create remaining rows of remaining layers ==============================================
+			for (y = 1; y < res - 1; y++) {
+			
+				//create first voxel of remaining rows of remaining layers
+				z = 0;
+
+				//create the first voxel of remaining rows of first layer=============================
+
+				//inherit corner values from local variable -----------------------------------------
+
+				//inherit corner values from isoCache -----------------------------------------------
+				xyz[2][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
+				xyz[2][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
+				xyz[2][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
+				val[2] = _octant->data[x + 1][y][z + 1];
+				cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
+
+				xyz[3][0] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[0];
+				xyz[3][1] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[1];
+				xyz[3][2] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[2];
+				val[3] = _octant->data[x][y][z + 1];
+				cellIsoBool[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].isoBool;
+
+				xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
+				xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
+				xyz[7][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
+				val[7] = _octant->data[x][y + 1][z + 1];
+				cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
+
+				//calculate corner values that could not be inherited ---------------------------------
+				xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+				val[0] = _octant->data[x][y][z];
+				if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
+					cellIsoBool[0] = true;
+				else
+					cellIsoBool[0] = false;
+
+				xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+				val[1] = _octant->data[x + 1][y][z];
+				if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
+					cellIsoBool[1] = true;
+				else
+					cellIsoBool[1] = false;
+
+				xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+				val[4] = _octant->data[x][y + 1][z];
+				if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
+					cellIsoBool[4] = true;
+				else
+					cellIsoBool[4] = false;
+
+				xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
+				val[5] = _octant->data[x + 1][y + 1][z];
+				if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
+					cellIsoBool[5] = true;
+				else
+					cellIsoBool[5] = false;
+
+				//save the sixth corner values to isoCache
+				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+				val[6] = _octant->data[x + 1][y + 1][z + 1];
+				if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
+					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
+				else
+					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
+
+				// get the case index
+				cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+					cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
+
+				// check if cube is entirely in or out of the surface ----------------------------
+				if (edgeTable[cubeIndex] != 0) {
+
+					// Find the vertices where the surface intersects the cube--------------------
+
+					//inherit vertex indices from local variable ---------------------------------
+					if (edgeTable[cubeIndex] & 1) {
+						vertList[0] = z0Cache;
+					}
+
+					//inherit vertex indices from isoCache ---------------------------------------
+					if (edgeTable[cubeIndex] & 2) {
+						vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
+					}
+					if (edgeTable[cubeIndex] & 4) {
+						vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
+					}
+					if (edgeTable[cubeIndex] & 8) {
+						vertList[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].vertexIndex[0];
+					}
+					if (edgeTable[cubeIndex] & 128) {
+						vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[0];
+					}
+					if (edgeTable[cubeIndex] & 2048) {
+						vertList[11] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
+					}
+
+					//calculate indices that could not be inherited ------------------------------
+				
+				
+					if (edgeTable[cubeIndex] & 16) {
+						dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+						vertList[4] = z0Cache = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 32) {
+						dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 64) {
+						dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
+						vertexCap++;
+					}
+				
+					if (edgeTable[cubeIndex] & 256) {
+						dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+						vertList[8] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 512) {
+						dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+						vertList[9] = vertexCap;
+						vertexCap++;
+					}
+					if (edgeTable[cubeIndex] & 1024) {
+						dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
+						vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+						vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+						vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
+						vertexCap++;
+					}
+				
+					// bind triangle indecies
+					for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
+						triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
+						triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
+						triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+
+						triangleCap++;
+					}
+				}
+
+				//create remaining voxels of remaining rows of remaining layers ==================
+				for (z = 1; z < res - 1; z++) {  
+					//inherit corner values from local variable -----------------------------------
+				
+					//inherit corner values from isoCache -----------------------------------------
+					xyz[0][0] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[0];
+					xyz[0][1] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[1];
+					xyz[0][2] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].cornerPoint[2];
+					val[0] = _octant->data[x][y][z];
+					cellIsoBool[0] = isoCache[(layerIndex + 1) % 2][y - 1][z - 1].isoBool;
+
+					xyz[1][0] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[0];
+					xyz[1][1] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[1];
+					xyz[1][2] = isoCache[layerIndex][y - 1][z - 1].cornerPoint[2];
+					val[1] = _octant->data[x + 1][y][z];
+					cellIsoBool[1] = isoCache[layerIndex][y - 1][z - 1].isoBool;
+
+					xyz[2][0] = isoCache[layerIndex][y - 1][z].cornerPoint[0];
+					xyz[2][1] = isoCache[layerIndex][y - 1][z].cornerPoint[1];
+					xyz[2][2] = isoCache[layerIndex][y - 1][z].cornerPoint[2];
+					val[2] = _octant->data[x + 1][y][z + 1];
+					cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
+
+					xyz[3][0] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[0];
+					xyz[3][1] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[1];
+					xyz[3][2] = isoCache[(layerIndex + 1) % 2][y - 1][z].cornerPoint[2];
+					val[3] = _octant->data[x][y][z + 1];
+					cellIsoBool[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].isoBool;
+
+					xyz[4][0] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[0];
+					xyz[4][1] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[1];
+					xyz[4][2] = isoCache[(layerIndex + 1) % 2][y][z - 1].cornerPoint[2];
+					val[4] = _octant->data[x][y + 1][z];
+					cellIsoBool[4] = isoCache[(layerIndex + 1) % 2][y][z - 1].isoBool;
+
+					xyz[5][0] = isoCache[layerIndex][y][z - 1].cornerPoint[0];
+					xyz[5][1] = isoCache[layerIndex][y][z - 1].cornerPoint[1];
+					xyz[5][2] = isoCache[layerIndex][y][z - 1].cornerPoint[2];
+					val[5] = _octant->data[x + 1][y + 1][z];
+					cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
+
+					xyz[7][0] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[0];
+					xyz[7][1] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[1];
+					xyz[7][2] = isoCache[(layerIndex + 1) % 2][y][z].cornerPoint[2];
+					val[7] = _octant->data[x][y + 1][z + 1];
+					cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
+
+					//calculate corner values that could not be inherited -------------------------------------------------
+					//save the sixth corner values to isoCache
+					xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+					xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+					xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
+					val[6] = _octant->data[x + 1][y + 1][z + 1];
+					if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
+						cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
+					else
+						cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
+
+					// get the case index
+					cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
+						cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
+
+					// check if cube is entirely in or out of the surface ----------------------------
+					if (edgeTable[cubeIndex] != 0) {
+
+						// Find the vertices where the surface intersects the cube--------------------
+
+						//inherit vertex indices from local variable ---------------------------------
+					
+
+						//inherit vertex indices from isoCache ---------------------------------------
+						if (edgeTable[cubeIndex] & 1) {
+							vertList[0] = isoCache[layerIndex][y - 1][z - 1].vertexIndex[1];
+						}
+						if (edgeTable[cubeIndex] & 2) {
+							vertList[1] = isoCache[layerIndex][y - 1][z].vertexIndex[0];
+						}
+						if (edgeTable[cubeIndex] & 4) {
+							vertList[2] = isoCache[layerIndex][y - 1][z].vertexIndex[1];
+						}
+						if (edgeTable[cubeIndex] & 8) {
+							vertList[3] = isoCache[(layerIndex + 1) % 2][y - 1][z].vertexIndex[0];
+						}
+						if (edgeTable[cubeIndex] & 16) {
+							vertList[4] = isoCache[layerIndex][y][z - 1].vertexIndex[1];
+						}
+						if (edgeTable[cubeIndex] & 128) {
+							vertList[7] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[0];
+						}
+						if (edgeTable[cubeIndex] & 256) {
+							vertList[8] = isoCache[(layerIndex + 1) % 2][y][z - 1].vertexIndex[2];
+						}
+						if (edgeTable[cubeIndex] & 512) {
+							vertList[9] = isoCache[layerIndex][y][z - 1].vertexIndex[2];
+						}
+						if (edgeTable[cubeIndex] & 2048) {
+							vertList[11] = isoCache[(layerIndex + 1) % 2][y][z].vertexIndex[2];
+						}
+
+						//calculate indices that could not be inherited ------------------------------			
+					
+
+						if (edgeTable[cubeIndex] & 32) {
+							dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
+							vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+							vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+							vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+							isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
+							vertexCap++;
+						}
+						if (edgeTable[cubeIndex] & 64) {
+							dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
+							vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+							vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+							vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+							isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
+							vertexCap++;
+						}
+						if (edgeTable[cubeIndex] & 1024) {
+							dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
+							vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+							vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+							vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+							isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
+							vertexCap++;
+						}
+
+						// bind triangle indecies
+						for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
+							triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
+							triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
+							triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+
+							triangleCap++;
+						}
+					}
+				}
+			}
+			layerIndex = (layerIndex + 1) % 2;
 		}
-		layerIndex = (layerIndex + 1) % 2;
+		//debugpoint
+		//std::cout << "finished";
+		_olStart++;
 	}
-	//debugpoint
-	std::cout << "finished";
 }
 
 void DynamicMesh::load(std::string fileName) {

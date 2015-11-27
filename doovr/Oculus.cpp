@@ -757,7 +757,7 @@ int Oculus::runOvr() {
 	StaticMesh* loaderMesh;
 
 	VertexTool* currentTool;
-	currentTool = new Push(modellingMesh, wand);
+	//currentTool = new Push(modellingMesh, wand);
 	ScalarTool* currentSTool;
 	currentSTool = new Add;
 	//currentTool = new Drag(modellingMesh, wand);
@@ -872,12 +872,6 @@ int Oculus::runOvr() {
 			//3.1.2 - temporary keyboardevents >----------------------------------------------------------------------------------------------
 			if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 				glfwSetWindowShouldClose(l_Window, GL_TRUE);
-			}
-			if (glfwGetKey(l_Window, GLFW_KEY_LEFT)) {
-				currentTool->setStrength(0.01f*deltaTime);
-			}
-			if (glfwGetKey(l_Window, GLFW_KEY_RIGHT)) {
-				currentTool->setStrength(-0.01f*deltaTime);
 			}
 
 			// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
@@ -1000,6 +994,8 @@ int Oculus::runOvr() {
 						&& wandPos[2] > tool[i].getPosition()[2] - tool[i].getDim()[2] / 2.f
 						&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {
 						if (!tool[i].getState()) {
+							//TODO: should be done when using halfedge structure
+							/*
 							tool[activeTool].setState(false);
 							delete currentTool;
 							tool[i].setState(true);
@@ -1010,11 +1006,12 @@ int Oculus::runOvr() {
 								currentTool = new Smooth(modellingMesh, wand);
 							else if (i == 2)
 								currentTool = new BuildUp(modellingMesh, wand);
-
-							//TODO: REMOVE THIS UGGGLY TEMP
-							currentTool->setRadius(toolRad);
+							*/
+							//TODO: should be generally for both types of tools
+							//currentTool->setRadius(toolRad);
 							currentSTool->setRadius(toolRad);
-							currentTool->setStrength(toolStr);
+							//TODO: should be done when using halfedge structure
+							//currentTool->setStrength(toolStr);
 						}
 						break;
 					}
@@ -1027,8 +1024,8 @@ int Oculus::runOvr() {
 					&& wandPos[2] < toolSize.getPosition()[2] + toolSize.getDim()[2] / 2.f) {
 					tempVecPtr = toolSizeFill.getPosition();
 					toolSizeFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
-					//TODO: REMOVE THIS UGGGLY TEMP
-					currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f; 
+					//TODO: should be generally for both types of tools
+					//currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f; 
 					currentSTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f;
 				}
 				else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
@@ -1039,7 +1036,8 @@ int Oculus::runOvr() {
 					&& wandPos[2] < toolStrength.getPosition()[2] + toolStrength.getDim()[2] / 2.f) {
 					tempVecPtr = toolStrengthFill.getPosition();
 					toolStrengthFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
-					currentTool->setStrength((wandPos[1] - tempVecPtr[1])); toolStr = (wandPos[1] - tempVecPtr[1]);
+					//TODO: should be done when using halfedge structure
+					//currentTool->setStrength((wandPos[1] - tempVecPtr[1])); toolStr = (wandPos[1] - tempVecPtr[1]);
 				}
 			}
 
@@ -1109,7 +1107,8 @@ int Oculus::runOvr() {
 			glReadBuffer(GL_NONE);
 			//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 			//currentTool->findIntersection(modellingMesh, wand, Pixel);
-			currentTool->getIntersection(intersectionP, intersectionN);
+			//TODO: this should be done when using half edge structure
+			//currentTool->getIntersection(intersectionP, intersectionN);
 			//linAlg::normVec(intersectionN);
 
 			glm::vec3 interP = glm::vec3(intersectionP[0], intersectionP[1], intersectionP[2]);
@@ -1410,7 +1409,7 @@ int Oculus::runOvr() {
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 				brush.render();
 				MVstack.pop();*/
-				currentTool->render(MVptr, locationMV);
+				currentSTool->render(MVptr, locationMV);
 				MVstack.pop();
 
 				glUseProgram(bloomShader.programID);
