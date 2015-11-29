@@ -52,9 +52,19 @@ DynamicMesh::DynamicMesh() {
 	//triEPtr = new int*[1];
 	//triEPtr[1] = new int[MAX_NR_OF_TRIANGLES];
 
-	e = new halfEdge[MAX_NR_OF_EDGES];
+	//e = new halfEdge[MAX_NR_OF_EDGES];
 	vertexCap = 1;
 	triangleCap = 1;
+
+	for (int i = 0; i < MAX_NR_OF_VERTICES; i++) {
+		vertexArray[i] = vertexArray[i + 1];
+	}
+	emptyVptr = &vertexArray[1];
+	//create queue for Triangles
+	for (int i = 0; i < MAX_NR_OF_TRIANGLES; i++) {
+		triangleArray[i] = triangleArray[i + 1];
+	}
+	emptyTptr = &triangleArray[1];
 
 	// _______________________________________________________
 
@@ -841,6 +851,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 	int x, y, z;
 	int layerIndex;
+	int vCounter, tCounter;
+	int iCounter;
 
 	float dim = (*_octList)[0]->halfDim * 2.0f;
 	int res = std::pow(2, 10 - (*_octList)[0]->depth);
@@ -849,6 +861,38 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 	while (_olStart < olEnd){
 		_octant = (*_octList)[_olStart];
+
+		if (_octant->vCount != 0){
+			for (int i = 0; i < _octant->vCount; i++)
+				delete _octant->vertices[i];
+
+			//delete _octant->vertices;
+			//_octant->vertices = new vertex*[1];
+			//_octant->vertices[0] = new vertex[res*res * 4];
+			//_octant->vCount = 1;
+
+			for (int i = 0; i < _octant->tCount; i++)
+				delete _octant->triangles[i];
+
+			//delete _octant->triangles;
+			//_octant->triangles = new triangle*[1];
+			//_octant->triangles[0] = new triangle[res*res * 2 * 4];
+			//_octant->tCount = 1;
+
+		}
+		else{
+			_octant->vertices = new vertex*[1];
+			_octant->vertices[0] = new vertex[res*res * 4];
+			_octant->vCount = 1;
+
+			_octant->triangles = new triangle*[1];
+			_octant->triangles[0] = new triangle[res*res * 2 * 4];
+			_octant->tCount = 1;
+		}
+
+		vCounter = 0;
+		tCounter = 0;
+		iCounter = 0;
 
 		layerIndex = 0;
 

@@ -23,15 +23,17 @@ public:
 	unsigned char*** data;
 	int fillCount;
 
-private:
+	vertex** vertices;
+	triangle** triangles;
 
-	int* vertices;
-	int* triangles;
-	
 	int vCount;
-	int triCount;
+	int tCount;
 
 	static const int MAX_DEPTH = 6;
+
+private:
+
+
 
 };
 
