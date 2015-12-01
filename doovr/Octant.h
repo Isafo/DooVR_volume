@@ -1,5 +1,6 @@
 #pragma once
 #include "Mesh.h"
+#include <math.h>
 class Octant
 {
 public:
@@ -30,6 +31,8 @@ public:
 	int tCount;
 
 	static const int MAX_DEPTH = 6;
+	//const int V_ROW_MAX = std::pow(2.0,10.0);
+	//static const int T_ROW_MAX;
 
 private:
 

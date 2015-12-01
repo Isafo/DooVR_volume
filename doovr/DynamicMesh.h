@@ -95,13 +95,13 @@ class DynamicMesh : public Mesh{
 	//! negative index of the latest removed vertex
 	/*! vInfoArray's edgepointer contains the negative index of an empty slot in the vertexArray*/
 	int emptyV;
-	vertex** emptyVptr;
+	std::vector<int> emptyVStack;
 
 	const int MAX_NR_OF_TRIANGLES = 2 * MAX_NR_OF_VERTICES;
 	//! negative index of the latest removed triangle
 	/*! triEPtr contains the negative index of an empty slot in the triangleArray*/
 	int emptyT;
-	triangle** emptyTptr;
+	std::vector<int> emptyTStack;
 
 	const int MAX_NR_OF_EDGES = 3 * MAX_NR_OF_VERTICES;
 	//! negative index of the latest removed edge

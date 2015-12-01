@@ -56,15 +56,8 @@ DynamicMesh::DynamicMesh() {
 	vertexCap = 1;
 	triangleCap = 1;
 
-	for (int i = 0; i < MAX_NR_OF_VERTICES; i++) {
-		vertexArray[i] = vertexArray[i + 1];
-	}
-	emptyVptr = &vertexArray[1];
-	//create queue for Triangles
-	for (int i = 0; i < MAX_NR_OF_TRIANGLES; i++) {
-		triangleArray[i] = triangleArray[i + 1];
-	}
-	emptyTptr = &triangleArray[1];
+	emptyVStack.reserve(100);
+	emptyTStack.reserve(100);
 
 	// _______________________________________________________
 
@@ -845,7 +838,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	bool cellIsoBool[8];
 	double dVal;
 	Octant* _octant;
-
+	vertex* tmpVptr;
 	//vertexCap = 1;
 	//triangleCap = 1;
 
@@ -855,44 +848,66 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	int iCounter;
 
 	float dim = (*_octList)[0]->halfDim * 2.0f;
-	int res = std::pow(2, 10 - (*_octList)[0]->depth);
+	int res = std::pow(2, 10 - (*_octList)[0]->MAX_DEPTH);
+	const static int V_ROW_MAX = res*res * 4;
+	const static int T_ROW_MAX = res*res * 2 * 4;
 
 	int olEnd = (*_octList).size();
 
-	while (_olStart < olEnd){
+	while (_olStart < olEnd) {
+		
+		// clear existing data \_________________________________________________________________
 		_octant = (*_octList)[_olStart];
 
-		if (_octant->vCount != 0){
+		if (_octant->vCount == 0) {
+			//new vertices
+			_octant->vertices = new vertex*[1];
+			if (emptyVStack.size() == 0){
+				_octant->vertices[0] = vertexArray[vertexCap];
+				vertexCap++;
+			}
+			else{
+				_octant->vertices[0] = vertexArray[emptyVStack.back()];
+				emptyVStack.pop_back();
+			}
+			_octant->vertices[0] = new vertex[V_ROW_MAX];
+			_octant->vCount = 1;
+
+			//new triangles
+			_octant->triangles = new triangle*[1];
+			if (emptyTStack.size() == 0){
+				_octant->triangles[0] = triangleArray[triangleCap];
+				triangleCap++;
+			}
+			else{
+				_octant->triangles[0] = triangleArray[emptyTStack.back()];
+				emptyTStack.pop_back();
+			}
+			_octant->triangles[0] = new triangle[T_ROW_MAX];
+			_octant->tCount = 1;
+		}
+		else
+		{
+			//här var ni TODO: använd redan allokerade platser
+
 			for (int i = 0; i < _octant->vCount; i++)
 				delete _octant->vertices[i];
 
-			//delete _octant->vertices;
-			//_octant->vertices = new vertex*[1];
-			//_octant->vertices[0] = new vertex[res*res * 4];
-			//_octant->vCount = 1;
+			delete _octant->vertices;
 
 			for (int i = 0; i < _octant->tCount; i++)
 				delete _octant->triangles[i];
 
-			//delete _octant->triangles;
-			//_octant->triangles = new triangle*[1];
-			//_octant->triangles[0] = new triangle[res*res * 2 * 4];
-			//_octant->tCount = 1;
-
+			delete _octant->triangles;
 		}
-		else{
-			_octant->vertices = new vertex*[1];
-			_octant->vertices[0] = new vertex[res*res * 4];
-			_octant->vCount = 1;
 
-			_octant->triangles = new triangle*[1];
-			_octant->triangles[0] = new triangle[res*res * 2 * 4];
-			_octant->tCount = 1;
-		}
+		
+		
+
 
 		vCounter = 0;
 		tCounter = 0;
-		iCounter = 0;
+		//iCounter = 0;
 
 		layerIndex = 0;
 
@@ -901,6 +916,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		y = 0;
 		z = 0;
 
+		// MC algorithm \_____________________________________________________________________
 		// create the first voxel ============================================================
 
 		//inherit corner values from local variable
