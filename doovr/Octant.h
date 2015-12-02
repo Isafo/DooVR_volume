@@ -24,11 +24,11 @@ public:
 	unsigned char*** data;
 	int fillCount;
 
-	vertex** vertices;
-	triangle** triangles;
+	int* vertices;
+	int* triangles;
 
-	int vCount;
-	int tCount;
+	int vRowCount;
+	int tRowCount;
 
 	static const int MAX_DEPTH = 6;
 	//const int V_ROW_MAX = std::pow(2.0,10.0);

@@ -53,8 +53,8 @@ DynamicMesh::DynamicMesh() {
 	//triEPtr[1] = new int[MAX_NR_OF_TRIANGLES];
 
 	//e = new halfEdge[MAX_NR_OF_EDGES];
-	vertexCap = 1;
-	triangleCap = 1;
+	vertexCap = 0;
+	triangleCap = 0;
 
 	emptyVStack.reserve(100);
 	emptyTStack.reserve(100);
@@ -521,6 +521,79 @@ void DynamicMesh::updateOGLData() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
+	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
+	const static int V_ROW_MAX = res*res * 4;
+	const static int T_ROW_MAX = res*res * 2 * 4;
+
+	triangle* indexP;
+	dBufferData* vertexP;
+	Octant* _octant;
+
+
+	
+	
+	for (int i = _olStart; i < (*_octList).size(); i++) {
+		_octant = (*_octList)[i];
+
+		for (int j = 0; j < _octant->vRowCount; j++) {
+
+			glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+			vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, sizeof(dBufferData) * _octant->vertices[j] * V_ROW_MAX, sizeof(dBufferData)*V_ROW_MAX,
+				GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+			for (int k = 0; k < V_ROW_MAX; k++) {
+				vertexP[k].x = vertexArray[_octant->vertices[j]][k].xyz[0];
+				vertexP[k].y = vertexArray[_octant->vertices[j]][k].xyz[1];
+				vertexP[k].z = vertexArray[_octant->vertices[j]][k].xyz[2];
+				vertexP[k].nx = vertexArray[_octant->vertices[j]][k].nxyz[0];
+				vertexP[k].ny = vertexArray[_octant->vertices[j]][k].nxyz[1];
+				vertexP[k].nz = vertexArray[_octant->vertices[j]][k].nxyz[2];
+			}
+			glUnmapBuffer(GL_ARRAY_BUFFER);
+
+			// Specify how many attribute arrays we have in our VAO
+			glEnableVertexAttribArray(0); // Vertex coordinates
+			glEnableVertexAttribArray(1); // Normals
+
+			// Specify how OpenGL should interpret the vertex buffer data:
+			// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+			// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+			// Type GL_FLOAT
+			// Not normalized (GL_FALSE)
+			// Stride 8 (interleaved array with 8 floats per vertex)
+			// Array buffer offset 0, 3, 6 (offset into first vertex)
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+				sizeof(dBufferData), (void*)0); // xyz coordinates
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+				sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+
+			// Activate the index buffer
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+
+
+			// Present our vertex <indices to OpenGL
+			indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle) * _octant->triangles[j] * T_ROW_MAX, sizeof(triangle) * T_ROW_MAX,
+				GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+			for (int k = 0; k < T_ROW_MAX; k++) {
+				indexP[k].index[0] = triangleArray[_octant->triangles[j]][k].index[0];
+				indexP[k].index[1] = triangleArray[_octant->triangles[j]][k].index[1];
+				indexP[k].index[2] = triangleArray[_octant->triangles[j]][k].index[2];
+			}
+
+			glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+			// Deactivate (unbind) the VAO and the buffers again.
+			// Do NOT unbind the buffers while the VAO is still bound.
+			// The index buffer is an essential part of the VAO state.
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		}
+	}
+
+}
+
 void DynamicMesh::cleanBuffer() {
 
 	if (vertexRange != 0) {
@@ -838,7 +911,12 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	bool cellIsoBool[8];
 	double dVal;
 	Octant* _octant;
-	vertex* tmpVptr;
+	int tmpVindex;
+	int tmpTindex;
+	int *tmpArray1;
+	int *tmpArray2;
+	int currVRow;
+	int currTRow;
 	//vertexCap = 1;
 	//triangleCap = 1;
 
@@ -847,8 +925,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	int vCounter, tCounter;
 	int iCounter;
 
-	float dim = (*_octList)[0]->halfDim * 2.0f;
-	int res = std::pow(2, 10 - (*_octList)[0]->MAX_DEPTH);
+	float dim = (*_octList)[_olStart]->halfDim * 2.0f;
+	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	const static int V_ROW_MAX = res*res * 4;
 	const static int T_ROW_MAX = res*res * 2 * 4;
 
@@ -859,55 +937,63 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		// clear existing data \_________________________________________________________________
 		_octant = (*_octList)[_olStart];
 
-		if (_octant->vCount == 0) {
+		//check if data is allocated or not
+		if (_octant->vRowCount == 0) {
 			//new vertices
-			_octant->vertices = new vertex*[1];
-			if (emptyVStack.size() == 0){
-				_octant->vertices[0] = vertexArray[vertexCap];
+			_octant->vertices = new int[1];
+			if (emptyVStack.size() == 0) {
+				_octant->vertices[0] = vertexCap;
 				vertexCap++;
 			}
-			else{
-				_octant->vertices[0] = vertexArray[emptyVStack.back()];
+			else {
+				_octant->vertices[0] = emptyVStack.back();
 				emptyVStack.pop_back();
 			}
-			_octant->vertices[0] = new vertex[V_ROW_MAX];
-			_octant->vCount = 1;
+			vertexArray[_octant->vertices[0]] = new vertex[V_ROW_MAX];
+			_octant->vRowCount = 1;
 
 			//new triangles
-			_octant->triangles = new triangle*[1];
-			if (emptyTStack.size() == 0){
-				_octant->triangles[0] = triangleArray[triangleCap];
+			_octant->triangles = new int[1];
+			if (emptyTStack.size() == 0) {
+				_octant->triangles[0] = triangleCap;
 				triangleCap++;
 			}
-			else{
-				_octant->triangles[0] = triangleArray[emptyTStack.back()];
+			else {
+				_octant->triangles[0] = emptyTStack.back();
 				emptyTStack.pop_back();
 			}
-			_octant->triangles[0] = new triangle[T_ROW_MAX];
-			_octant->tCount = 1;
+			triangleArray[_octant->triangles[0]] = new triangle[T_ROW_MAX];
+			_octant->tRowCount = 1;
 		}
-		else
-		{
-			//här var ni TODO: använd redan allokerade platser
+		else {
+			
+			//delete old vertex data and allocate new
+			for (int i = 0; i < _octant->vRowCount; i++)
+				delete[] vertexArray[_octant->vertices[i]];
 
-			for (int i = 0; i < _octant->vCount; i++)
-				delete _octant->vertices[i];
+			tmpVindex = _octant->vertices[0];
+			delete[] _octant->vertices;
+			_octant->vertices = new int[1];
+			_octant->vertices[0] = tmpVindex;
+			vertexArray[_octant->vertices[0]] = new vertex[V_ROW_MAX];
+			_octant->vRowCount = 1;
 
-			delete _octant->vertices;
+			//delete old triangle data and allocate new
+			for (int i = 0; i < _octant->tRowCount; i++)
+				delete[] triangleArray[_octant->triangles[i]];
 
-			for (int i = 0; i < _octant->tCount; i++)
-				delete _octant->triangles[i];
-
-			delete _octant->triangles;
+			tmpTindex = _octant->triangles[0];
+			delete[] _octant->triangles;
+			_octant->triangles = new int[1];
+			_octant->triangles[0] = tmpTindex;
+			triangleArray[_octant->triangles[0]] = new triangle[T_ROW_MAX];
+			_octant->tRowCount = 1;
 		}
-
-		
-		
-
 
 		vCounter = 0;
 		tCounter = 0;
-		//iCounter = 0;
+		currVRow = 0;
+		currTRow = 0;
 
 		layerIndex = 0;
 
@@ -1013,109 +1099,113 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			//calculate indices that could not be inherited ------------------------------
 			if (edgeTable[cubeIndex] & 1) {
 				dVal = (double)(isoValue - val[0]) / (double)(val[1] - val[0]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
-				vertList[0] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
+				vertList[0] = _octant->vertices[currVRow]*V_ROW_MAX + vCounter;
+				vCounter++;
+				
 			}
 
 			if (edgeTable[cubeIndex] & 2) {
 				dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
-				vertList[1] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
+				vertList[1] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 4) {
 				dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
-				vertList[2] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+				vertList[2] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 8) {
 				dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-				vertList[3] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+				vertList[3] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 16) {
 				dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-				vertList[4] = z0Cache = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+				vertList[4] = z0Cache = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 32) {
 				dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-				isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+				isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 64) {
 				dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 128) {
 				dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-				vertList[7] = y0Cache[z] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+				vertList[7] = y0Cache[z] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 256) {
 				dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
-				vertList[8] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+				vertList[8] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 512) {
 				dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-				vertList[9] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+				vertList[9] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 1024) {
 				dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 			if (edgeTable[cubeIndex] & 2048) {
 				dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-				vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-				vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-				vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-				vertList[11] = vertexCap;
-				vertexCap++;
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+				vertList[11] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+				vCounter++;
 			}
 
 			// bind triangle indecies
 			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-				triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-				triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-				triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+				triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+				triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+				triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
-				triangleCap++;
+				tCounter++;
+				
+				
+
 			}
 		}
 
@@ -1213,77 +1303,77 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 				//calculate indices that could not be inherited ------------------------------
 				if (edgeTable[cubeIndex] & 2) {
 					dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
-					vertList[1] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
+					vertList[1] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 4) {
 					dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
-					vertList[2] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+					vertList[2] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 8) {
 					dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-					vertList[3] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+					vertList[3] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 
 				if (edgeTable[cubeIndex] & 32) {
 					dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 64) {
 					dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 128) {
 					dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-					vertList[7] = y0Cache[z] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+					vertList[7] = y0Cache[z] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 1024) {
 					dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 2048) {
 					dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-					vertList[11] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+					vertList[11] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 
 				// bind triangle indecies
 				for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-					triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-					triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-					triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
-					triangleCap++;
+					tCounter++;
 				}
 			}
 		}
@@ -1397,76 +1487,76 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	
 				if (edgeTable[cubeIndex] & 16) {
 					dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-					vertList[4] = z0Cache = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+					vertList[4] = z0Cache = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 32) {
 					dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 64) {
 					dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 128) {
 					dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-					vertList[7] = y0Cache[z] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+					vertList[7] = y0Cache[z] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 256) {
 					dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
-					vertList[8] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+					vertList[8] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 512) {
 					dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-					vertList[9] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+					vertList[9] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 1024) {
 					dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 2048) {
 					dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-					vertList[11] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+					vertList[11] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 
 				// bind triangle indecies
 				for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-					triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-					triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-					triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
-					triangleCap++;
+					tCounter++;
 				}
 			}
 
@@ -1571,52 +1661,52 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 					if (edgeTable[cubeIndex] & 32) {
 						dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 64) {
 						dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 128) {
 						dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-						vertList[7] = y0Cache[z] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
+						vertList[7] = y0Cache[z] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 1024) {
 						dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 2048) {
 						dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-						vertList[11] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
+						vertList[11] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 
 					// bind triangle indecies
 					for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-						triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-						triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-						triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
-						triangleCap++;
+						tCounter++;
 					}
 				}
 			}
@@ -1728,94 +1818,133 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 				//calculate indices that could not be inherited ------------------------------
 				if (edgeTable[cubeIndex] & 1) {
 					dVal = (double)(isoValue - val[0]) / (double)(val[1] - val[0]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
-					vertList[0] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
+					vertList[0] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 
 				if (edgeTable[cubeIndex] & 2) {
 					dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
-					vertList[1] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
+					vertList[1] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 4) {
 					dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
-					vertList[2] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+					vertList[2] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 8) {
 					dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-					vertList[3] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+					vertList[3] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 16) {
 					dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-					vertList[4] = z0Cache = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+					vertList[4] = z0Cache = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 32) {
 					dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+					isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 64) {
 					dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+					isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 			
 				if (edgeTable[cubeIndex] & 256) {
 					dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
-					vertList[8] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+					vertList[8] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 512) {
 					dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-					vertList[9] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+					vertList[9] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 				if (edgeTable[cubeIndex] & 1024) {
 					dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-					vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-					vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-					vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-					vertexCap++;
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+					vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+					isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+					vCounter++;
 				}
 
 				// bind triangle indecies
 				for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-					triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-					triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-					triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+					triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
-					triangleCap++;
+					tCounter++;
+				}
+
+				//check if new memory needs to be allocated
+				if (vCounter > V_ROW_MAX - 8) {
+					_octant->vRowCount++;
+					_octant->tRowCount++;
+					currVRow++;
+					currTRow++;
+
+					tmpArray1 = new int[_octant->vRowCount];
+					tmpArray2 = new int[_octant->tRowCount];
+					for (int i = 0; i < _octant->vRowCount - 1; i++) {
+						tmpArray1[i] = _octant->vertices[i];
+						tmpArray2[i] = _octant->triangles[i];
+					}
+					delete _octant->vertices;
+					_octant->vertices = tmpArray1;
+					delete _octant->triangles;
+					_octant->triangles = tmpArray1;
+
+					//allocate vertex data
+					if (emptyVStack.size() == 0) {
+						_octant->vertices[currVRow] = vertexCap;
+					}
+					else {
+						_octant->vertices[currVRow] = emptyVStack.back();
+						emptyVStack.pop_back();
+					}
+					vertexArray[_octant->vertices[currVRow]] = new vertex[V_ROW_MAX];
+
+					//allocate triangle data
+					if (emptyTStack.size() == 0) {
+						_octant->triangles[currTRow] = triangleCap;
+					}
+					else {
+						_octant->triangles[currTRow] = emptyTStack.back();
+						emptyTStack.pop_back();
+					}
+					triangleArray[_octant->triangles[currTRow]] = new triangle[T_ROW_MAX];
 				}
 			}
 
@@ -1918,61 +2047,100 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 					//calculate indices that could not be inherited ------------------------------
 					if (edgeTable[cubeIndex] & 2) {
 						dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
-						vertList[1] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
+						vertList[1] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 4) {
 						dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
-						vertList[2] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
+						vertList[2] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 8) {
 						dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-						vertList[3] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
+						vertList[3] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 
 					if (edgeTable[cubeIndex] & 32) {
 						dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 64) {
 						dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 1024) {
 						dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 
 					// bind triangle indecies
 					for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-						triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-						triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-						triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
-						triangleCap++;
+						tCounter++;
+					}
+
+					//check if new memory needs to be allocated
+					if (vCounter > V_ROW_MAX - 8) {
+						_octant->vRowCount++;
+						_octant->tRowCount++;
+						currVRow++;
+						currTRow++;
+
+						tmpArray1 = new int[_octant->vRowCount];
+						tmpArray2 = new int[_octant->tRowCount];
+						for (int i = 0; i < _octant->vRowCount - 1; i++) {
+							tmpArray1[i] = _octant->vertices[i];
+							tmpArray2[i] = _octant->triangles[i];
+						}
+						delete _octant->vertices;
+						_octant->vertices = tmpArray1;
+						delete _octant->triangles;
+						_octant->triangles = tmpArray1;
+
+						//allocate vertex data
+						if (emptyVStack.size() == 0) {
+							_octant->vertices[currVRow] = vertexCap;
+						}
+						else {
+							_octant->vertices[currVRow] = emptyVStack.back();
+							emptyVStack.pop_back();
+						}
+						vertexArray[_octant->vertices[currVRow]] = new vertex[V_ROW_MAX];
+
+						//allocate triangle data
+						if (emptyTStack.size() == 0) {
+							_octant->triangles[currTRow] = triangleCap;
+						}
+						else {
+							_octant->triangles[currTRow] = emptyTStack.back();
+							emptyTStack.pop_back();
+						}
+						triangleArray[_octant->triangles[currTRow]] = new triangle[T_ROW_MAX];
 					}
 				}
 			}
@@ -2089,61 +2257,100 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 				
 					if (edgeTable[cubeIndex] & 16) {
 						dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-						vertList[4] = z0Cache = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
+						vertList[4] = z0Cache = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 32) {
 						dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+						isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 64) {
 						dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+						isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 				
 					if (edgeTable[cubeIndex] & 256) {
 						dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
-						vertList[8] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
+						vertList[8] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 512) {
 						dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-						vertList[9] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
+						vertList[9] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 					if (edgeTable[cubeIndex] & 1024) {
 						dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-						vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-						vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-						vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-						vertexCap++;
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+						vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+						isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+						vCounter++;
 					}
 				
 					// bind triangle indecies
 					for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-						triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-						triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-						triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+						triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
-						triangleCap++;
+						tCounter++;
+					}
+
+					//check if new memory needs to be allocated
+					if (vCounter > V_ROW_MAX - 8) {
+						_octant->vRowCount++;
+						_octant->tRowCount++;
+						currVRow++;
+						currTRow++;
+
+						tmpArray1 = new int[_octant->vRowCount];
+						tmpArray2 = new int[_octant->tRowCount];
+						for (int i = 0; i < _octant->vRowCount - 1; i++) {
+							tmpArray1[i] = _octant->vertices[i];
+							tmpArray2[i] = _octant->triangles[i];
+						}
+						delete _octant->vertices;
+						_octant->vertices = tmpArray1;
+						delete _octant->triangles;
+						_octant->triangles = tmpArray1;
+
+						//allocate vertex data
+						if (emptyVStack.size() == 0) {
+							_octant->vertices[currVRow] = vertexCap;
+						}
+						else {
+							_octant->vertices[currVRow] = emptyVStack.back();
+							emptyVStack.pop_back();
+						}
+						vertexArray[_octant->vertices[currVRow]] = new vertex[V_ROW_MAX];
+
+						//allocate triangle data
+						if (emptyTStack.size() == 0) {
+							_octant->triangles[currTRow] = triangleCap;
+						}
+						else {
+							_octant->triangles[currTRow] = emptyTStack.back();
+							emptyTStack.pop_back();
+						}
+						triangleArray[_octant->triangles[currTRow]] = new triangle[T_ROW_MAX];
 					}
 				}
 
@@ -2251,36 +2458,75 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 						if (edgeTable[cubeIndex] & 32) {
 							dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-							vertexArray[0][vertexCap].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-							vertexArray[0][vertexCap].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-							vertexArray[0][vertexCap].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-							isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = vertexCap;
-							vertexCap++;
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+							isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+							vCounter++;
 						}
 						if (edgeTable[cubeIndex] & 64) {
 							dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-							vertexArray[0][vertexCap].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-							vertexArray[0][vertexCap].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-							vertexArray[0][vertexCap].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-							isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = vertexCap;
-							vertexCap++;
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+							isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+							vCounter++;
 						}
 						if (edgeTable[cubeIndex] & 1024) {
 							dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-							vertexArray[0][vertexCap].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-							vertexArray[0][vertexCap].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-							vertexArray[0][vertexCap].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-							isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = vertexCap;
-							vertexCap++;
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+							vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+							isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
+							vCounter++;
 						}
 
 						// bind triangle indecies
 						for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-							triangleArray[0][triangleCap].index[2] = vertList[triTable[cubeIndex][i]];
-							triangleArray[0][triangleCap].index[1] = vertList[triTable[cubeIndex][i + 1]];
-							triangleArray[0][triangleCap].index[0] = vertList[triTable[cubeIndex][i + 2]];
+							triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+							triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+							triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
-							triangleCap++;
+							tCounter++;
+						}
+
+						//check if new memory needs to be allocated
+						if (vCounter > V_ROW_MAX - 8) {
+							_octant->vRowCount++;
+							_octant->tRowCount++;
+							currVRow++;
+							currTRow++;
+
+							tmpArray1 = new int[_octant->vRowCount];
+							tmpArray2 = new int[_octant->tRowCount];
+							for (int i = 0; i < _octant->vRowCount - 1; i++) {
+								tmpArray1[i] = _octant->vertices[i];
+								tmpArray2[i] = _octant->triangles[i];
+							}
+							delete _octant->vertices;
+							_octant->vertices = tmpArray1;
+							delete _octant->triangles;
+							_octant->triangles = tmpArray1;
+
+							//allocate vertex data
+							if (emptyVStack.size() == 0) {
+								_octant->vertices[currVRow] = vertexCap;
+							}
+							else {
+								_octant->vertices[currVRow] = emptyVStack.back();
+								emptyVStack.pop_back();
+							}
+							vertexArray[_octant->vertices[currVRow]] = new vertex[V_ROW_MAX];
+
+							//allocate triangle data
+							if (emptyTStack.size() == 0) {
+								_octant->triangles[currTRow] = triangleCap;
+							}
+							else {
+								_octant->triangles[currTRow] = emptyTStack.back();
+								emptyTStack.pop_back();
+							}
+							triangleArray[_octant->triangles[currTRow]] = new triangle[T_ROW_MAX];
 						}
 					}
 				}

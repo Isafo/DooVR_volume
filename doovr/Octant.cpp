@@ -28,6 +28,8 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 					data[i][j][k] = 0;
 	}
 	fillCount = 0;
+	vRowCount = 0;
+	tRowCount = 0;
 
 	parent = _parent;
 	depth = _depth;
