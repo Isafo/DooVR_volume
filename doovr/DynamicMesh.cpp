@@ -23,7 +23,7 @@ DynamicMesh::DynamicMesh() {
 	orientation[12] = 0.0f; orientation[13] = 0.0f; orientation[14] = 0.0f; orientation[15] = 1.0f;
 	
 	// TEMPORARY __________________________________________
-	int tmpMAX_DEPTH = 6;
+	
 	//nr of preallocated vertices per octant = scalarNR*scalarNR*4
 	//nr of preallocated triangles per octant = scalarNR*scalarNR*2*4
 
@@ -416,12 +416,14 @@ void DynamicMesh::createBuffers() {
 		vertexP[i].nx = 0.0f;
 		vertexP[i].ny = 0.0f;
 		vertexP[i].nz = 0.0f;
+		vertexP[i].selected = 0.0f;
 	}
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	// Specify how many attribute arrays we have in our VAO
 	glEnableVertexAttribArray(0); // Vertex coordinates
 	glEnableVertexAttribArray(1); // Normals
+	glEnableVertexAttribArray(2); // Normals
 	// Specify how OpenGL should interpret the vertex buffer data:
 	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
 	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
@@ -433,6 +435,8 @@ void DynamicMesh::createBuffers() {
 		sizeof(dBufferData), (void*)0); // xyz coordinates
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
 		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)(6 * sizeof(GLfloat))); // normals
 
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
@@ -460,6 +464,10 @@ void DynamicMesh::createBuffers() {
 }
 
 void DynamicMesh::updateOGLData() {
+	int res = std::pow(2, 10 - tmpMAX_DEPTH);
+	const int V_ROW_MAX = res * res * 4;
+	const int T_ROW_MAX = res * res * 2 * 4;
+
 	triangle* indexP;
 	dBufferData* vertexP;
 
@@ -468,22 +476,28 @@ void DynamicMesh::updateOGLData() {
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 
-	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData)*(vertexCap + 1),
+	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData)*(vertexCap*V_ROW_MAX),
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = 0; i <= vertexCap; i++) {
-		vertexP[i].x = vertexArray[0][i].xyz[0];
-		vertexP[i].y = vertexArray[0][i].xyz[1];
-		vertexP[i].z = vertexArray[0][i].xyz[2];
-		vertexP[i].nx = vertexArray[0][i].nxyz[0];
-		vertexP[i].ny = vertexArray[0][i].nxyz[1];
-		vertexP[i].nz = vertexArray[0][i].nxyz[2];
-	}
+	//for (int j = 0; j < vertexCap; j++) {
+		for (int i = 0; i < V_ROW_MAX; i++) {
+			vertexP[i].x = vertexArray[0][i].xyz[0];
+			vertexP[i].y = vertexArray[0][i].xyz[1];
+			vertexP[i].z = vertexArray[0][i].xyz[2];
+			vertexP[i].nx = vertexArray[0][i].nxyz[0];
+			vertexP[i].ny = vertexArray[0][i].nxyz[1];
+			vertexP[i].nz = vertexArray[0][i].nxyz[2];
+			vertexP[i].selected = 0.0f;
+		}
+		
+	//}
+	
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	// Specify how many attribute arrays we have in our VAO
 	glEnableVertexAttribArray(0); // Vertex coordinates
 	glEnableVertexAttribArray(1); // Normals
+	glEnableVertexAttribArray(2); // Normals
 
 	// Specify how OpenGL should interpret the vertex buffer data:
 	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
@@ -496,21 +510,23 @@ void DynamicMesh::updateOGLData() {
 		sizeof(dBufferData), (void*)0); // xyz coordinates
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
 		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)(6 * sizeof(GLfloat))); // normals
 
 
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 
 	// Present our vertex <indices to OpenGL
-	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * (triangleCap + 1),
+	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * (triangleCap*T_ROW_MAX),
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-
-	for (int i = 0; i <= triangleCap; i++) {
-		indexP[i].index[0] = triangleArray[0][i].index[0];
-		indexP[i].index[1] = triangleArray[0][i].index[1];
-		indexP[i].index[2] = triangleArray[0][i].index[2];
-	}
-
+	//for (int j = 0; j < triangleCap; j++) {
+		for (int i = 0; i < T_ROW_MAX; i++) {
+			indexP[i].index[0] = triangleArray[0][i].index[0];
+			indexP[i].index[1] = triangleArray[0][i].index[1];
+			indexP[i].index[2] = triangleArray[0][i].index[2];
+		}
+	//}
 	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
 	// Deactivate (unbind) the VAO and the buffers again.
@@ -519,19 +535,18 @@ void DynamicMesh::updateOGLData() {
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	
 }
 
 void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
-	const static int V_ROW_MAX = res*res * 4;
-	const static int T_ROW_MAX = res*res * 2 * 4;
+	const int V_ROW_MAX = res*res * 4;
+	const int T_ROW_MAX = res*res * 2 * 4;
 
 	triangle* indexP;
 	dBufferData* vertexP;
 	Octant* _octant;
 
-
-	
 	
 	for (int i = _olStart; i < (*_octList).size(); i++) {
 		_octant = (*_octList)[i];
@@ -667,9 +682,13 @@ void DynamicMesh::cleanBuffer() {
 }
 
 void DynamicMesh::render() {
+
+	int res = std::pow(2, 10 - tmpMAX_DEPTH);
+	const int V_ROW_MAX = res * res * 4;
+	const int T_ROW_MAX = res * res * 2 * 4;
 	glBindVertexArray(vao);
 
-	glDrawElements(GL_TRIANGLES, (triangleCap + 1) * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_TRIANGLES, (triangleCap*T_ROW_MAX) * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex uN, type, element array buffer offset)
 	glBindVertexArray(0);
 }
@@ -925,10 +944,10 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	int vCounter, tCounter;
 	int iCounter;
 
-	float dim = (*_octList)[_olStart]->halfDim * 2.0f;
+	float dim = (*_octList)[_olStart]->halfDim; //TODO: kolla noggrant innan borttagande* 2.0f;
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
-	const static int V_ROW_MAX = res*res * 4;
-	const static int T_ROW_MAX = res*res * 2 * 4;
+	const int V_ROW_MAX = res*res * 4;
+	const int T_ROW_MAX = res*res * 2 * 4;
 
 	int olEnd = (*_octList).size();
 
@@ -1929,6 +1948,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 					//allocate vertex data
 					if (emptyVStack.size() == 0) {
 						_octant->vertices[currVRow] = vertexCap;
+						vertexCap++;
 					}
 					else {
 						_octant->vertices[currVRow] = emptyVStack.back();
@@ -1939,6 +1959,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 					//allocate triangle data
 					if (emptyTStack.size() == 0) {
 						_octant->triangles[currTRow] = triangleCap;
+						triangleCap++;
 					}
 					else {
 						_octant->triangles[currTRow] = emptyTStack.back();
@@ -2125,6 +2146,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 						//allocate vertex data
 						if (emptyVStack.size() == 0) {
 							_octant->vertices[currVRow] = vertexCap;
+							vertexCap++;
 						}
 						else {
 							_octant->vertices[currVRow] = emptyVStack.back();
@@ -2135,6 +2157,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 						//allocate triangle data
 						if (emptyTStack.size() == 0) {
 							_octant->triangles[currTRow] = triangleCap;
+							triangleCap++;
 						}
 						else {
 							_octant->triangles[currTRow] = emptyTStack.back();
@@ -2335,6 +2358,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 						//allocate vertex data
 						if (emptyVStack.size() == 0) {
 							_octant->vertices[currVRow] = vertexCap;
+							vertexCap++;
 						}
 						else {
 							_octant->vertices[currVRow] = emptyVStack.back();
@@ -2345,6 +2369,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 						//allocate triangle data
 						if (emptyTStack.size() == 0) {
 							_octant->triangles[currTRow] = triangleCap;
+							triangleCap++;
 						}
 						else {
 							_octant->triangles[currTRow] = emptyTStack.back();
@@ -2511,6 +2536,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 							//allocate vertex data
 							if (emptyVStack.size() == 0) {
 								_octant->vertices[currVRow] = vertexCap;
+								vertexCap++;
 							}
 							else {
 								_octant->vertices[currVRow] = emptyVStack.back();
@@ -2521,6 +2547,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 							//allocate triangle data
 							if (emptyTStack.size() == 0) {
 								_octant->triangles[currTRow] = triangleCap;
+								triangleCap++;
 							}
 							else {
 								_octant->triangles[currTRow] = emptyTStack.back();

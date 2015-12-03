@@ -1,6 +1,9 @@
 #pragma once
 #include "Mesh.h"
+#include "MatrixStack.h"
 #include <math.h>
+#include "LineCube.h"
+
 class Octant
 {
 public:
@@ -13,6 +16,9 @@ public:
 	void deAllocateData();
 
 	void partition();
+
+	LineCube* shape;
+	void render(MatrixStack* MVstack, GLint locationMV);
 
 	float pos[3];
 	float halfDim;
@@ -30,7 +36,7 @@ public:
 	int vRowCount;
 	int tRowCount;
 
-	static const int MAX_DEPTH = 6;
+	const int MAX_DEPTH = 4;
 	//const int V_ROW_MAX = std::pow(2.0,10.0);
 	//static const int T_ROW_MAX;
 

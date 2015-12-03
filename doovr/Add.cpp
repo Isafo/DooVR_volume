@@ -64,7 +64,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	int olCounter = 0;
 	int tmpI;
 	int olStart;
-	int scalarNR = std::pow(2, 10 - _ot->MAX_DEPTH);
+	int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
 
 	for (int j = 0; j < 3; j++) {
 		if (nwPos[j] <  -currentOct->halfDim) {
@@ -80,7 +80,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 		return;
 	}
 
-	while (currentOct->depth < _ot->MAX_DEPTH) {//<-- reaching depth 6 --
+	while (currentOct->depth < _ot->root->MAX_DEPTH) {//<-- reaching depth 6 --
 			
 		if (currentOct->child[0] == nullptr) {
 			currentOct->partition();
@@ -117,7 +117,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 						childOct->deAllocate();
 
 					childOct->data[0][0][0] = 255;
-					childOct->fillCount = std::pow(std::pow(2, _ot->MAX_DEPTH - childOct->depth), 3);
+					childOct->fillCount = std::pow(std::pow(2, 10 - childOct->depth), 3);
 				}// --->
 				else {
 					octList.push_back(childOct);
@@ -168,6 +168,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 
 	_mesh->generateMC(&octList, olStart );
 
-	_mesh->updateOGLData(&octList, olStart);
+	_mesh->updateOGLData();
+	//_mesh->updateOGLData();
 }
 

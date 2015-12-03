@@ -1188,14 +1188,15 @@ int Oculus::runOvr() {
 
 				// 3.4 - Scene Matrix stack \__________________________________________________________________________________________________
 				MVstack.push();
-				// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
+				
 
+				// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
 				glUniform4fv(locationLP, 1, LP);
 				MVstack.push();
-				MVstack.translate(board.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glBindTexture(GL_TEXTURE_2D, greyTex.getTextureID());
-				board.render();
+					MVstack.translate(board.getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					glBindTexture(GL_TEXTURE_2D, greyTex.getTextureID());
+					board.render();
 				MVstack.pop();
 
 				// Render Ground >----------------------------------------------------------------------------------------------------------------
@@ -1319,6 +1320,10 @@ int Oculus::runOvr() {
 					MVstack.push();
 					MVstack.translate(modellingMesh->getPosition());
 					MVstack.multiply(modellingMesh->getOrientation());
+
+					//debug
+					oTest->root->render(MVptr, locationMV);
+
 					glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					glUniform4fv(locationFlatLP, 1, LP);
 					glUniform4fv(locationFlatLP2, 1, lPosTemp);
@@ -1362,6 +1367,7 @@ int Oculus::runOvr() {
 					MVstack.push();
 					MVstack.translate(modellingMesh->getPosition());
 					MVstack.multiply(modellingMesh->getOrientation());
+
 					glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					glUniform4fv(locationMeshLP, 1, LP);
 					glUniform4fv(locationMeshLP2, 1, lPosTemp);
