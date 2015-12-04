@@ -10,10 +10,9 @@ public:
 	Octant(int _depth, Octant* _parent, float x, float y, float z, float _hafDim);
 	~Octant();
 
-
-	const int MAX_DEPTH = 6;
-
 	void deAllocate();
+
+	const int MAX_DEPTH = 7;
 
 	void allocateData();
 	void deAllocateData();

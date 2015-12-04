@@ -64,9 +64,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	int olCounter = 0;
 	int tmpI;
 	int olStart;
-	int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
-
-
+	
 
 	for (int j = 0; j < 3; j++) {
 		if (nwPos[j] <  -currentOct->halfDim) {
@@ -113,7 +111,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 				tmpVec[2] = (0.0f > tmpPos[2] ? childDim : -childDim);
 
 				linAlg::calculateVec(tmpVec, tmpPos, tmpVec);
-				if (linAlg::vecLength(tmpVec) < radius) {//<--- check if cube is entirely inside sphere --	
+				if (linAlg::vecLength(tmpVec) <= radius) {//<--- check if cube is entirely inside sphere --	
 						
 					if (childOct->child[0] != nullptr)
 						childOct->deAllocate();
@@ -130,10 +128,17 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 		olCounter++;
 	}// -->
 
+	
 	//<-- change selected iso values --
 	olCounter--;
 	olStart = olCounter;
 	tmpI = octList.size();
+
+	int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
+	int hRes = (scalarNR - 1) / 2;
+	float dim = octList[olStart]->halfDim;
+	
+
 	while (olCounter < tmpI) {
 		currentOct = octList[olCounter];
 
@@ -142,26 +147,21 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 		tmpPos[2] = currentOct->pos[2] - currentOct->halfDim;
 
 		for (int i = 0; i < scalarNR; i++) {
+			tmpPos[0] = currentOct->pos[0] + ((i - hRes) / ((float)hRes))*dim;
 			for (int j = 0; j < scalarNR; j++) {
+				tmpPos[1] = currentOct->pos[1] + ((j - hRes) / ((float)hRes))*dim;
 				for (int k = 0; k < scalarNR; k++) {
+					tmpPos[2] = currentOct->pos[2] + ((k - hRes) / ((float)hRes))*dim;
 					linAlg::calculateVec(tmpPos, nwPos, tmpVec);
 
-					if (linAlg::vecLength(tmpVec) < radius) {//check if point is inside sphere
+					if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
 						if (currentOct->data[i][j][k] != 255) {
 							currentOct->data[i][j][k] = 255;
 							currentOct->fillCount++;
 						}
 					}
-									
-					 tmpPos[2] += 0.001f;
 				}
-				tmpPos[1] += 0.001f;
-				tmpPos[2] = currentOct->pos[2] - currentOct->halfDim;
 			}
-			tmpPos[0] += 0.001f;
-			tmpPos[1] = currentOct->pos[1] - currentOct->halfDim;
-			tmpPos[2] = currentOct->pos[2] - currentOct->halfDim;
-
 		}		
 		olCounter++;
 	}// -->

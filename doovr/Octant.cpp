@@ -3,8 +3,7 @@
 
 
 Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim) {
-	if (_depth != MAX_DEPTH)
-	{
+	if (_depth != MAX_DEPTH) {
 		data = new unsigned char**[1];
 		data[0] = new unsigned char*[1];
 		data[0][0] = new unsigned char[1];
@@ -43,8 +42,7 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 
 Octant::~Octant() {
 
-	if (depth == MAX_DEPTH)
-	{
+	if (depth == MAX_DEPTH) {
 		int scalarNR = std::pow(2, (10 - depth));
 
 		for (int i = 0; i < scalarNR; i++)
@@ -56,10 +54,8 @@ Octant::~Octant() {
 
 		delete data;
 	}
-	else
-	{
-		if (child[0] != nullptr)
-		{
+	else {
+		if (child[0] != nullptr) {
 			delete child[0];
 			delete child[1];
 			delete child[2];
@@ -127,8 +123,7 @@ void Octant::allocateData() {
 
 }
 
-void Octant::deAllocateData()
-{
+void Octant::deAllocateData() {
 	int scalarNR = std::pow(2, 10 - depth);
 
 	for (int i = 0; i < scalarNR; i++)
@@ -146,14 +141,8 @@ void Octant::deAllocateData()
 
 }
 
-void Octant::render(MatrixStack* MVstack, GLint locationMV)
-{
-	MVstack->push();
-		MVstack->translate(pos);
-		glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack->getCurrentMatrix());
-		shape->render();
-	MVstack->pop();
-
+void Octant::render(MatrixStack* MVstack, GLint locationMV) {
+	
 	if (child[0] != nullptr){
 		child[0]->render(MVstack, locationMV);
 		child[1]->render(MVstack, locationMV);
@@ -163,5 +152,12 @@ void Octant::render(MatrixStack* MVstack, GLint locationMV)
 		child[5]->render(MVstack, locationMV);
 		child[6]->render(MVstack, locationMV);
 		child[7]->render(MVstack, locationMV);
+	}
+	else {
+		MVstack->push();
+			MVstack->translate(pos);
+			glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack->getCurrentMatrix());
+			shape->render();
+		MVstack->pop();
 	}
 }

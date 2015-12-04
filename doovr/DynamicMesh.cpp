@@ -939,6 +939,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	const int V_ROW_MAX = res*res * 4;
 	const int T_ROW_MAX = res*res * 2 * 4;
+	res = res - 1;
 
 	int olEnd = (*_octList).size();
 
@@ -1220,7 +1221,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		}
 
 		//create the remaining voxels of first row of first layer ======================================
-		for (z = 1; z < res - 1; z++) {
+		for (z = 1; z < res; z++) {
 
 			//inherit corner values from local variable
 			xyz[0][0] = xyz[3][0];
@@ -1389,7 +1390,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		}
 
 		//create the remaining rows of the first layer=============================================
-		for ( y = 1; y < res - 1; y++) {
+		for ( y = 1; y < res; y++) {
 		
 			z = 0;
 			//create the first voxel of remaining rows of first layer=============================
@@ -1571,7 +1572,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 
 			//create the remaining voxels of remaining rows of first layer=============================
-			for (z = 1; z < res - 1; z++) {
+			for (z = 1; z < res; z++) {
 				//inherit corner values from local variable
 				xyz[0][0] = xyz[3][0];
 				xyz[0][1] = xyz[3][1];
@@ -1724,7 +1725,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	
 		layerIndex++; // move to next layer
 		// create remaining layers ============================================================================
-		for (x = 1; x < res - 1; x++) {
+		for (x = 1; x < res; x++) {
 			y = 0;
 			z = 0;
 			//create first voxel of first row of remaining layers ---------------------------------------------
@@ -1961,7 +1962,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 
 			//create remaining voxels of first row of remaining layers ===========================
-			for (z = 1; z < res - 1; z++) {
+			for (z = 1; z < res; z++) {
 
 				//inherit corner values from local variable --------------------------------------
 				xyz[0][0] = xyz[3][0];
@@ -2160,7 +2161,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 
 			//create remaining rows of remaining layers ==============================================
-			for (y = 1; y < res - 1; y++) {
+			for (y = 1; y < res; y++) {
 			
 				//create first voxel of remaining rows of remaining layers
 				z = 0;
@@ -2371,7 +2372,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 				}
 
 				//create remaining voxels of remaining rows of remaining layers ==================
-				for (z = 1; z < res - 1; z++) {  
+				for (z = 1; z < res; z++) {  
 					//inherit corner values from local variable -----------------------------------
 				
 					//inherit corner values from isoCache -----------------------------------------
