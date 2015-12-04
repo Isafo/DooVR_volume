@@ -18,7 +18,6 @@ struct dBufferData {
 	GLfloat nx;
 	GLfloat ny;
 	GLfloat nz;
-	GLfloat selected;
 };
 
 //! HalfEdge data structure. HalfEdge points to the next edge in the triangle counter clockwise.
@@ -92,7 +91,7 @@ class DynamicMesh : public Mesh{
 
   private:
 
-	const int tmpMAX_DEPTH = 4;
+	const int tmpMAX_DEPTH = 6;
 	  //TODO: remove one zero
 	const int MAX_NR_OF_VERTICES = 10000000;
 	//! negative index of the latest removed vertex

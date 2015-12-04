@@ -10,7 +10,7 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 		data[0][0] = new unsigned char[1];
 		data[0][0][0] = 0;
 	}
-	else{
+	else {
 
 		int scalarNR = std::pow(2, 10 - _depth);
 

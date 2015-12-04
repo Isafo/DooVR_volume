@@ -66,6 +66,8 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	int olStart;
 	int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
 
+
+
 	for (int j = 0; j < 3; j++) {
 		if (nwPos[j] <  -currentOct->halfDim) {
 			s = nwPos[j] + currentOct->halfDim;
@@ -166,9 +168,9 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 
    	olCounter = olStart;
 
-	_mesh->generateMC(&octList, olStart );
+	_mesh->generateMC(&octList, olStart);
 
-	_mesh->updateOGLData();
+	_mesh->updateOGLData(&octList, olStart);
 	//_mesh->updateOGLData();
 }
 

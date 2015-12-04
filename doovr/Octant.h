@@ -10,6 +10,9 @@ public:
 	Octant(int _depth, Octant* _parent, float x, float y, float z, float _hafDim);
 	~Octant();
 
+
+	const int MAX_DEPTH = 6;
+
 	void deAllocate();
 
 	void allocateData();
@@ -36,7 +39,7 @@ public:
 	int vRowCount;
 	int tRowCount;
 
-	const int MAX_DEPTH = 4;
+
 	//const int V_ROW_MAX = std::pow(2.0,10.0);
 	//static const int T_ROW_MAX;
 
