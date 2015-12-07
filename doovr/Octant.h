@@ -12,7 +12,7 @@ public:
 
 	void deAllocate();
 
-	const int MAX_DEPTH = 7;
+	const int MAX_DEPTH = 10;
 
 	void allocateData();
 	void deAllocateData();
@@ -29,18 +29,10 @@ public:
 	Octant* parent;
 	int depth;
 
-	unsigned char*** data;
-	int fillCount;
+	unsigned char data;
 
-	int* vertices;
-	int* triangles;
-
-	int vRowCount;
-	int tRowCount;
-
-
-	//const int V_ROW_MAX = std::pow(2.0,10.0);
-	//static const int T_ROW_MAX;
+	int vertices;
+	int triangles;
 
 private:
 
