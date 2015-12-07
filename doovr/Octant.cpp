@@ -69,9 +69,7 @@ Octant::~Octant() {
 		delete data[0][0];
 		delete data[0];
 		delete data;
-
 	}
-	
 }
 
 
