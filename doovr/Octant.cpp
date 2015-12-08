@@ -3,7 +3,7 @@
 
 
 Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim) {
-	if (_depth != MAX_DEPTH) {
+	/*if (_depth != MAX_DEPTH) {
 		data = new unsigned char**[1];
 		data[0] = new unsigned char*[1];
 		data[0][0] = new unsigned char[1];
@@ -25,10 +25,7 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 			for (int j = 0; j < scalarNR; j++)
 				for (int k = 0; k < scalarNR; k++)
 					data[i][j][k] = 0;
-	}
-	fillCount = 0;
-	vRowCount = 0;
-	tRowCount = 0;
+	}*/
 
 	shape = new LineCube(0.0f, 0.0f, 0.0f, _halfDim * 2, _halfDim * 2, _halfDim * 2);
 
@@ -36,13 +33,18 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 	depth = _depth;
 	pos[0] = x; pos[1] = y; pos[2] = z;
 	halfDim = _halfDim;
+	//TODO: maybe do manually
+	data = 0;
+	isoBool = false;
+	vertices = -1;
+	triangles = -1;
 
 }
 
 
 Octant::~Octant() {
 
-	if (depth == MAX_DEPTH) {
+	/*if (depth == MAX_DEPTH) {
 		int scalarNR = std::pow(2, (10 - depth));
 
 		for (int i = 0; i < scalarNR; i++)
@@ -69,6 +71,17 @@ Octant::~Octant() {
 		delete data[0][0];
 		delete data[0];
 		delete data;
+	}*/
+
+	if (child[0] != nullptr) {
+		delete child[0];
+		delete child[1];
+		delete child[2];
+		delete child[3];
+		delete child[4];
+		delete child[5];
+		delete child[6];
+		delete child[7];
 	}
 }
 
@@ -100,7 +113,7 @@ void Octant::deAllocate() {
 
 void Octant::allocateData() {
 	//unsigned char tmpIso = data[0][0][0];
-	delete data[0][0];
+	/*delete data[0][0];
 	delete data[0];
 	delete data;
 
@@ -117,12 +130,12 @@ void Octant::allocateData() {
 	for (int i = 0; i < scalarNR; i++)
 		for (int j = 0; j < scalarNR; j++)
 			for (int k = 0; k < scalarNR; k++)
-				data[i][j][k] = 0;
+				data[i][j][k] = 0;*/
 
 }
 
 void Octant::deAllocateData() {
-	int scalarNR = std::pow(2, 10 - depth);
+	/*int scalarNR = std::pow(2, 10 - depth);
 
 	for (int i = 0; i < scalarNR; i++)
 		for (int j = 0; j < scalarNR; j++)
@@ -135,7 +148,7 @@ void Octant::deAllocateData() {
 
 	data = new unsigned char**[1];
 	data[0] = new unsigned char*[1];
-	data[0][0] = new unsigned char[1];
+	data[0][0] = new unsigned char[1];*/
 
 }
 

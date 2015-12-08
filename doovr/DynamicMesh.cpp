@@ -405,10 +405,10 @@ void DynamicMesh::createBuffers() {
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	// Present our vertex coordinates to OpenGL
 	glBufferData(GL_ARRAY_BUFFER,
-		(MAX_NR_OF_VERTICES)*sizeof(dBufferData), NULL, GL_STREAM_DRAW);
+				 (MAX_NR_OF_VERTICES) * sizeof(dBufferData), NULL, GL_STREAM_DRAW);
 
-	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) *MAX_NR_OF_VERTICES,
-		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) * MAX_NR_OF_VERTICES,
+											 GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	for (int i = 0; i < MAX_NR_OF_VERTICES; i++) {
 		vertexP[i].x = 0.0f;
@@ -440,7 +440,7 @@ void DynamicMesh::createBuffers() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 	// Present our vertex indices to OpenGL
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		(MAX_NR_OF_TRIANGLES)*sizeof(triangle), NULL, GL_STREAM_DRAW);
+				 (MAX_NR_OF_TRIANGLES) * sizeof(triangle), NULL, GL_STREAM_DRAW);
 
 	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * MAX_NR_OF_TRIANGLES,
 		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
@@ -534,8 +534,8 @@ void DynamicMesh::updateOGLData() {
 void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	//TODO: FIXA
-	const int V_ROW_MAX = res*res * 4;
-	const int T_ROW_MAX = res*res * 2 * 4;
+	const int V_ROW_MAX = 3;
+	const int T_ROW_MAX = 4;
 
 	triangle* indexP;
 	dBufferData* vertexP;
@@ -674,10 +674,10 @@ void DynamicMesh::cleanBuffer() {
 }
 
 void DynamicMesh::render() {
-
+	//TODO: fixa
 	int res = std::pow(2, 10 - tmpMAX_DEPTH);
-	const int V_ROW_MAX = res * res * 4;
-	const int T_ROW_MAX = res * res * 2 * 4;
+	const int V_ROW_MAX = 3;
+	const int T_ROW_MAX = 4;
 	glBindVertexArray(vao);
 
 	glDrawElements(GL_TRIANGLES, (triangleCap*T_ROW_MAX) * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
@@ -918,26 +918,24 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	int cubeIndex;
 
 	float xyz[8][3];
+	float nPos[7][3];
+	float fDim;
 	int vertList[12];
 	unsigned char val[8];
 	bool cellIsoBool[8];
 	double dVal;
 	Octant* _octant;
+	Octant* tmpOct;
+	Octant* oNeighbor[7];
 	int tmpVindex;
 	int tmpTindex;
 	int *tmpArray1;
 	int *tmpArray2;
-	int currVRow;
-	int currTRow;
-	//vertexCap = 1;
-	//triangleCap = 1;
 
-	int x, y, z;
-	int layerIndex;
-	int vCounter, tCounter;
-	int iCounter;
+	int tCounter;
 
 	float dim = (*_octList)[_olStart]->halfDim; //TODO: kolla noggrant innan borttagande* 2.0f;
+	fDim = dim * 2;
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	const int V_ROW_MAX = 3;
 	const int T_ROW_MAX = 4;
@@ -949,9 +947,10 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 		// clear existing data \_________________________________________________________________
 		_octant = (*_octList)[_olStart];
+		tCounter = 0;
 
 		//check if data is allocated or not
-		if (_octant->vertices != -1) {
+		if (_octant->vertices == -1) {
 			//new vertices
 			if (emptyVStack.size() == 0) {
 				_octant->vertices = vertexCap;
@@ -985,8 +984,41 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
 		}
 
-		vCounter = 0;
-		tCounter = 0;
+		nPos[0][0] = _octant->pos[0] - fDim;	nPos[0][1] = _octant->pos[1] - fDim;	nPos[0][2] = _octant->pos[2] - fDim;
+		nPos[1][0] = _octant->pos[0];			nPos[1][1] = _octant->pos[1] - fDim;	nPos[1][2] = _octant->pos[2] - fDim;
+		nPos[2][0] = _octant->pos[0];			nPos[2][1] = _octant->pos[1] - fDim;	nPos[2][2] = _octant->pos[2];
+		nPos[3][0] = _octant->pos[0] - fDim;	nPos[3][1] = _octant->pos[1] - fDim;	nPos[3][2] = _octant->pos[2];
+		nPos[4][0] = _octant->pos[0] - fDim;	nPos[4][1] = _octant->pos[1];			nPos[4][2] = _octant->pos[2] - fDim;
+		nPos[5][0] = _octant->pos[0];			nPos[5][1] = _octant->pos[1];			nPos[5][2] = _octant->pos[2] - fDim;
+		nPos[6][0] = _octant->pos[0] - fDim;	nPos[6][1] = _octant->pos[1];			nPos[6][2] = _octant->pos[2];
+		
+		for (int i = 0; i < 7; i++){
+			//TODO: replace temp values of this if
+			if ((nPos[i][0] > 0.5f || nPos[i][0] < -0.5f ||
+				nPos[i][1] > 0.5f || nPos[i][1] < -0.5f ||
+				nPos[i][2] > 0.5f || nPos[i][2] < -0.5f)){
+				std::cout << "utanfor";
+			}
+
+			tmpOct = _octant->parent;
+			while (nPos[i][0] > tmpOct->pos[0] + tmpOct->halfDim || nPos[i][0] < tmpOct->pos[0] - tmpOct->halfDim ||
+				nPos[i][1] > tmpOct->pos[1] + tmpOct->halfDim || nPos[i][1] < tmpOct->pos[1] - tmpOct->halfDim ||
+				nPos[i][2] > tmpOct->pos[2] + tmpOct->halfDim || nPos[i][2] < tmpOct->pos[2] - tmpOct->halfDim){
+
+				tmpOct = tmpOct->parent;
+			}
+			while(tmpOct->child[0] != nullptr){
+				for (int j = 0; j < 8; j++){
+					if (nPos[i][0] < tmpOct->child[j]->pos[0] + tmpOct->child[j]->halfDim && nPos[i][0] > tmpOct->child[j]->pos[0] - tmpOct->child[j]->halfDim &&
+						nPos[i][1] < tmpOct->child[j]->pos[1] + tmpOct->child[j]->halfDim && nPos[i][1] > tmpOct->child[j]->pos[1] - tmpOct->child[j]->halfDim &&
+						nPos[i][2] < tmpOct->child[j]->pos[2] + tmpOct->child[j]->halfDim && nPos[i][2] > tmpOct->child[j]->pos[2] - tmpOct->child[j]->halfDim){
+						tmpOct = tmpOct->child[j];
+						break;
+					}
+				}
+			}
+			oNeighbor[i] = tmpOct;
+		}
 
 		// MC algorithm \_____________________________________________________________________
 		// create the first voxel ============================================================
@@ -996,82 +1028,58 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		//inherit corner values from isoCache
 
 		//calculate corner values that could not be inherited
-		xyz[0][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[0][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[0][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-		val[0] = _octant->data[x][y][z];
-		if (_octant->data[x][y][z] < isoValue)			// cubeIndex |= 1;
-			cellIsoBool[0] = true;
-		else
-			cellIsoBool[0] = false;
+		xyz[0][0] = _octant->pos[0] - dim;
+		xyz[0][1] = _octant->pos[1] - dim;
+		xyz[0][2] = _octant->pos[2] - dim;
+		val[0] = oNeighbor[0]->data;
+		cellIsoBool[0] = oNeighbor[0]->isoBool;
 
-		xyz[1][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[1][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[1][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-		val[1] = _octant->data[x + 1][y][z];
-		if (_octant->data[x + 1][y][z] < isoValue)		// cubeIndex |= 2;
-			cellIsoBool[1] = true;
-		else
-			cellIsoBool[1] = false;
+		xyz[1][0] = _octant->pos[0] + dim;
+		xyz[1][1] = _octant->pos[1] - dim;
+		xyz[1][2] = _octant->pos[2] - dim;
+		val[1] = oNeighbor[1]->data;
+		cellIsoBool[1] = oNeighbor[1]->isoBool;
 
-		xyz[2][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[2][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[2][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[2] = _octant->data[x + 1][y][z + 1];
-		if (_octant->data[x + 1][y][z + 1] < isoValue)	// cubeIndex |= 4;
-			cellIsoBool[2] = true;
-		else
-			cellIsoBool[2] = false;
+		xyz[2][0] = _octant->pos[0] + dim;
+		xyz[2][1] = _octant->pos[1] - dim;
+		xyz[2][2] = _octant->pos[2] + dim;
+		val[2] = oNeighbor[2]->data;
+		cellIsoBool[2] = oNeighbor[2]->isoBool;
 
-		xyz[3][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][1] = _octant->pos[1] + (float)((y - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[3][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[3] = _octant->data[x][y][z + 1];
-		if (_octant->data[x][y][z + 1] < isoValue)		// cubeIndex |= 8;
-			cellIsoBool[3] = true;
-		else
-			cellIsoBool[3] = false;
+		xyz[3][0] = _octant->pos[0] - dim;
+		xyz[3][1] = _octant->pos[1] - dim;
+		xyz[3][2] = _octant->pos[2] + dim;
+		val[3] = oNeighbor[3]->data;
+		cellIsoBool[3] = oNeighbor[3]->isoBool;
 
-		xyz[4][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[4][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[4][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-		val[4] = _octant->data[x][y + 1][z];
-		if (_octant->data[x][y + 1][z] < isoValue)		//cubeIndex |= 16;
-			cellIsoBool[4] = true;
-		else
-			cellIsoBool[4] = false;
+		xyz[4][0] = _octant->pos[0] - dim;
+		xyz[4][1] = _octant->pos[1] + dim;
+		xyz[4][2] = _octant->pos[2] - dim;
+		val[4] = oNeighbor[4]->data;
+		cellIsoBool[4] = oNeighbor[4]->isoBool;
 
-		xyz[5][0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[5][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[5][2] = _octant->pos[2] + (float)((z - (res / 2)) / ((float)(res / 2)))*dim;
-		val[5] = _octant->data[x + 1][y + 1][z];
-		if (_octant->data[x + 1][y + 1][z] < isoValue)	// cubeIndex |= 32;
-			cellIsoBool[5] = true;
-		else
-			cellIsoBool[5] = false;
+		xyz[5][0] = _octant->pos[0] + dim;
+		xyz[5][1] = _octant->pos[1] + dim;
+		xyz[5][2] = _octant->pos[2] - dim;
+		val[5] = oNeighbor[5]->data;
+		cellIsoBool[5] = oNeighbor[5]->isoBool;
 
 		//save the sixth corner values to isoCache
-		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = _octant->pos[0] + (float)((x + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[6] = _octant->data[x + 1][y + 1][z + 1];
-		if (_octant->data[x + 1][y + 1][z + 1] < isoValue)// cubeIndex |= 64;
-			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
-		else
-			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
+		xyz[6][0] = _octant->pos[0] + dim;
+		xyz[6][1] = _octant->pos[1] + dim;
+		xyz[6][2] = _octant->pos[2] + dim;
+		val[6] = _octant->data;
+		cellIsoBool[6] = _octant->isoBool;
 
-		xyz[7][0] = _octant->pos[0] + (float)((x - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][1] = _octant->pos[1] + (float)((y + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		xyz[7][2] = _octant->pos[2] + (float)((z + 1 - (res / 2)) / ((float)(res / 2)))*dim;
-		val[7] = _octant->data[x][y + 1][z + 1];
-		if (_octant->data[x][y + 1][z + 1] < isoValue)	// cubeIndex |= 128;
-			cellIsoBool[7] = true;
-		else
-			cellIsoBool[7] = false;
+		xyz[7][0] = _octant->pos[0] - dim;
+		xyz[7][1] = _octant->pos[1] + dim;
+		xyz[7][2] = _octant->pos[2] + dim;
+		val[7] = oNeighbor[6]->data;
+		cellIsoBool[7] = oNeighbor[6]->isoBool;
 
 		// get the case index
 		cubeIndex = cellIsoBool[0] * 1 + cellIsoBool[1] * 2 + cellIsoBool[2] * 4 + cellIsoBool[3] * 8 +
-			cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
+					cellIsoBool[4] * 16 + cellIsoBool[5] * 32 + cellIsoBool[6] * 64 + cellIsoBool[7] * 128;
 
 		// check if cube is entirely in or out of the surface ----------------------------
 		if (edgeTable[cubeIndex] != 0) {
@@ -1084,114 +1092,62 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 			//calculate indices that could not be inherited ------------------------------
 			if (edgeTable[cubeIndex] & 1) {
-				dVal = (double)(isoValue - val[0]) / (double)(val[1] - val[0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[0][0] + dVal*(xyz[1][0] - xyz[0][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[0][1] + dVal*(xyz[1][1] - xyz[0][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[0][2] + dVal*(xyz[1][2] - xyz[0][2]);
-				vertList[0] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
-
+				vertList[0] = oNeighbor[1]->vertices * V_ROW_MAX + 1;
 			}
 
 			if (edgeTable[cubeIndex] & 2) {
-				dVal = (double)(isoValue - val[1]) / (double)(val[2] - val[1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[2][0] - xyz[1][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[2][1] - xyz[1][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[2][2] - xyz[1][2]);
-				vertList[1] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertList[1] = oNeighbor[2]->vertices * V_ROW_MAX;
 			}
 			if (edgeTable[cubeIndex] & 4) {
-				dVal = (double)(isoValue - val[2]) / (double)(val[3] - val[2]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[3][0] - xyz[2][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[3][1] - xyz[2][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[3][2] - xyz[2][2]);
-				vertList[2] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertList[2] = oNeighbor[2]->vertices * V_ROW_MAX + 1;
 			}
 			if (edgeTable[cubeIndex] & 8) {
-				dVal = (double)(isoValue - val[3]) / (double)(val[0] - val[3]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[0][0] - xyz[3][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[0][1] - xyz[3][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[0][2] - xyz[3][2]);
-				vertList[3] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertList[3] = oNeighbor[3]->vertices * V_ROW_MAX;
 			}
 			if (edgeTable[cubeIndex] & 16) {
-				dVal = (double)(isoValue - val[4]) / (double)(val[5] - val[4]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[4][0] + dVal*(xyz[5][0] - xyz[4][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[4][1] + dVal*(xyz[5][1] - xyz[4][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[4][2] + dVal*(xyz[5][2] - xyz[4][2]);
-				vertList[4] = z0Cache = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertList[4] = oNeighbor[5]->vertices * V_ROW_MAX + 1;
 			}
 			if (edgeTable[cubeIndex] & 32) {
 				dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-				isoCache[layerIndex][y][z].vertexIndex[0] = vertList[5] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertexArray[_octant->vertices][0].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+				vertexArray[_octant->vertices][0].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+				vertexArray[_octant->vertices][0].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+				vertList[5] = _octant->vertices * V_ROW_MAX;
 			}
 			if (edgeTable[cubeIndex] & 64) {
 				dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-				isoCache[layerIndex][y][z].vertexIndex[1] = vertList[6] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertexArray[_octant->vertices][1].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+				vertexArray[_octant->vertices][1].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+				vertexArray[_octant->vertices][1].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+				vertList[6] = _octant->vertices * V_ROW_MAX + 1;
 			}
 			if (edgeTable[cubeIndex] & 128) {
-				dVal = (double)(isoValue - val[7]) / (double)(val[4] - val[7]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[7][0] + dVal*(xyz[4][0] - xyz[7][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[7][1] + dVal*(xyz[4][1] - xyz[7][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[7][2] + dVal*(xyz[4][2] - xyz[7][2]);
-				vertList[7] = y0Cache[z] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertList[7] = oNeighbor[6]->vertices * V_ROW_MAX;
 			}
 			if (edgeTable[cubeIndex] & 256) {
-				dVal = (double)(isoValue - val[0]) / (double)(val[4] - val[0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[0][0] + dVal*(xyz[4][0] - xyz[0][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[0][1] + dVal*(xyz[4][1] - xyz[0][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[0][2] + dVal*(xyz[4][2] - xyz[0][2]);
-				vertList[8] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertList[8] = oNeighbor[4]->vertices * V_ROW_MAX + 2;
 			}
 			if (edgeTable[cubeIndex] & 512) {
-				dVal = (double)(isoValue - val[1]) / (double)(val[5] - val[1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[1][0] + dVal*(xyz[5][0] - xyz[1][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[1][1] + dVal*(xyz[5][1] - xyz[1][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[1][2] + dVal*(xyz[5][2] - xyz[1][2]);
-				vertList[9] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertList[9] = oNeighbor[5]->vertices * V_ROW_MAX + 2;
 			}
 			if (edgeTable[cubeIndex] & 1024) {
 				dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-				isoCache[layerIndex][y][z].vertexIndex[2] = vertList[10] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertexArray[_octant->vertices][2].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+				vertexArray[_octant->vertices][2].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+				vertexArray[_octant->vertices][2].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+				vertList[10] = _octant->vertices * V_ROW_MAX + 2;
 			}
 			if (edgeTable[cubeIndex] & 2048) {
-				dVal = (double)(isoValue - val[3]) / (double)(val[7] - val[3]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[0] = xyz[3][0] + dVal*(xyz[7][0] - xyz[3][0]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[1] = xyz[3][1] + dVal*(xyz[7][1] - xyz[3][1]);
-				vertexArray[_octant->vertices[currVRow]][vCounter].xyz[2] = xyz[3][2] + dVal*(xyz[7][2] - xyz[3][2]);
-				vertList[11] = _octant->vertices[currVRow] * V_ROW_MAX + vCounter;
-				vCounter++;
+				vertList[11] = oNeighbor[6]->vertices * V_ROW_MAX + 2;
 			}
 
 			// bind triangle indecies
 			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-				triangleArray[_octant->triangles[currTRow]][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
-				triangleArray[_octant->triangles[currTRow]][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
-				triangleArray[_octant->triangles[currTRow]][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
+				triangleArray[_octant->triangles][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+				triangleArray[_octant->triangles][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
+				triangleArray[_octant->triangles][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
 
 				tCounter++;
-
-
-
 			}
 		}
 		_olStart++;

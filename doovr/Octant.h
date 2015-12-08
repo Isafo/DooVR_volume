@@ -12,7 +12,7 @@ public:
 
 	void deAllocate();
 
-	const int MAX_DEPTH = 10;
+	const int MAX_DEPTH = 9;
 
 	void allocateData();
 	void deAllocateData();
@@ -30,6 +30,7 @@ public:
 	int depth;
 
 	unsigned char data;
+	bool isoBool;
 
 	int vertices;
 	int triangles;

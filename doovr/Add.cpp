@@ -116,8 +116,8 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 					if (childOct->child[0] != nullptr)
 						childOct->deAllocate();
 
-					childOct->data[0][0][0] = 255;
-					childOct->fillCount = std::pow(std::pow(2, 10 - childOct->depth), 3);
+					childOct->data = 255;
+					childOct->isoBool = true;
 				}// --->
 				else {
 					octList.push_back(childOct);
@@ -142,27 +142,15 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	while (olCounter < tmpI) {
 		currentOct = octList[olCounter];
 
-		tmpPos[0] = currentOct->pos[0] - currentOct->halfDim;
-		tmpPos[1] = currentOct->pos[1] - currentOct->halfDim;
-		tmpPos[2] = currentOct->pos[2] - currentOct->halfDim;
+		tmpPos[0] = currentOct->pos[0] + currentOct->halfDim;
+		tmpPos[1] = currentOct->pos[1] + currentOct->halfDim;
+		tmpPos[2] = currentOct->pos[2] + currentOct->halfDim;
+		linAlg::calculateVec(tmpPos, nwPos, tmpVec);
 
-		for (int i = 0; i < scalarNR; i++) {
-			tmpPos[0] = currentOct->pos[0] + ((i - hRes) / ((float)hRes))*dim;
-			for (int j = 0; j < scalarNR; j++) {
-				tmpPos[1] = currentOct->pos[1] + ((j - hRes) / ((float)hRes))*dim;
-				for (int k = 0; k < scalarNR; k++) {
-					tmpPos[2] = currentOct->pos[2] + ((k - hRes) / ((float)hRes))*dim;
-					linAlg::calculateVec(tmpPos, nwPos, tmpVec);
-
-					if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
-						if (currentOct->data[i][j][k] != 255) {
-							currentOct->data[i][j][k] = 255;
-							currentOct->fillCount++;
-						}
-					}
-				}
-			}
-		}		
+		if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
+			currentOct->data = 255;
+			currentOct->isoBool = true;
+		}
 		olCounter++;
 	}// -->
 
