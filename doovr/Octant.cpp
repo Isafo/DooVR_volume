@@ -27,7 +27,7 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 					data[i][j][k] = 0;
 	}*/
 
-	shape = new LineCube(0.0f, 0.0f, 0.0f, _halfDim * 2, _halfDim * 2, _halfDim * 2);
+	//shape = new LineCube(0.0f, 0.0f, 0.0f, _halfDim * 2, _halfDim * 2, _halfDim * 2);
 
 	parent = _parent;
 	depth = _depth;
@@ -75,6 +75,7 @@ Octant::~Octant() {
 
 	if (child[0] != nullptr) {
 		delete child[0];
+		child[0] = nullptr;
 		delete child[1];
 		delete child[2];
 		delete child[3];
@@ -99,8 +100,12 @@ void Octant::partition() {
 }
 
 void Octant::deAllocate() {
-	
+
+	vertices = -1;
+	triangles = -1;
+
 	delete child[0];
+	child[0] = nullptr;
 	delete child[1];
 	delete child[2];
 	delete child[3];
@@ -168,7 +173,7 @@ void Octant::render(MatrixStack* MVstack, GLint locationMV) {
 		MVstack->push();
 			MVstack->translate(pos);
 			glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack->getCurrentMatrix());
-			shape->render();
+			//shape->render();
 		MVstack->pop();
 	}
 }

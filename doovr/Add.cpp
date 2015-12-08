@@ -60,7 +60,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	Octant* childOct;
 
 	std::vector<Octant*> octList;
-	octList.reserve(50);
+	octList.reserve(1000);
 	int olCounter = 0;
 	int tmpI;
 	int olStart;
@@ -115,6 +115,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 						
 					if (childOct->child[0] != nullptr)
 						childOct->deAllocate();
+
 
 					childOct->data = 255;
 					childOct->isoBool = true;

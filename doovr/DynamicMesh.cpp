@@ -42,13 +42,13 @@ DynamicMesh::DynamicMesh() {
 
 	y0Cache = new int[scalarNR];
 */
-	vertexArray = new vertex*[3];
+	vertexArray = new vertex*[MAX_NR_OF_VERTICES/3];
 	//vertexArray[0] = new vertex[MAX_NR_OF_VERTICES];
 	//vInfoArray = new vInfo*[1];
 	//vInfoArray[0] = new vInfo[MAX_NR_OF_VERTICES];
 
 
-	triangleArray = new triangle*[4];
+	triangleArray = new triangle*[MAX_NR_OF_TRIANGLES/4];
 	//triangleArray[0] = new triangle[MAX_NR_OF_TRIANGLES];
 	//triEPtr = new int*[1];
 	//triEPtr[1] = new int[MAX_NR_OF_TRIANGLES];
@@ -535,7 +535,7 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	//TODO: FIXA
 	const int V_ROW_MAX = 3;
-	const int T_ROW_MAX = 4;
+	const int T_ROW_MAX = 5;
 
 	triangle* indexP;
 	dBufferData* vertexP;
@@ -677,7 +677,7 @@ void DynamicMesh::render() {
 	//TODO: fixa
 	int res = std::pow(2, 10 - tmpMAX_DEPTH);
 	const int V_ROW_MAX = 3;
-	const int T_ROW_MAX = 4;
+	const int T_ROW_MAX = 5;
 	glBindVertexArray(vao);
 
 	glDrawElements(GL_TRIANGLES, (triangleCap*T_ROW_MAX) * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
@@ -938,7 +938,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	fDim = dim * 2;
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	const int V_ROW_MAX = 3;
-	const int T_ROW_MAX = 4;
+	const int T_ROW_MAX = 5;
 	res = res - 1;
 
 	int olEnd = (*_octList).size();
@@ -974,7 +974,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
 		}
 		else {
-
 			//delete old vertex data and allocate new
 			delete[] vertexArray[_octant->vertices];
 			vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
@@ -1143,9 +1142,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 			// bind triangle indecies
 			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-				triangleArray[_octant->triangles][tCounter].index[2] = vertList[triTable[cubeIndex][i]];
+				triangleArray[_octant->triangles][tCounter].index[0] = vertList[triTable[cubeIndex][i]];
 				triangleArray[_octant->triangles][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
-				triangleArray[_octant->triangles][tCounter].index[0] = vertList[triTable[cubeIndex][i + 2]];
+				triangleArray[_octant->triangles][tCounter].index[2] = vertList[triTable[cubeIndex][i + 2]];
 
 				tCounter++;
 			}

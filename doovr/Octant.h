@@ -19,7 +19,7 @@ public:
 
 	void partition();
 
-	LineCube* shape;
+	//LineCube* shape;
 	void render(MatrixStack* MVstack, GLint locationMV);
 
 	float pos[3];
