@@ -27,11 +27,8 @@ void Add::render(MatrixStack* MVstack, GLint locationMV)
 	MVstack->pop();
 }
 
-void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
-{
-	//TODO: started assuming octree depth of 5, changed it to 6 might have caused bugs. check. Also make the handling of depth dynamic
+void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	//TODO: implement tests that check if child cubes can be deallocated when entire cubes are filled.
-	//TODO:	use currentOct->fillCount variable in Octant properly
 	float wPos[4]; float nwPos[4];
 	float wDirr[4]; float nwDirr[4];
 	float s, d = 0.0f, childDim = 0.0f;
@@ -84,12 +81,12 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	while (currentOct->depth < _ot->root->MAX_DEPTH) {//<-- reaching depth 6 --
 			
 		//check if data is alread filled
-		if (currentOct->data > _mesh->isoValue){
-			if (olCounter >= octList.size()){
+		if (currentOct->data > _mesh->isoValue) {
+			if (olCounter >= octList.size()) {
 				maxReached = false;
 				break;
 			}
-			else{
+			else {
 				currentOct = octList[olCounter];
 				olCounter++;
 				continue;
