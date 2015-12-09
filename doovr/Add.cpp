@@ -38,6 +38,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 	float octPos[3];
 	float tmpPos[3];
 	float tmpVec[3];
+	bool maxReached = true;
 
 	linAlg::transpose(_mesh->orientation);
 	//--< 1.0 | calculated the position and direction of the wand
@@ -82,12 +83,25 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 
 	while (currentOct->depth < _ot->root->MAX_DEPTH) {//<-- reaching depth 6 --
 			
+		//check if data is alread filled
+		if (currentOct->data > _mesh->isoValue){
+			if (olCounter >= octList.size()){
+				maxReached = false;
+				break;
+			}
+			else{
+				currentOct = octList[olCounter];
+				olCounter++;
+				continue;
+			}
+		}
+		//check if children are allocated
 		if (currentOct->child[0] == nullptr) {
 			currentOct->partition();
 		}
-
+		//<--- collision check cubechildren ---
 		childDim = currentOct->child[0]->halfDim;
-		for (int i = 0; i < 8; i++) {//<--- collision check cubechildren ---
+		for (int i = 0; i < 8; i++) {
 			childOct = currentOct->child[i];
 			tmpPos[0] = nwPos[0] - childOct->pos[0];
 			tmpPos[1] = nwPos[1] - childOct->pos[1];
@@ -110,12 +124,12 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 				tmpVec[1] = (0.0f > tmpPos[1] ? childDim : -childDim);
 				tmpVec[2] = (0.0f > tmpPos[2] ? childDim : -childDim);
 
+				//<--- check if cube is entirely inside sphere --	
 				linAlg::calculateVec(tmpVec, tmpPos, tmpVec);
-				if (linAlg::vecLength(tmpVec) <= radius) {//<--- check if cube is entirely inside sphere --	
+				if (linAlg::vecLength(tmpVec) <= radius) {
 						
 					if (childOct->child[0] != nullptr)
 						childOct->deAllocate();
-
 
 					childOct->data = 255;
 					childOct->isoBool = true;
@@ -129,37 +143,39 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot )
 		olCounter++;
 	}// -->
 
+	//check if the maximum depth was reached
+	if (maxReached){
+		//<-- change selected iso values --
+		olCounter--;
+		olStart = olCounter;
+		tmpI = octList.size();
+
+		int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
+		int hRes = (scalarNR - 1) / 2;
+		float dim = octList[olStart]->halfDim;
 	
-	//<-- change selected iso values --
-	olCounter--;
-	olStart = olCounter;
-	tmpI = octList.size();
 
-	int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
-	int hRes = (scalarNR - 1) / 2;
-	float dim = octList[olStart]->halfDim;
-	
+		while (olCounter < tmpI) {
+			currentOct = octList[olCounter];
 
-	while (olCounter < tmpI) {
-		currentOct = octList[olCounter];
+			tmpPos[0] = currentOct->pos[0] + currentOct->halfDim;
+			tmpPos[1] = currentOct->pos[1] + currentOct->halfDim;
+			tmpPos[2] = currentOct->pos[2] + currentOct->halfDim;
+			linAlg::calculateVec(tmpPos, nwPos, tmpVec);
 
-		tmpPos[0] = currentOct->pos[0] + currentOct->halfDim;
-		tmpPos[1] = currentOct->pos[1] + currentOct->halfDim;
-		tmpPos[2] = currentOct->pos[2] + currentOct->halfDim;
-		linAlg::calculateVec(tmpPos, nwPos, tmpVec);
+			if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
+				currentOct->data = 255;
+				currentOct->isoBool = true;
+			}
+			olCounter++;
+		}// -->
 
-		if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
-			currentOct->data = 255;
-			currentOct->isoBool = true;
-		}
-		olCounter++;
-	}// -->
+   		olCounter = olStart;
 
-   	olCounter = olStart;
+		_mesh->generateMC(&octList, olStart);
 
-	_mesh->generateMC(&octList, olStart);
-
-	_mesh->updateOGLData(&octList, olStart);
-	//_mesh->updateOGLData();
+		_mesh->updateOGLData(&octList, olStart);
+		//_mesh->updateOGLData();
+	}
 }
 
