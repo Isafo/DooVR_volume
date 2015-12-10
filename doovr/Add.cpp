@@ -78,6 +78,10 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		return;
 	}
 
+
+	int emptyVStackInitSize = _mesh->emptyVStack.size();
+	int emptyTStackInitSize = _mesh->emptyTStack.size();
+
 	while (currentOct->depth < _ot->root->MAX_DEPTH) {//<-- reaching depth 6 --
 			
 		//check if data is alread filled
@@ -125,9 +129,10 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 				linAlg::calculateVec(tmpVec, tmpPos, tmpVec);
 				if (linAlg::vecLength(tmpVec) <= radius) {
 						
-					if (childOct->child[0] != nullptr)
-						childOct->deAllocate();
-
+					if (childOct->child[0] != nullptr) {
+						childOct->deAllocate(_mesh);
+					}
+						
 					childOct->data = 255;
 					childOct->isoBool = true;
 				}// --->
@@ -141,7 +146,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	}// -->
 
 	//check if the maximum depth was reached
-	if (maxReached){
+	if (maxReached) {
 		//<-- change selected iso values --
 		olCounter--;
 		olStart = olCounter;
@@ -170,9 +175,12 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
    		olCounter = olStart;
 
 		_mesh->generateMC(&octList, olStart);
-
 		_mesh->updateOGLData(&octList, olStart);
-		//_mesh->updateOGLData();
+	}
+
+	// update removed vertexbuffer data that was not reused
+	if (_mesh->emptyVStack.size() > emptyVStackInitSize) {
+		_mesh->updateRemovedOGLData(emptyVStackInitSize, emptyTStackInitSize);
 	}
 }
 

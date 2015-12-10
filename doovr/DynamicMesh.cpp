@@ -604,6 +604,80 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 
 }
 
+
+void DynamicMesh::updateRemovedOGLData(int _vStart, int _tStart) {
+	//TODO: FIXA
+	const int V_ROW_MAX = 3;
+	const int T_ROW_MAX = 5;
+
+	triangle* indexP;
+	dBufferData* vertexP;
+
+	int index;
+
+	// Activate the vertex buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+	// Activate the index buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+
+	for (int i = _vStart; i < emptyVStack.size(); i++) {
+
+		index = emptyVStack[i];
+
+		vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, sizeof(dBufferData) * index * V_ROW_MAX, sizeof(dBufferData) * V_ROW_MAX,
+												 GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+		for (int k = 0; k < V_ROW_MAX; k++) {
+			vertexP[k].x = 0.0f;
+			vertexP[k].y = 0.0f;
+			vertexP[k].z = 0.0f;
+			vertexP[k].nx = 0.0f;
+			vertexP[k].ny = 0.0f;
+			vertexP[k].nz = 0.0f;
+		}
+		glUnmapBuffer(GL_ARRAY_BUFFER);
+
+		// Specify how many attribute arrays we have in our VAO
+		glEnableVertexAttribArray(0); // Vertex coordinates
+		glEnableVertexAttribArray(1); // Normals
+
+		// Specify how OpenGL should interpret the vertex buffer data:
+		// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+		// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+		// Type GL_FLOAT
+		// Not normalized (GL_FALSE)
+		// Stride 8 (interleaved array with 8 floats per vertex)
+		// Array buffer offset 0, 3, 6 (offset into first vertex)
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+			sizeof(dBufferData), (void*)0); // xyz coordinates
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+			sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+
+		// Present our vertex <indices to OpenGL
+		index = emptyTStack[i];
+		
+		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle) * index * T_ROW_MAX, sizeof(triangle) * T_ROW_MAX,
+			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+		//TODO: kolla om det här är legit
+		for (int k = 0; k < T_ROW_MAX; k++) {
+			indexP[k].index[0] = 0;
+			indexP[k].index[1] = 0;
+			indexP[k].index[2] = 0;
+		}
+
+		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	}
+
+	// Deactivate (unbind) the VAO and the buffers again.
+	// Do NOT unbind the buffers while the VAO is still bound.
+	// The index buffer is an essential part of the VAO state.
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+
 void DynamicMesh::cleanBuffer() {
 
 	if (vertexRange != 0) {
@@ -982,6 +1056,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			delete[] triangleArray[_octant->triangles];
 			triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
 		}
+
 
 		nPos[0][0] = _octant->pos[0] - fDim;	nPos[0][1] = _octant->pos[1] - fDim;	nPos[0][2] = _octant->pos[2] - fDim;
 		nPos[1][0] = _octant->pos[0];			nPos[1][1] = _octant->pos[1] - fDim;	nPos[1][2] = _octant->pos[2] - fDim;

@@ -1,5 +1,6 @@
 #include "Octant.h"
 #include <vector>
+#include "DynamicMesh.h"
 
 
 Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim) {
@@ -99,62 +100,27 @@ void Octant::partition() {
 	child[7] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] + d, d);
 }
 
-void Octant::deAllocate() {
+void Octant::deAllocate(DynamicMesh* _mesh) {
+	for (int i = 0; i < 8; i++) {
 
-	vertices = -1;
-	triangles = -1;
-
-	delete child[0];
+		// child has no children 
+		if (child[i]->child[0] == nullptr) {
+			// vertex data is allocated
+			if (child[i]->vertices != -1) {
+				_mesh->emptyVStack.push_back(child[i]->vertices);
+				_mesh->emptyTStack.push_back(child[i]->triangles);
+				delete[] _mesh->vertexArray[child[i]->vertices];
+				delete[] _mesh->triangleArray[child[i]->triangles];
+			}
+		}
+		// child has children
+		else {
+			child[i]->deAllocate(_mesh);
+		}
+		// clean up
+		delete child[i];	
+	}
 	child[0] = nullptr;
-	delete child[1];
-	delete child[2];
-	delete child[3];
-	delete child[4];
-	delete child[5];
-	delete child[6];
-	delete child[7];
-
-}
-
-void Octant::allocateData() {
-	//unsigned char tmpIso = data[0][0][0];
-	/*delete data[0][0];
-	delete data[0];
-	delete data;
-
-	int scalarNR = std::pow(2, 10 - depth);
-
-	data = new unsigned char**[scalarNR];
-	for (int i = 0; i < scalarNR; i++)
-		data[i] = new unsigned char*[scalarNR];
-
-	for (int i = 0; i < scalarNR; i++)
-		for (int j = 0; j < scalarNR; j++)
-			data[i][j] = new unsigned char[scalarNR];
-
-	for (int i = 0; i < scalarNR; i++)
-		for (int j = 0; j < scalarNR; j++)
-			for (int k = 0; k < scalarNR; k++)
-				data[i][j][k] = 0;*/
-
-}
-
-void Octant::deAllocateData() {
-	/*int scalarNR = std::pow(2, 10 - depth);
-
-	for (int i = 0; i < scalarNR; i++)
-		for (int j = 0; j < scalarNR; j++)
-			delete data[i][j];
-
-	for (int i = 0; i < scalarNR; i++)
-		delete data[i];
-	
-	delete data;
-
-	data = new unsigned char**[1];
-	data[0] = new unsigned char*[1];
-	data[0][0] = new unsigned char[1];*/
-
 }
 
 void Octant::render(MatrixStack* MVstack, GLint locationMV) {

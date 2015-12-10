@@ -377,61 +377,61 @@ int Oculus::runOvr() {
 
 
 	//WandView \____________________________________________________________________________
+	//
+	//// create and set up the FBO
+	//GLuint wandViewFBO;
+	//glGenFramebuffers(1, &wandViewFBO);
+	//glBindFramebuffer(GL_FRAMEBUFFER, wandViewFBO);
 
-	// create and set up the FBO
-	GLuint wandViewFBO;
-	glGenFramebuffers(1, &wandViewFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, wandViewFBO);
+	//GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
 
-	GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+	//GLuint wandShadowMap;
+	//glGenTextures(1, &wandShadowMap);
+	//glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	////glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+	///*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	//glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+	//*/
+	////Assign the shadow map to texture channel 0 
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, wandShadowMap);
 
-	GLuint wandShadowMap;
-	glGenTextures(1, &wandShadowMap);
-	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//glDrawBuffer(GL_NONE); // No color buffer is drawn to.
-	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-	*/
-	//Assign the shadow map to texture channel 0 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+	//glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, wandShadowMap, 0);
 
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, wandShadowMap, 0);
+	//GLuint pickingTexture;
+	//glGenTextures(1, &pickingTexture);
+	//glBindTexture(GL_TEXTURE_2D, pickingTexture);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB_FLOAT32_ATI, 1024, 1024,
+	//	0, GL_RGB, GL_FLOAT, NULL);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+	//	pickingTexture, 0);
 
-	GLuint pickingTexture;
-	glGenTextures(1, &pickingTexture);
-	glBindTexture(GL_TEXTURE_2D, pickingTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB_FLOAT32_ATI, 1024, 1024,
-		0, GL_RGB, GL_FLOAT, NULL);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-		pickingTexture, 0);
+	////glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
+	////glDrawBuffer(GL_NONE);
+	////glReadBuffer(GL_NONE);
+	//glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
-	//glDrawBuffer(GL_NONE);
-	//glReadBuffer(GL_NONE);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	//GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
-	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-	if (Status != GL_FRAMEBUFFER_COMPLETE) {
-		printf("FB error, status: 0x%x\n", Status);
-		return false;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//if (Status != GL_FRAMEBUFFER_COMPLETE) {
+	//	printf("FB error, status: 0x%x\n", Status);
+	//	return false;
+	//}
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-	glfwSetWindowSizeCallback(l_Window, WindowSizeCallback);
-
+	//glfwSetWindowSizeCallback(l_Window, WindowSizeCallback);
+	//
 	//=====================================================================================================================================
 	// 2 - Variable Declarations
 	//=====================================================================================================================================
@@ -1054,81 +1054,81 @@ int Oculus::runOvr() {
 			}
 
 			//wandViewMAP -------------------------------------------
-			glViewport(0, 0, 1024, 1024);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wandViewFBO);
-			glClear(GL_DEPTH_BUFFER_BIT);
-			glUseProgram(projectionShader.programID);
+			//glViewport(0, 0, 1024, 1024);
+			//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wandViewFBO);
+			//glClear(GL_DEPTH_BUFFER_BIT);
+			//glUseProgram(projectionShader.programID);
 
-			//glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
-			glm::mat4 projP = glm::ortho(-0.1f, 0.1f, -0.1f, 0.1f, 0.0f, 1.0f);
-			glm::transpose(projP);
-			glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
-			//glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
-			MVstack.push();
+			////glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
+			//glm::mat4 projP = glm::ortho(-0.1f, 0.1f, -0.1f, 0.1f, 0.0f, 1.0f);
+			//glm::transpose(projP);
+			//glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
+			////glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
+			//MVstack.push();
 
-			//pmat4 = wand->getOrientation();
-			//linAlg::invertMatrix(pmat4, unitMat);
-			//linAlg::transpose(unitMat);
-			//MVstack.multiply(pmat4);
+			////pmat4 = wand->getOrientation();
+			////linAlg::invertMatrix(pmat4, unitMat);
+			////linAlg::transpose(unitMat);
+			////MVstack.multiply(pmat4);
 
-			//wand->getPosition(wandPos);
-			glm::vec3 gWandPos = glm::vec3(wandPos[0], wandPos[1], wandPos[2]);
-			wand->getDirection(tempVec);
-			glm::vec3 gWandDirr = glm::vec3(tempVec[0], tempVec[1], tempVec[2]);
-			//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
-			//MVstack.translate(tempVec);
+			////wand->getPosition(wandPos);
+			//glm::vec3 gWandPos = glm::vec3(wandPos[0], wandPos[1], wandPos[2]);
+			//wand->getDirection(tempVec);
+			//glm::vec3 gWandDirr = glm::vec3(tempVec[0], tempVec[1], tempVec[2]);
+			////tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
+			////MVstack.translate(tempVec);
 
-			glm::normalize(gWandDirr);
+			//glm::normalize(gWandDirr);
 
-			glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
-			//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
-			MVstack.multiply(&camTrans[0][0]);
+			//glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
+			////glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
+			//MVstack.multiply(&camTrans[0][0]);
 
-			MVstack.push();
-			MVstack.translate(modellingMesh->getPosition());
-			MVstack.multiply(modellingMesh->getOrientation());
-			//MVstack.multiply(&projP[0][0]);
-			linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
-			glUniformMatrix4fv(locationProjMV, 1, GL_FALSE, LMVP);
-			linAlg::matrixMult(biasMatrix, LMVP, LMVP);
+			//MVstack.push();
+			//MVstack.translate(modellingMesh->getPosition());
+			//MVstack.multiply(modellingMesh->getOrientation());
+			////MVstack.multiply(&projP[0][0]);
+			//linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
+			//glUniformMatrix4fv(locationProjMV, 1, GL_FALSE, LMVP);
+			//linAlg::matrixMult(biasMatrix, LMVP, LMVP);
 
-			modellingMesh->render();
-			MVstack.pop();
-			MVstack.pop();
+			//modellingMesh->render();
+			//MVstack.pop();
+			//MVstack.pop();
 
-			//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			////glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-			//glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
-			//glReadBuffer(GL_COLOR_ATTACHMENT0);
+			////glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
+			////glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-			//glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
+			////glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
 
-			//std::cout << pixel << std::endl;
-			glReadBuffer(GL_NONE);
-			//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-			//currentTool->findIntersection(modellingMesh, wand, Pixel);
-			//TODO: this should be done when using half edge structure
-			//currentTool->getIntersection(intersectionP, intersectionN);
-			//linAlg::normVec(intersectionN);
+			////std::cout << pixel << std::endl;
+			//glReadBuffer(GL_NONE);
+			////glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+			////currentTool->findIntersection(modellingMesh, wand, Pixel);
+			////TODO: this should be done when using half edge structure
+			////currentTool->getIntersection(intersectionP, intersectionN);
+			////linAlg::normVec(intersectionN);
 
-			glm::vec3 interP = glm::vec3(intersectionP[0], intersectionP[1], intersectionP[2]);
-			wand->getDirection(tempVec);
-			glm::vec3 interN = glm::vec3(intersectionN[0], intersectionN[1], intersectionN[2]);
-			//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
-			//MVstack.translate(tempVec);
+			//glm::vec3 interP = glm::vec3(intersectionP[0], intersectionP[1], intersectionP[2]);
+			//wand->getDirection(tempVec);
+			//glm::vec3 interN = glm::vec3(intersectionN[0], intersectionN[1], intersectionN[2]);
+			////tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
+			////MVstack.translate(tempVec);
 
 
-			glm::mat4 interTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
-			//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
+			//glm::mat4 interTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
+			////glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
 
-			MVstack.push();
-			MVstack.multiply(&interTrans[0][0]);
-			MVstack.translate(modellingMesh->getPosition());
-			MVstack.multiply(modellingMesh->getOrientation());
-			//MVstack.multiply(&projP[0][0]);
-			linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
-			linAlg::matrixMult(biasMatrix, LMVP, LMVP);
-			MVstack.pop();
+			//MVstack.push();
+			//MVstack.multiply(&interTrans[0][0]);
+			//MVstack.translate(modellingMesh->getPosition());
+			//MVstack.multiply(modellingMesh->getOrientation());
+			////MVstack.multiply(&projP[0][0]);
+			//linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
+			//linAlg::matrixMult(biasMatrix, LMVP, LMVP);
+			//MVstack.pop();
 
 
 			// get hmd eye poses \__________________________________________________________________________________________________________________
@@ -1334,7 +1334,7 @@ int Oculus::runOvr() {
 				else {
 					glUseProgram(meshShader.programID);
 
-					glUniformMatrix4fv(locationMeshPP, 1, GL_FALSE, &projP[0][0]);
+					//glUniformMatrix4fv(locationMeshPP, 1, GL_FALSE, &projP[0][0]);
 					glUniformMatrix4fv(locationMeshLMVP, 1, GL_FALSE, LMVP);
 					glUniform3fv(locationMeshIntersectionP, 1, intersectionP);
 					glUniform3fv(locationMeshIntersectionN, 1, intersectionN);
@@ -1361,8 +1361,8 @@ int Oculus::runOvr() {
 
 					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
 
-					glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-					glUniform1i(locationMeshDTex, 0);
+					//glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+					//glUniform1i(locationMeshDTex, 0);
 
 					MVstack.push();
 					MVstack.translate(modellingMesh->getPosition());
