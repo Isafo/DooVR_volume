@@ -35,8 +35,10 @@ public:
 	unsigned char data;
 	bool isoBool;
 
-	int vertices;
-	int triangles;
+	int vertices[3];
+	
+	int tCount;
+	int* triangles;
 
 private:
 

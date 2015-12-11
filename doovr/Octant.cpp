@@ -37,8 +37,8 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 	//TODO: maybe do manually
 	data = 0;
 	isoBool = false;
-	vertices = -1;
-	triangles = -1;
+	//vertices[0] = -1;
+	triangles = nullptr;
 
 }
 
@@ -105,12 +105,28 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 
 		// child has no children 
 		if (child[i]->child[0] == nullptr) {
-			// vertex data is allocated
-			if (child[i]->vertices != -1) {
-				_mesh->emptyVStack.push_back(child[i]->vertices);
-				_mesh->emptyTStack.push_back(child[i]->triangles);
-				delete[] _mesh->vertexArray[child[i]->vertices];
-				delete[] _mesh->triangleArray[child[i]->triangles];
+			// data is allocated
+			if (child[i]->triangles != nullptr) {
+				//delete triangle data
+				for (int j = 0; j < child[i]->tCount; j++){
+					_mesh->emptyTStack.push_back(child[i]->triangles[j]);
+					delete _mesh->triangleArray[child[i]->triangles[j]];
+				}
+				delete[] triangles;
+				
+				//delete vertex data
+				if (child[i]->vertices[0] != -1){
+					_mesh->emptyVStack.push_back(child[i]->vertices[0]);
+					delete _mesh->vertexArray[child[i]->vertices[0]];
+				}
+				if (child[i]->vertices[1] != -1){
+					_mesh->emptyVStack.push_back(child[i]->vertices[1]);
+					delete _mesh->vertexArray[child[i]->vertices[1]];
+				}
+				if (child[i]->vertices[2] != -1){
+					_mesh->emptyVStack.push_back(child[i]->vertices[2]);
+					delete _mesh->vertexArray[child[i]->vertices[2]];
+				}
 			}
 		}
 		// child has children
@@ -121,6 +137,7 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 		delete child[i];	
 	}
 	child[0] = nullptr;
+
 }
 
 void Octant::render(MatrixStack* MVstack, GLint locationMV) {

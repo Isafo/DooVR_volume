@@ -549,7 +549,8 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 
 	for (int i = _olStart; i < (*_octList).size(); i++) {
 		_octant = (*_octList)[i];
-
+		if (_octant->vertices == -1)
+			continue;
 
 		vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, sizeof(dBufferData) * _octant->vertices * V_ROW_MAX, sizeof(dBufferData)*V_ROW_MAX,
 			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
@@ -558,9 +559,9 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 			vertexP[k].x = vertexArray[_octant->vertices][k].xyz[0];
 			vertexP[k].y = vertexArray[_octant->vertices][k].xyz[1];
 			vertexP[k].z = vertexArray[_octant->vertices][k].xyz[2];
-			vertexP[k].nx = vertexArray[_octant->vertices][k].nxyz[0];
-			vertexP[k].ny = vertexArray[_octant->vertices][k].nxyz[1];
-			vertexP[k].nz = vertexArray[_octant->vertices][k].nxyz[2];
+			//vertexP[k].nx = vertexArray[_octant->vertices][k].nxyz[0];
+			//vertexP[k].ny = vertexArray[_octant->vertices][k].nxyz[1];
+			//vertexP[k].nz = vertexArray[_octant->vertices][k].nxyz[2];
 		}
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 
@@ -1003,8 +1004,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	Octant* oNeighbor[7];
 	int tmpVindex;
 	int tmpTindex;
-	int *tmpArray1;
-	int *tmpArray2;
+	int tmpArray[5];
 
 	int tCounter;
 
@@ -1019,44 +1019,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 	while (_olStart < olEnd) {
 
-		// clear existing data \_________________________________________________________________
+		// fetch current octant
 		_octant = (*_octList)[_olStart];
-		tCounter = 0;
-
-		//check if data is allocated or not
-		if (_octant->vertices == -1) {
-			//new vertices
-			if (emptyVStack.size() == 0) {
-				_octant->vertices = vertexCap;
-				vertexCap++;
-			}
-			else {
-				_octant->vertices = emptyVStack.back();
-				emptyVStack.pop_back();
-			}
-			vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
-
-			//new triangles
-			if (emptyTStack.size() == 0) {
-				_octant->triangles = triangleCap;
-				triangleCap++;
-			}
-			else {
-				_octant->triangles = emptyTStack.back();
-				emptyTStack.pop_back();
-			}
-			triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
-		}
-		else {
-			//delete old vertex data and allocate new
-			delete[] vertexArray[_octant->vertices];
-			vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
-
-			//delete old triangle data and allocate new
-			delete[] triangleArray[_octant->triangles];
-			triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
-		}
-
 
 		nPos[0][0] = _octant->pos[0] - fDim;	nPos[0][1] = _octant->pos[1] - fDim;	nPos[0][2] = _octant->pos[2] - fDim;
 		nPos[1][0] = _octant->pos[0];			nPos[1][1] = _octant->pos[1] - fDim;	nPos[1][2] = _octant->pos[2] - fDim;
@@ -1157,6 +1121,54 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 		// check if cube is entirely in or out of the surface ----------------------------
 		if (edgeTable[cubeIndex] != 0) {
+			tCounter = 0;
+
+			//check if data is allocated or not and then start using allocated data
+			if (_octant->triangles == nullptr) {
+				////new vertices
+				//if (emptyVStack.size() == 0) {
+				//	_octant->vertices = vertexCap;
+				//	vertexCap++;
+				//}
+				//else {
+				//	_octant->vertices = emptyVStack.back();
+				//	emptyVStack.pop_back();
+				//}
+				//vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
+
+				////new triangles
+				//if (emptyTStack.size() == 0) {
+				//	_octant->triangles = triangleCap;
+				//	triangleCap++;
+				//}
+				//else {
+				//	_octant->triangles = emptyTStack.back();
+				//	emptyTStack.pop_back();
+				//}
+				//triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
+			}
+			//TODO: move outside cubeindex if 
+			else {
+				//delete old vertex data
+				delete vertexArray[_octant->vertices[0]];
+				emptyVStack.push_back(_octant->vertices[0]);
+				//_octant->vertices[0] = -1;
+				delete vertexArray[_octant->vertices[1]];
+				emptyVStack.push_back(_octant->vertices[1]);
+				//_octant->vertices[1] = -1;
+				delete vertexArray[_octant->vertices[2]];
+				emptyVStack.push_back(_octant->vertices[2]);
+				//_octant->vertices[2] = -1;
+				//vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
+
+				//delete old triangle data 
+				for (int i = 0; i < _octant->tCount; i++){
+					delete triangleArray[_octant->triangles[i]];
+					emptyTStack.push_back(_octant->triangles[i]);
+				}
+				//triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
+			}
+
 
 			// Find the vertices where the surface intersects the cube--------------------
 
@@ -1166,63 +1178,123 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 			//calculate indices that could not be inherited ------------------------------
 			if (edgeTable[cubeIndex] & 1) {
-				vertList[0] = oNeighbor[1]->vertices * V_ROW_MAX + 1;
+				vertList[0] = oNeighbor[1]->vertices[1];// *V_ROW_MAX + 1;
 			}
 
 			if (edgeTable[cubeIndex] & 2) {
-				vertList[1] = oNeighbor[2]->vertices * V_ROW_MAX;
+				vertList[1] = oNeighbor[2]->vertices[0];// *V_ROW_MAX;
 			}
 			if (edgeTable[cubeIndex] & 4) {
-				vertList[2] = oNeighbor[2]->vertices * V_ROW_MAX + 1;
+				vertList[2] = oNeighbor[2]->vertices[1];// * V_ROW_MAX + 1;
 			}
 			if (edgeTable[cubeIndex] & 8) {
-				vertList[3] = oNeighbor[3]->vertices * V_ROW_MAX;
+				vertList[3] = oNeighbor[3]->vertices[0];// * V_ROW_MAX;
 			}
 			if (edgeTable[cubeIndex] & 16) {
-				vertList[4] = oNeighbor[5]->vertices * V_ROW_MAX + 1;
+				vertList[4] = oNeighbor[5]->vertices[1];// * V_ROW_MAX + 1;
 			}
 			if (edgeTable[cubeIndex] & 32) {
+				//assign new vertex index and allocate data
+				if (emptyVStack.size() == 0) {
+					_octant->vertices[0] = vertexCap;
+					vertexCap++;
+				}
+				else {
+					_octant->vertices[0] = emptyVStack.back();
+					emptyVStack.pop_back();
+				}
+				vertexArray[_octant->vertices[0]] = new vertex;
+
 				dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-				vertexArray[_octant->vertices][0].xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-				vertexArray[_octant->vertices][0].xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-				vertexArray[_octant->vertices][0].xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
-				vertList[5] = _octant->vertices * V_ROW_MAX;
+				(*vertexArray[_octant->vertices[0]]).xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+				(*vertexArray[_octant->vertices[0]]).xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+				(*vertexArray[_octant->vertices[0]]).xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+				vertList[5] = _octant->vertices[0];// *V_ROW_MAX;
 			}
 			if (edgeTable[cubeIndex] & 64) {
+				//assign new vertex index and allocate data
+				if (emptyVStack.size() == 0) {
+					_octant->vertices[1] = vertexCap;
+					vertexCap++;
+				}
+				else {
+					_octant->vertices[1] = emptyVStack.back();
+					emptyVStack.pop_back();
+				}
+				vertexArray[_octant->vertices[1]] = new vertex;
+				
 				dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-				vertexArray[_octant->vertices][1].xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-				vertexArray[_octant->vertices][1].xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-				vertexArray[_octant->vertices][1].xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
-				vertList[6] = _octant->vertices * V_ROW_MAX + 1;
+				(*vertexArray[_octant->vertices[1]]).xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+				(*vertexArray[_octant->vertices[1]]).xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+				(*vertexArray[_octant->vertices[1]]).xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+				vertList[6] = _octant->vertices[1];// * V_ROW_MAX + 1;
 			}
 			if (edgeTable[cubeIndex] & 128) {
-				vertList[7] = oNeighbor[6]->vertices * V_ROW_MAX;
+				vertList[7] = oNeighbor[6]->vertices[0];// * V_ROW_MAX;
 			}
 			if (edgeTable[cubeIndex] & 256) {
-				vertList[8] = oNeighbor[4]->vertices * V_ROW_MAX + 2;
+				vertList[8] = oNeighbor[4]->vertices[2];// * V_ROW_MAX + 2;
 			}
 			if (edgeTable[cubeIndex] & 512) {
-				vertList[9] = oNeighbor[5]->vertices * V_ROW_MAX + 2;
+				vertList[9] = oNeighbor[5]->vertices[2];// * V_ROW_MAX + 2;
 			}
 			if (edgeTable[cubeIndex] & 1024) {
+				//assign new vertex index and allocate data
+				if (emptyVStack.size() == 0) {
+					_octant->vertices[2] = vertexCap;
+					vertexCap++;
+				}
+				else {
+					_octant->vertices[2] = emptyVStack.back();
+					emptyVStack.pop_back();
+				}
+				vertexArray[_octant->vertices[2]] = new vertex;
+				
 				dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-				vertexArray[_octant->vertices][2].xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-				vertexArray[_octant->vertices][2].xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-				vertexArray[_octant->vertices][2].xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
-				vertList[10] = _octant->vertices * V_ROW_MAX + 2;
+				(*vertexArray[_octant->vertices[2]]).xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+				(*vertexArray[_octant->vertices[2]]).xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+				(*vertexArray[_octant->vertices[2]]).xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+				vertList[10] = _octant->vertices[2];// * V_ROW_MAX + 2;
 			}
 			if (edgeTable[cubeIndex] & 2048) {
-				vertList[11] = oNeighbor[6]->vertices * V_ROW_MAX + 2;
+				vertList[11] = oNeighbor[6]->vertices[2];// * V_ROW_MAX + 2;
 			}
 
 			// bind triangle indecies
 			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-				triangleArray[_octant->triangles][tCounter].index[0] = vertList[triTable[cubeIndex][i]];
-				triangleArray[_octant->triangles][tCounter].index[1] = vertList[triTable[cubeIndex][i + 1]];
-				triangleArray[_octant->triangles][tCounter].index[2] = vertList[triTable[cubeIndex][i + 2]];
+				tmpTindex = i*0.34;
 
-				tCounter++;
+				if (emptyTStack.size() == 0) {
+					 tmpArray[tmpTindex] = triangleCap;
+					triangleCap++;
+				}
+				else {
+					tmpArray[tmpTindex] = emptyTStack.back();
+					emptyTStack.pop_back();
+				}
+
+				(*triangleArray[tmpArray[tmpTindex]]).index[0] = vertList[triTable[cubeIndex][i]];
+				(*triangleArray[tmpArray[tmpTindex]]).index[1] = vertList[triTable[cubeIndex][i + 1]];
+				(*triangleArray[tmpArray[tmpTindex]]).index[2] = vertList[triTable[cubeIndex][i + 2]];
+
+				_octant->tCount++;
 			}
+
+			// allocate triangle data and copy from tmp
+			_octant->triangles = new int[_octant->tCount + 1];
+			for (int i = 0; i < _octant->tCount; i++){
+				_octant->triangles[i] = tmpArray[i];
+			}
+
+		}
+		//TODO: remove and do this always. remember to set _octant->tCount = 0
+		else if (_octant->vertices != -1) {
+			emptyVStack.push_back(_octant->vertices);
+			emptyTStack.push_back(_octant->triangles);
+			delete[] vertexArray[_octant->vertices];
+			delete[] triangleArray[_octant->triangles];
+			_octant->vertices = -1;
+			_octant->triangles = -1;
 		}
 		_olStart++;
 	}
