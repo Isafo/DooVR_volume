@@ -547,54 +547,65 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 
+	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData)*vertexCap,
+							GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+	// Present our vertex <indices to OpenGL
+	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * triangleCap,
+						GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
 	for (int i = _olStart; i < (*_octList).size(); i++) {
 		_octant = (*_octList)[i];
-		if (_octant->vertices == -1)
+		if (_octant->triangles == nullptr)
 			continue;
 
-		vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, sizeof(dBufferData) * _octant->vertices * V_ROW_MAX, sizeof(dBufferData)*V_ROW_MAX,
-			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-
-		for (int k = 0; k < V_ROW_MAX; k++) {
-			vertexP[k].x = vertexArray[_octant->vertices][k].xyz[0];
-			vertexP[k].y = vertexArray[_octant->vertices][k].xyz[1];
-			vertexP[k].z = vertexArray[_octant->vertices][k].xyz[2];
-			//vertexP[k].nx = vertexArray[_octant->vertices][k].nxyz[0];
-			//vertexP[k].ny = vertexArray[_octant->vertices][k].nxyz[1];
-			//vertexP[k].nz = vertexArray[_octant->vertices][k].nxyz[2];
+		if (_octant->vertices[0] != -1){
+			vertexP[_octant->vertices[0]].x = (*vertexArray[_octant->vertices[0]]).xyz[0];
+			vertexP[_octant->vertices[0]].y = (*vertexArray[_octant->vertices[0]]).xyz[1];
+			vertexP[_octant->vertices[0]].z = (*vertexArray[_octant->vertices[0]]).xyz[2];
 		}
-		glUnmapBuffer(GL_ARRAY_BUFFER);
-
-		// Specify how many attribute arrays we have in our VAO
-		glEnableVertexAttribArray(0); // Vertex coordinates
-		glEnableVertexAttribArray(1); // Normals
-
-		// Specify how OpenGL should interpret the vertex buffer data:
-		// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
-		// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
-		// Type GL_FLOAT
-		// Not normalized (GL_FALSE)
-		// Stride 8 (interleaved array with 8 floats per vertex)
-		// Array buffer offset 0, 3, 6 (offset into first vertex)
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-			sizeof(dBufferData), (void*)0); // xyz coordinates
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-			sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
-
-		// Present our vertex <indices to OpenGL
-		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle) * _octant->triangles * T_ROW_MAX, sizeof(triangle) * T_ROW_MAX,
-			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-
-		for (int k = 0; k < T_ROW_MAX; k++) {
-			indexP[k].index[0] = triangleArray[_octant->triangles][k].index[0];
-			indexP[k].index[1] = triangleArray[_octant->triangles][k].index[1];
-			indexP[k].index[2] = triangleArray[_octant->triangles][k].index[2];
+			
+		if (_octant->vertices[1] != -1){
+			vertexP[_octant->vertices[1]].x = (*vertexArray[_octant->vertices[1]]).xyz[0];
+			vertexP[_octant->vertices[1]].y = (*vertexArray[_octant->vertices[1]]).xyz[1];
+			vertexP[_octant->vertices[1]].z = (*vertexArray[_octant->vertices[1]]).xyz[2];
 		}
-
-		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-
 		
+		if (_octant->vertices[2] != -1){
+			vertexP[_octant->vertices[2]].x = (*vertexArray[_octant->vertices[2]]).xyz[0];
+			vertexP[_octant->vertices[2]].y = (*vertexArray[_octant->vertices[2]]).xyz[1];
+			vertexP[_octant->vertices[2]].z = (*vertexArray[_octant->vertices[2]]).xyz[2];
+		}
+		//vertexP[k].nx = vertexArray[_octant->vertices][k].nxyz[0];
+		//vertexP[k].ny = vertexArray[_octant->vertices][k].nxyz[1];
+		//vertexP[k].nz = vertexArray[_octant->vertices][k].nxyz[2];
+
+		for (int k = 0; k < _octant->tCount; k++) {
+			indexP[_octant->triangles[k]].index[0] = (*triangleArray[_octant->triangles[k]]).index[0];
+			indexP[_octant->triangles[k]].index[1] = (*triangleArray[_octant->triangles[k]]).index[1];
+			indexP[_octant->triangles[k]].index[2] = (*triangleArray[_octant->triangles[k]]).index[2];
+		}
 	}
+
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+
+	// Specify how many attribute arrays we have in our VAO
+	glEnableVertexAttribArray(0); // Vertex coordinates
+	glEnableVertexAttribArray(1); // Normals
+
+	// Specify how OpenGL should interpret the vertex buffer data:
+	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+	// Type GL_FLOAT
+	// Not normalized (GL_FALSE)
+	// Stride 8 (interleaved array with 8 floats per vertex)
+	// Array buffer offset 0, 3, 6 (offset into first vertex)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)0); // xyz coordinates
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+
+	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
 	// Deactivate (unbind) the VAO and the buffers again.
 	// Do NOT unbind the buffers while the VAO is still bound.
@@ -607,69 +618,56 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 
 
 void DynamicMesh::updateRemovedOGLData(int _vStart, int _tStart) {
-	//TODO: FIXA
-	const int V_ROW_MAX = 3;
-	const int T_ROW_MAX = 5;
-
 	triangle* indexP;
 	dBufferData* vertexP;
-
-	int index;
 
 	// Activate the vertex buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 
-	// Activate the index buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) * vertexCap,
+		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	for (int i = _vStart; i < emptyVStack.size(); i++) {
 
-		index = emptyVStack[i];
+		vertexP[emptyVStack[i]].x = 0.0f;
+		vertexP[emptyVStack[i]].y = 0.0f;
+		vertexP[emptyVStack[i]].z = 0.0f;
+		vertexP[emptyVStack[i]].nx = 0.0f;
+		vertexP[emptyVStack[i]].ny = 0.0f;
+		vertexP[emptyVStack[i]].nz = 0.0f;
+	}
+	glUnmapBuffer(GL_ARRAY_BUFFER);
 
-		vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, sizeof(dBufferData) * index * V_ROW_MAX, sizeof(dBufferData) * V_ROW_MAX,
-												 GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	// Specify how many attribute arrays we have in our VAO
+	glEnableVertexAttribArray(0); // Vertex coordinates
+	glEnableVertexAttribArray(1); // Normals
 
-		for (int k = 0; k < V_ROW_MAX; k++) {
-			vertexP[k].x = 0.0f;
-			vertexP[k].y = 0.0f;
-			vertexP[k].z = 0.0f;
-			vertexP[k].nx = 0.0f;
-			vertexP[k].ny = 0.0f;
-			vertexP[k].nz = 0.0f;
-		}
-		glUnmapBuffer(GL_ARRAY_BUFFER);
+	// Specify how OpenGL should interpret the vertex buffer data:
+	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+	// Type GL_FLOAT
+	// Not normalized (GL_FALSE)
+	// Stride 8 (interleaved array with 8 floats per vertex)
+	// Array buffer offset 0, 3, 6 (offset into first vertex)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)0); // xyz coordinates
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
 
-		// Specify how many attribute arrays we have in our VAO
-		glEnableVertexAttribArray(0); // Vertex coordinates
-		glEnableVertexAttribArray(1); // Normals
+	// Activate the index buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 
-		// Specify how OpenGL should interpret the vertex buffer data:
-		// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
-		// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
-		// Type GL_FLOAT
-		// Not normalized (GL_FALSE)
-		// Stride 8 (interleaved array with 8 floats per vertex)
-		// Array buffer offset 0, 3, 6 (offset into first vertex)
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-			sizeof(dBufferData), (void*)0); // xyz coordinates
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-			sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * triangleCap,
+		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-		// Present our vertex <indices to OpenGL
-		index = emptyTStack[i];
-		
-		indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangle) * index * T_ROW_MAX, sizeof(triangle) * T_ROW_MAX,
-			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-		//TODO: kolla om det här är legit
-		for (int k = 0; k < T_ROW_MAX; k++) {
-			indexP[k].index[0] = 0;
-			indexP[k].index[1] = 0;
-			indexP[k].index[2] = 0;
-		}
-
-		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	for (int i = _tStart; i < emptyTStack.size(); i++) {
+		indexP[emptyTStack[i]].index[0] = 0;
+		indexP[emptyTStack[i]].index[1] = 0;
+		indexP[emptyTStack[i]].index[2] = 0;
 	}
 
+	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	
 	// Deactivate (unbind) the VAO and the buffers again.
 	// Do NOT unbind the buffers while the VAO is still bound.
 	// The index buffer is an essential part of the VAO state.
@@ -755,7 +753,7 @@ void DynamicMesh::render() {
 	const int T_ROW_MAX = 5;
 	glBindVertexArray(vao);
 
-	glDrawElements(GL_TRIANGLES, (triangleCap*T_ROW_MAX) * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_TRIANGLES, triangleCap * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex uN, type, element array buffer offset)
 	glBindVertexArray(0);
 }
@@ -1057,6 +1055,39 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 			oNeighbor[i] = tmpOct;
 		}
+		
+		//TODO: remove and do this always. remember to set _octant->tCount = 0
+		//check if data is allocated or not and then start using allocated data
+		if (_octant->triangles != nullptr) {
+
+			//delete old vertex data
+			if (_octant->vertices[0] != -1){
+				delete vertexArray[_octant->vertices[0]];
+				emptyVStack.push_back(_octant->vertices[0]);
+				_octant->vertices[0] = -1;
+			}
+			if (_octant->vertices[1] != -1){
+				delete vertexArray[_octant->vertices[1]];
+				emptyVStack.push_back(_octant->vertices[1]);
+				_octant->vertices[1] = -1;
+			}
+			if (_octant->vertices[2] != -1){
+				delete vertexArray[_octant->vertices[2]];
+				emptyVStack.push_back(_octant->vertices[2]);
+				_octant->vertices[2] = -1;
+			}
+			//vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
+
+			//delete old triangle data 
+			for (int i = 0; i < _octant->tCount; i++){
+				delete triangleArray[_octant->triangles[i]];
+				emptyTStack.push_back(_octant->triangles[i]);
+			}
+			_octant->tCount = 0;
+			delete[] _octant->triangles;
+			_octant->triangles = nullptr;
+			//triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
+		}
 
 		// MC algorithm \_____________________________________________________________________
 		// create the first voxel ============================================================
@@ -1123,53 +1154,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		if (edgeTable[cubeIndex] != 0) {
 			tCounter = 0;
 
-			//check if data is allocated or not and then start using allocated data
-			if (_octant->triangles == nullptr) {
-				////new vertices
-				//if (emptyVStack.size() == 0) {
-				//	_octant->vertices = vertexCap;
-				//	vertexCap++;
-				//}
-				//else {
-				//	_octant->vertices = emptyVStack.back();
-				//	emptyVStack.pop_back();
-				//}
-				//vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
-
-				////new triangles
-				//if (emptyTStack.size() == 0) {
-				//	_octant->triangles = triangleCap;
-				//	triangleCap++;
-				//}
-				//else {
-				//	_octant->triangles = emptyTStack.back();
-				//	emptyTStack.pop_back();
-				//}
-				//triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
-			}
-			//TODO: move outside cubeindex if 
-			else {
-				//delete old vertex data
-				delete vertexArray[_octant->vertices[0]];
-				emptyVStack.push_back(_octant->vertices[0]);
-				//_octant->vertices[0] = -1;
-				delete vertexArray[_octant->vertices[1]];
-				emptyVStack.push_back(_octant->vertices[1]);
-				//_octant->vertices[1] = -1;
-				delete vertexArray[_octant->vertices[2]];
-				emptyVStack.push_back(_octant->vertices[2]);
-				//_octant->vertices[2] = -1;
-				//vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
-
-				//delete old triangle data 
-				for (int i = 0; i < _octant->tCount; i++){
-					delete triangleArray[_octant->triangles[i]];
-					emptyTStack.push_back(_octant->triangles[i]);
-				}
-				//triangleArray[_octant->triangles] = new triangle[T_ROW_MAX];
-			}
-
-
 			// Find the vertices where the surface intersects the cube--------------------
 
 			//inherit vertex indices from local variable ---------------------------------
@@ -1180,7 +1164,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			if (edgeTable[cubeIndex] & 1) {
 				vertList[0] = oNeighbor[1]->vertices[1];// *V_ROW_MAX + 1;
 			}
-
 			if (edgeTable[cubeIndex] & 2) {
 				vertList[1] = oNeighbor[2]->vertices[0];// *V_ROW_MAX;
 			}
@@ -1195,6 +1178,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 			if (edgeTable[cubeIndex] & 32) {
 				//assign new vertex index and allocate data
+				//TODO: remove this bugtest
 				if (emptyVStack.size() == 0) {
 					_octant->vertices[0] = vertexCap;
 					vertexCap++;
@@ -1213,6 +1197,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 			if (edgeTable[cubeIndex] & 64) {
 				//assign new vertex index and allocate data
+				//TODO: remove this bugtest
 				if (emptyVStack.size() == 0) {
 					_octant->vertices[1] = vertexCap;
 					vertexCap++;
@@ -1240,6 +1225,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 			if (edgeTable[cubeIndex] & 1024) {
 				//assign new vertex index and allocate data
+				//TODO: remove this debugtest
 				if (emptyVStack.size() == 0) {
 					_octant->vertices[2] = vertexCap;
 					vertexCap++;
@@ -1264,6 +1250,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
 				tmpTindex = i*0.34;
 
+				//TODO: remove this bugtest
 				if (emptyTStack.size() == 0) {
 					 tmpArray[tmpTindex] = triangleCap;
 					triangleCap++;
@@ -1272,7 +1259,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 					tmpArray[tmpTindex] = emptyTStack.back();
 					emptyTStack.pop_back();
 				}
-
+				triangleArray[tmpArray[tmpTindex]] = new triangle;
 				(*triangleArray[tmpArray[tmpTindex]]).index[0] = vertList[triTable[cubeIndex][i]];
 				(*triangleArray[tmpArray[tmpTindex]]).index[1] = vertList[triTable[cubeIndex][i + 1]];
 				(*triangleArray[tmpArray[tmpTindex]]).index[2] = vertList[triTable[cubeIndex][i + 2]];
@@ -1285,16 +1272,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			for (int i = 0; i < _octant->tCount; i++){
 				_octant->triangles[i] = tmpArray[i];
 			}
-
-		}
-		//TODO: remove and do this always. remember to set _octant->tCount = 0
-		else if (_octant->vertices != -1) {
-			emptyVStack.push_back(_octant->vertices);
-			emptyTStack.push_back(_octant->triangles);
-			delete[] vertexArray[_octant->vertices];
-			delete[] triangleArray[_octant->triangles];
-			_octant->vertices = -1;
-			_octant->triangles = -1;
 		}
 		_olStart++;
 	}

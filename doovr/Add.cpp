@@ -84,18 +84,6 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 
 	while (currentOct->depth < _ot->root->MAX_DEPTH) {//<-- reaching depth 6 --
 			
-		//check if data is alread filled
-		if (currentOct->data > _mesh->isoValue) {
-			if (olCounter >= octList.size()) {
-				maxReached = false;
-				break;
-			}
-			else {
-				currentOct = octList[olCounter];
-				olCounter++;
-				continue;
-			}
-		}
 		//check if children are allocated
 		if (currentOct->child[0] == nullptr) {
 			currentOct->partition();
@@ -145,42 +133,41 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		olCounter++;
 	}// -->
 
-	//check if the maximum depth was reached
-	if (maxReached) {
-		//<-- change selected iso values --
-		olCounter--;
-		olStart = olCounter;
-		tmpI = octList.size();
+	
+	//<-- change selected iso values --
+	olCounter--;
+	olStart = olCounter;
+	tmpI = octList.size();
 
-		int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
-		int hRes = (scalarNR - 1) / 2;
-		float dim = octList[olStart]->halfDim;
+	int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
+	int hRes = (scalarNR - 1) / 2;
+	float dim = octList[olStart]->halfDim;
 	
 
-		while (olCounter < tmpI) {
-			currentOct = octList[olCounter];
+	while (olCounter < tmpI) {
+		currentOct = octList[olCounter];
 
-			tmpPos[0] = currentOct->pos[0] + currentOct->halfDim;
-			tmpPos[1] = currentOct->pos[1] + currentOct->halfDim;
-			tmpPos[2] = currentOct->pos[2] + currentOct->halfDim;
-			linAlg::calculateVec(tmpPos, nwPos, tmpVec);
+		tmpPos[0] = currentOct->pos[0] + currentOct->halfDim;
+		tmpPos[1] = currentOct->pos[1] + currentOct->halfDim;
+		tmpPos[2] = currentOct->pos[2] + currentOct->halfDim;
+		linAlg::calculateVec(tmpPos, nwPos, tmpVec);
 
-			if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
-				currentOct->data = 255;
-				currentOct->isoBool = true;
-			}
-			olCounter++;
-		}// -->
+		if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
+			currentOct->data = 255;
+			currentOct->isoBool = true;
+		}
+		olCounter++;
+	}// -->
 
-   		olCounter = olStart;
+   	olCounter = olStart;
 
-		_mesh->generateMC(&octList, olStart);
-		_mesh->updateOGLData(&octList, olStart);
-	}
+	_mesh->generateMC(&octList, olStart);
+	_mesh->updateOGLData(&octList, olStart);
+	
 
 	// update removed vertexbuffer data that was not reused
-	if (_mesh->emptyVStack.size() > emptyVStackInitSize) {
-		_mesh->updateRemovedOGLData(emptyVStackInitSize, emptyTStackInitSize);
+	if (_mesh->emptyVStack.size() > emptyVStackInitSize || _mesh->emptyTStack.size() > emptyTStackInitSize) {
+	//	_mesh->updateRemovedOGLData(emptyVStackInitSize, emptyTStackInitSize);
 	}
 }
 
