@@ -54,8 +54,6 @@ MenuItem::MenuItem(float x, float y, float z, float dX, float dZ, int tX, int tY
 	glEnableVertexAttribArray(1); // Normals
 	glEnableVertexAttribArray(2); // Texture coordinates
 
-
-
 	// Specify how OpenGL should interpret the vertex buffer data:
 	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
 	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
@@ -169,6 +167,25 @@ MenuItem::~MenuItem() {
 	std::cout << "A menuItem has died." << std::endl;
 	delete[] vertexarray;
 	delete[] indexarray;
+	clean();
+}
+
+void MenuItem::clean() {
+
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
+
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
 }
 
 void MenuItem::render() {

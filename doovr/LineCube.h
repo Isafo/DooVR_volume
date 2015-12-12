@@ -8,5 +8,8 @@ public:
 	~LineCube();
 
 	void render();
+
+private:
+	void clean();
 };
 

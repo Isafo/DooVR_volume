@@ -69,6 +69,25 @@ Line::Line(float pX, float pY, float pZ, float length) {
 Line::~Line() {
 	delete[] vertexarray;
 	delete[] indexarray;
+	clean();
+}
+
+void Line::clean() {
+
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
+
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
 }
 
 void Line::render() {

@@ -4,17 +4,32 @@
 #include <string>
 #include <iostream>
 
-StaticMesh::StaticMesh()
-{
+StaticMesh::StaticMesh() {
 }
 
 
-StaticMesh::~StaticMesh()
-{
+StaticMesh::~StaticMesh() {
 	//delete[] vertexArray;
 	//delete[] triangleArray;
+	//clean();
 }
 
+void StaticMesh::clean() {
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
+
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
+}
 
 void StaticMesh::render() {
 	glBindVertexArray(vao);

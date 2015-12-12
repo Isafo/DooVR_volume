@@ -25,7 +25,6 @@ public:
 	void move(float h);
 	void moveInstant(float h);
 	void GLcalls();
-	
 
 	void render();
 
@@ -38,5 +37,7 @@ private:
 	GLfloat *vertexarray; // Vertex array on interleaved format: x y z nx ny nz s t
 	GLuint *indexarray;   // Element index array
 	int function;
+
+	void clean();
 	void display(std::ostream& os) const;
 };

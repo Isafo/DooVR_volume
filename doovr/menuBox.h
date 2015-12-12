@@ -1,12 +1,9 @@
 #pragma once
 #include "Entity.h"
 
-class menuBox :
-	public Entity
-{
+class menuBox : public Entity {
 public:
-	menuBox()
-	{
+	menuBox() {
 		vao = 0;
 		vertexbuffer = 0;
 		indexbuffer = 0;
@@ -39,5 +36,6 @@ private:
 	float dim[3];
 	bool active = false;
 
+	void clean();
 	void display(std::ostream& os) const;
 };

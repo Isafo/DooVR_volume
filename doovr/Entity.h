@@ -10,10 +10,8 @@
 
 #include "Utilities.h"
 
-class Entity
-{
+class Entity {
 	public:
-		//getters
 		char getOtype(){ return oType; }
 
 		float* getPosition(){ return position; }
