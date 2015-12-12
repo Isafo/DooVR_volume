@@ -39,5 +39,7 @@ class MenuItem : public Entity {
 
 	float dim[2];
 	bool active = false;
+
+	void clean();
 };
 

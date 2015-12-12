@@ -29,4 +29,6 @@ class TrackingRange : public Entity {
 	GLuint indexbuffer;  // Buffer ID to bind to GL_ELEMENT_ARRAY_BUFFER
 	GLfloat *vertexarray; // Vertex array on interleaved format: x y z nx ny nz s t
 	GLuint *indexarray;   // Element index array
+
+	void clean();
 };

@@ -33,4 +33,5 @@ private:
 	GLuint *indexarray;   // Element index array
 
 	void display(std::ostream& os) const;
+	void clean();
 };

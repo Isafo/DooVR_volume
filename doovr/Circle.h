@@ -10,5 +10,8 @@ public:
 
 	void render();
 
+private:
+	void clean();
+
 };
 

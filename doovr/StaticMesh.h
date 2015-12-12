@@ -31,5 +31,6 @@ public:
 
 private:
 	texCoords* texArray;
+	void clean();
 };
 

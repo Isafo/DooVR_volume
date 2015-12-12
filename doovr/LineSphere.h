@@ -9,5 +9,9 @@ public:
 	~LineSphere();
 
 	void render();
+
+private:
+	void clean();
+
 };
 

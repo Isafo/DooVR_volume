@@ -1,14 +1,12 @@
 #include "hexBox.h"
 
-hexBox::hexBox(float x, float y, float z, float tX, float tY)
-{
+hexBox::hexBox(float x, float y, float z, float tX, float tY) {
 	oType = 'H';
 	function = -1;
 	position[0] = x;
 	position[1] = y;
 	position[2] = z;
 	float radius = 0.0465f;
-
 
 	GLfloat vertex_array_data[] = {
 		//						Vertex									Normals										Texture  
@@ -35,8 +33,6 @@ hexBox::hexBox(float x, float y, float z, float tX, float tY)
 		radius/2.0f + x,		-3.0f,	-radius*0.86f + z,		 0.0f, 0.0f, -1.0f,								 49.0f/1024.0f, 0.52f,
 		-radius/2.0f + x,		-3.0f,	-radius*0.86f + z,		 0.0f, 0.0f, -1.0f,								 96.0f/1024.0f, 0.51f,
 		-radius + x,			-3.0f,	0.0f + z,				 -1.0f, 0.0f, 0.0f,								 49.0f/1024.0f, 0.52f,
-
-
 	};
 
 	static const GLuint index_array_data[] = {
@@ -94,18 +90,32 @@ hexBox::hexBox(float x, float y, float z, float tX, float tY)
 }
 
 
-hexBox::~hexBox(void)
-{
+hexBox::~hexBox(void) {
 	//cout << "A hexbox has died." << endl;
 	delete[] vertexarray;
 	delete[] indexarray;
+	clean();
 }
 
+void hexBox::clean() {
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
 
-void hexBox::move(float f)
-{
-	for (int i = 1; i < 105; i = i + 8)
-	{
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
+}
+
+void hexBox::move(float f) {
+	for (int i = 1; i < 105; i = i + 8) {
 		if (vertexarray[i] < f)
 			vertexarray[i] += 0.04f*(f - vertexarray[i]);
 		else
@@ -117,10 +127,8 @@ void hexBox::move(float f)
 	GLcalls();
 }
 
-void hexBox::moveInstant(float f) 
-{
-	for (int i = 1; i < 105; i = i + 8)
-	{
+void hexBox::moveInstant(float f) {
+	for (int i = 1; i < 105; i = i + 8) {
 		vertexarray[i] = f;
 	}
 	//position[0] = vertexarray[48];
@@ -129,8 +137,7 @@ void hexBox::moveInstant(float f)
 	GLcalls();
 }
 
-void hexBox::GLcalls()
-{
+void hexBox::GLcalls() {
 	// Activate the vertex buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	// Present our vertex coordinates to OpenGL
@@ -168,17 +175,14 @@ void hexBox::GLcalls()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void hexBox::render()
-{
+void hexBox::render() {
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, 3 * ntris, GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex count, type, element array buffer offset)
 	glBindVertexArray(0);
 }
 
-void hexBox::display(std::ostream& os) const
-{
+void hexBox::display(std::ostream& os) const {
 	os << "Shape: hexBox" << std::endl;
 	os << position[1] << std::endl;
-
 }

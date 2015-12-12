@@ -3,8 +3,7 @@
 
 #define EPSILON 0.000001
 
-Drag::Drag(DynamicMesh* mesh, Wand* wand)
-{
+Drag::Drag(DynamicMesh* mesh, Wand* wand) {
 	selectedVertices = new int[MAX_SELECTED]; selectedSize = 0;
 	previouslySelectedVertices = new int[MAX_SELECTED]; previouslySelectedSize = 0;
 
@@ -44,17 +43,15 @@ Drag::Drag(DynamicMesh* mesh, Wand* wand)
 }
 
 
-Drag::~Drag()
-{
-	delete selectedVertices;
-	delete previouslySelectedVertices;
+Drag::~Drag() {
+	delete[] selectedVertices;
+	delete[] previouslySelectedVertices;
 	delete toolBrush;
 	delete pointer;
 	delete iCircle;
 }
 
-void Drag::renderIntersection(MatrixStack* MVstack, GLint locationMV)
-{
+void Drag::renderIntersection(MatrixStack* MVstack, GLint locationMV) {
 
 	linAlg::crossProd(tempVec, intersection.nxyz, zVec);
 	linAlg::normVec(tempVec);
@@ -73,9 +70,7 @@ void Drag::renderIntersection(MatrixStack* MVstack, GLint locationMV)
 	MVstack->pop();
 }
 
-void Drag::render(MatrixStack* MVstack, GLint locationMV)
-{
-
+void Drag::render(MatrixStack* MVstack, GLint locationMV) {
 	MVstack->push();
 	MVstack->translate(lineOffset);
 	glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack->getCurrentMatrix());
@@ -91,8 +86,7 @@ void Drag::render(MatrixStack* MVstack, GLint locationMV)
 }
 
 
-void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
-{
+void Drag::firstSelect(DynamicMesh* mesh, Wand* wand) {
 	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
 	float eVec1[3]; float eVec2[3];
 	float P[3]; float Q[3]; float T[3];
@@ -144,16 +138,14 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 		linAlg::calculateVec(eVec1, Dirr, eVec2);
 		oLength = linAlg::vecLength(eVec2);
 		// 2.2 >----------------------
-		if (pLength > 0.0f && oLength < mMAX_LENGTH)
-		{
+		if (pLength > 0.0f && oLength < mMAX_LENGTH) {
 			selectedVertices[selectedSize] = i; selectedSize++;
 			success = true;
 		}
 	}
 	// 2.0 >----------------------
 
-	if (!success) 
-	{
+	if (!success) {
 		deSelect();
 		mesh->updateOGLData();
 		return;
@@ -169,30 +161,25 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 		do {
 			tempE = mEdgeArray[mEdgeArray[tempEdge].nextEdge].sibling;
 
-			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected != 1.0f)
-			{
+			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected != 1.0f) {
 				linAlg::calculateVec(mVertexArray[mEdgeArray[tempEdge].vertex].xyz, mVertexArray[index2].xyz, eVec1);
 				linAlg::calculateVec(mVertexArray[mEdgeArray[tempE].vertex].xyz, mVertexArray[index2].xyz, eVec2);
 				linAlg::crossProd(P, newDirr, eVec2);
 
 				pLength = linAlg::dotProd(eVec1, P);
-				if (pLength < -EPSILON || pLength > EPSILON)
-				{
+				if (pLength < -EPSILON || pLength > EPSILON) {
 					invP = 1.f / pLength;
 					linAlg::calculateVec(newWPoint, mVertexArray[index2].xyz, T);
 
 					u = linAlg::dotProd(T, P) * invP;
-					if (u > 0.0f && u < 1.0f)
-					{
+					if (u > 0.0f && u < 1.0f) {
 						linAlg::crossProd(Q, T, eVec1);
 
 						v = linAlg::dotProd(newDirr, Q)*invP;
 
-						if (v > 0.0f && u + v < 1.0f)
-						{
+						if (v > 0.0f && u + v < 1.0f) {
 							t = linAlg::dotProd(eVec2, Q)*invP;
-							if (t > EPSILON && t < 0.1f )
-							{
+							if (t > EPSILON && t < 0.1f ) {
 								//sIt->next->index = e[tempEdge].triangle;
 								tempVec[0] = newDirr[0] * t;
 								tempVec[1] = newDirr[1] * t;
@@ -223,8 +210,7 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 	}
 
 
-	if (!success)
-	{
+	if (!success) {
 		deSelect();
 		mesh->updateOGLData();
 		return;
@@ -288,8 +274,7 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 		} while (tempEdge != mVInfoArray[index2].edgePtr);
 
 	}
-/*		for (int i = 0; i < selectedSize; i++)
-	{
+/*	for (int i = 0; i < selectedSize; i++) {
 		mVInfoArray[selectedVertices[i]].selected = 0.0f;
 	}*/
 	
@@ -298,8 +283,7 @@ void Drag::firstSelect(DynamicMesh* mesh, Wand* wand)
 }
 
 
-void Drag::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
-{
+void Drag::moveVertices(DynamicMesh* mesh, Wand* wand, float dT) {
 	deSelect();
 
 	float eVec1[3]; float eVec2[3];
@@ -382,8 +366,7 @@ void Drag::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 
 		mLength = linAlg::vecLength(tempVec1);
 
-		if (mLength <  radius)
-		{
+		if (mLength <  radius) {
 			vNorm = mVertexArray[i].nxyz;
 			selectedVertices[selectedSize] = i; selectedSize++;
 
@@ -434,16 +417,13 @@ void Drag::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 	mesh->updateOGLData();
 
 }
-void Drag::deSelect()
-{
-	for (int i = 0; i < previouslySelectedSize; i++)
-	{
+void Drag::deSelect() {
+	for (int i = 0; i < previouslySelectedSize; i++) {
 		mVInfoArray[previouslySelectedVertices[i]].selected = 0.0f;
 	}
 	previouslySelectedSize = 0;
 
-	for (int i = 0; i < selectedSize; i++)
-	{
+	for (int i = 0; i < selectedSize; i++) {
 		mVInfoArray[selectedVertices[i]].selected = 0.0f;
 	}
 	selectedSize = 0;

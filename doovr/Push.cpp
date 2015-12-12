@@ -3,8 +3,7 @@
 #include "math.h"
 
 
-Push::Push(DynamicMesh* mesh, Wand* wand)
-{
+Push::Push(DynamicMesh* mesh, Wand* wand) {
 	selectedVertices = new int[MAX_SELECTED]; selectedSize = 0;
 
 
@@ -24,14 +23,13 @@ Push::Push(DynamicMesh* mesh, Wand* wand)
 }
 
 
-Push::~Push()
-{
-	delete selectedVertices;
+Push::~Push() {
+	delete[] selectedVertices;
 	delete toolBrush;
 }
 
 
-void Push::render(MatrixStack* MVstack, GLint locationMV){
+void Push::render(MatrixStack* MVstack, GLint locationMV) {
 
 	MVstack->push();
 		MVstack->scale(radius);
@@ -45,8 +43,7 @@ void Push::renderIntersection(MatrixStack* MVstack, GLint locationMV) {
 
 }
 
-void Push::firstSelect(DynamicMesh* mesh, Wand* wand)
-{
+void Push::firstSelect(DynamicMesh* mesh, Wand* wand) {
 	float newWPoint[4];
 	float Dirr[4]; float newDirr[4];
 	float tempVec1[3]; float tempVec2[3];
@@ -62,8 +59,7 @@ void Push::firstSelect(DynamicMesh* mesh, Wand* wand)
 
 	float mLength;
 
-	for (int i = 0; i < selectedSize; i++)
-	{
+	for (int i = 0; i < selectedSize; i++) {
 		mVInfoArray[selectedVertices[i]].selected = 0.0f;
 	}
 	selectedSize = 0;
@@ -93,8 +89,7 @@ void Push::firstSelect(DynamicMesh* mesh, Wand* wand)
 		// 2.1 >---------------------
 		mLength = linAlg::vecLength(tempVec1);
 		// 2.2 >----------------------
-		if (mLength <  radius)
-		{
+		if (mLength <  radius) {
 			//--< 2.3 | add the found vertex to list of selected vertices and mark it as selected 
 			//changedVertices.push_back(i);
 			selectedVertices[selectedSize] = i; selectedSize++;
@@ -138,7 +133,7 @@ void Push::firstSelect(DynamicMesh* mesh, Wand* wand)
 	
 
 }
-void Push::moveVertices(DynamicMesh* mesh, Wand* wand, float dT){
+void Push::moveVertices(DynamicMesh* mesh, Wand* wand, float dT) {
 	float newWPoint[4];
 	float Dirr[4]; float newDirr[4];
 	float tempVec1[3]; float tempVec2[3];
@@ -183,8 +178,7 @@ void Push::moveVertices(DynamicMesh* mesh, Wand* wand, float dT){
 
 		mLength = linAlg::vecLength(tempVec1);
 
-		if (mLength <  radius)
-		{
+		if (mLength <  radius) {
 			vNorm = mVertexArray[i].nxyz;
 			selectedVertices[selectedSize] = i; selectedSize++;
 
@@ -194,7 +188,6 @@ void Push::moveVertices(DynamicMesh* mesh, Wand* wand, float dT){
 			mVertexArray[i].xyz[1] = newWPoint[1] + tempVec1[1] * radius;
 			mVertexArray[i].xyz[2] = newWPoint[2] + tempVec1[2] * radius;
 			break;
-
 		}
 	}
 
@@ -231,10 +224,9 @@ void Push::moveVertices(DynamicMesh* mesh, Wand* wand, float dT){
 
 	mesh->updateArea(selectedVertices, selectedSize);
 }
-void Push::deSelect(){
+void Push::deSelect() {
 	
-	for (int i = 0; i < selectedSize; i++)
-	{
+	for (int i = 0; i < selectedSize; i++) {
 		mVInfoArray[selectedVertices[i]].selected = 0.0f;
 	}
 	selectedSize = 0;

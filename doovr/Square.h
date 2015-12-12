@@ -9,5 +9,9 @@ public:
 	~Square();
 
 	void render();
+
+private:
+	void clean();
+
 };
 

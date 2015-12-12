@@ -13,6 +13,25 @@ TrackingRange::~TrackingRange(void) {
 	std::cout << "A TrackingRange has died." << std::endl;
 	delete[] vertexarray;
 	delete[] indexarray;
+	clean();
+}
+
+void TrackingRange::clean() {
+
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
+
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
 }
 
 void TrackingRange::createBox(float xSize, float ySize, float zSize) {
