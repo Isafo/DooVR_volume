@@ -3,7 +3,6 @@
 #include "linAlg.h"
 #include "Mesh.h"
 #include "Wand.h"
-#include "scalarField.h"
 #include "Octant.h"
 
 #include <vector>

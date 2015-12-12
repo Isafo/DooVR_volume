@@ -11,6 +11,8 @@ StaticMesh::StaticMesh()
 
 StaticMesh::~StaticMesh()
 {
+	//delete[] vertexArray;
+	//delete[] triangleArray;
 }
 
 

@@ -11,6 +11,8 @@ TrackingRange::TrackingRange(float x, float y, float z, float dX, float dY, floa
 
 TrackingRange::~TrackingRange(void) {
 	std::cout << "A TrackingRange has died." << std::endl;
+	delete[] vertexarray;
+	delete[] indexarray;
 }
 
 void TrackingRange::createBox(float xSize, float ySize, float zSize) {

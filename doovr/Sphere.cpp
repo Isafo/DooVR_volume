@@ -62,6 +62,8 @@ void Sphere::render()
 Sphere::~Sphere(void)
 {
 	std::cout << "A sphere has died" << std::endl;
+	delete[] vertexarray;
+	delete[] indexarray;
 	clean();
 }
 

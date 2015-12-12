@@ -382,7 +382,19 @@ DynamicMesh::DynamicMesh(std::string fileName) {
 
 
 DynamicMesh::~DynamicMesh(void) {
+	//delete vertexArray
+	for (int i = 0; i < vertexCap; i++){
+		if (vertexArray[i] != nullptr)
+			delete vertexArray[i];
+	}
+	delete[] vertexArray;
 
+	//delete triangleArray
+	for (int i = 0; i < triangleCap; i++){
+		if (triangleArray[i] != nullptr)
+			delete triangleArray[i];
+	}
+	delete[] triangleArray;
 }
 
 
@@ -1251,8 +1263,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 				tmpTindex = i*0.34;
 
 				//TODO: remove this bugtest
-				if (emptyTStack.size() == 0) {
-					 tmpArray[tmpTindex] = triangleCap;
+				if  (emptyTStack.size() == 0) {
+					tmpArray[tmpTindex] = triangleCap;
 					triangleCap++;
 				}
 				else {

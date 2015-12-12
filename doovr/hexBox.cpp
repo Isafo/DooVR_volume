@@ -97,6 +97,8 @@ hexBox::hexBox(float x, float y, float z, float tX, float tY)
 hexBox::~hexBox(void)
 {
 	//cout << "A hexbox has died." << endl;
+	delete[] vertexarray;
+	delete[] indexarray;
 }
 
 

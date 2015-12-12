@@ -3,6 +3,7 @@
 #include "DynamicMesh.h"
 
 
+
 Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim) {
 	/*if (_depth != MAX_DEPTH) {
 		data = new unsigned char**[1];

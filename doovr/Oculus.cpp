@@ -19,7 +19,6 @@
 
 #include "DynamicMesh.h"
 #include "StaticMesh.h"
-#include "scalarField.h"
 #include "Octree.h"
 
 #include "Circle.h"
@@ -50,6 +49,7 @@
 #include <OVR/OVR_CAPI_GL.h>
 //#include <OVR/Win32_GLAppUtil.h> //needed for OVR GL structs.
 
+#include "vld\vld.h"
 
 struct DepthBuffer
 {
@@ -728,7 +728,7 @@ int Oculus::runOvr() {
 
 	
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
-	ScalarField sTest(128, 128, 128, 0.1, 0.1, 0.1);
+	//ScalarField sTest(128, 128, 128, 0.1, 0.1, 0.1);
 	Octree* oTest = new Octree(1.0f);
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
@@ -2187,6 +2187,17 @@ int Oculus::runOvr() {
 	ovr_Destroy(HMD);
 	ovr_Shutdown();
 
+	//delete eyeRenderTexture[0]; delete eyeRenderTexture[1];
+	//delete eyeDepthBuffer[0]; delete eyeDepthBuffer[1];
+
+	/*for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++)
+		delete modellingButton[i];
+
+	delete modellingButtonFrame;
+
+	for (int i = 0; i < 3; i++)
+		delete modellingButtonString[i];*/
+	
 	return 1;
 }
 

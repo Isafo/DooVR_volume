@@ -11,6 +11,8 @@ Box::Box(float x, float y, float z, float dX, float dY, float dZ) {
 
 Box::~Box(void) {
 	std::cout << "A box has died." << std::endl;
+	delete[] vertexarray;
+	delete[] indexarray;
 }
 
 void Box::createBox(float dX, float dY, float dZ) {

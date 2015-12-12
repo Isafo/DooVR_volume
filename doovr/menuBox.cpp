@@ -115,6 +115,8 @@ menuBox::menuBox(float x, float y, float z, float dX, float dY, float dZ, int tX
 
 menuBox::~menuBox(void) {
 	std::cout << "A box has died." << std::endl;
+	//delete[] vertexarray;
+	//delete[] indexarray;
 }
 
 void menuBox::setDim(float x, float y, float z) {
