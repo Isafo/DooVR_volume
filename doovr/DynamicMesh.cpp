@@ -1190,8 +1190,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 			if (edgeTable[cubeIndex] & 32) {
 				//assign new vertex index and allocate data
-				//TODO: remove this bugtest
-				if (emptyVStack.size() == 0) {
+				//TODO: remove this bugtest (true) {//
+				if (true) {// (emptyVStack.size() == 0) {
 					_octant->vertices[0] = vertexCap;
 					vertexCap++;
 				}
@@ -1210,7 +1210,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			if (edgeTable[cubeIndex] & 64) {
 				//assign new vertex index and allocate data
 				//TODO: remove this bugtest
-				if (emptyVStack.size() == 0) {
+				if (true) {//(emptyVStack.size() == 0) {
 					_octant->vertices[1] = vertexCap;
 					vertexCap++;
 				}
@@ -1238,7 +1238,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			if (edgeTable[cubeIndex] & 1024) {
 				//assign new vertex index and allocate data
 				//TODO: remove this debugtest
-				if (emptyVStack.size() == 0) {
+				if (true) {//(emptyVStack.size() == 0) {
 					_octant->vertices[2] = vertexCap;
 					vertexCap++;
 				}
@@ -1263,7 +1263,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 				tmpTindex = i*0.34;
 
 				//TODO: remove this bugtest
-				if  (emptyTStack.size() == 0) {
+				if (true) {// (emptyTStack.size() == 0) {
 					tmpArray[tmpTindex] = triangleCap;
 					triangleCap++;
 				}
@@ -1278,12 +1278,46 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 				_octant->tCount++;
 			}
+			
 
 			// allocate triangle data and copy from tmp
 			_octant->triangles = new int[_octant->tCount + 1];
 			for (int i = 0; i < _octant->tCount; i++){
 				_octant->triangles[i] = tmpArray[i];
 			}
+		}
+		else {//Was entirely inside or outside isoSurface, parent octant needs to be checked to see if it should be deAllocated
+			
+			//TODO: ta bort if satsen som kolla listans storlek och gå istället till näst sista platsen i listan för att därefter behandla sista platsen enskilt. eventuellt...
+			//TODO:använd något annat än tCounter
+			if (_olStart < (*_octList).size() - 1){
+				// check if next octant in octlist have the same parent
+				if (_octant->parent != (*_octList)[_olStart + 1]->parent) {
+
+					tmpOct = _octant->parent;
+					tCounter = tmpOct->child[0]->tCount;
+					for (int i = 1; i < 8; i++){
+						tCounter += tmpOct->child[i]->tCount;
+					}
+					if (tCounter == 0){
+						tmpOct->deAllocate(this);
+						tmpOct->parent->checkHomogeneity();
+					}
+				}
+			}
+			else{
+				// check the last octant in octlist
+				tmpOct = _octant->parent;
+				tCounter = tmpOct->child[0]->tCount;
+				for (int i = 1; i < 8; i++){
+					tCounter += tmpOct->child[i]->tCount;
+				}
+				if (tCounter == 0){
+					tmpOct->deAllocate(this);
+					tmpOct->parent->checkHomogeneity();
+				}
+			}
+
 		}
 		_olStart++;
 	}

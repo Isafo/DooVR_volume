@@ -90,7 +90,7 @@ Octant::~Octant() {
 	}
 }
 
-
+//do NOT use on MAX_DEPTH octants
 void Octant::partition() {
 	float d = halfDim / 2.0f;
 	child[0] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] - d, d);
@@ -103,6 +103,7 @@ void Octant::partition() {
 	child[7] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] + d, d);
 }
 
+//do NOT use on MAX_DEPTH octants
 void Octant::deAllocate(DynamicMesh* _mesh) {
 	for (int i = 0; i < 8; i++) {
 
@@ -140,6 +141,22 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 		delete child[i];	
 	}
 	child[0] = nullptr;
+}
+
+//do NOT use on MAX_DEPTH or (MAX_DEPTH - 1)  octants
+void Octant::checkHomogeneity() {
+	//int count = 0;
+	for (int i = 0; i < 8; i++){
+		if (child[i]->child[0] != nullptr)
+			return;
+	}
+	for (int i = 0; i < 8; i++){
+		delete child[i];
+	}
+	child[0] = nullptr;
+
+	if (parent != nullptr)
+		parent->checkHomogeneity();
 }
 
 void Octant::findNeighbors(Octant* _oNeighbors[7]) {
