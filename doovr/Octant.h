@@ -22,8 +22,12 @@ public:
 
 	void partition();
 
+	void findNeighbors(Octant* _oNeighbors[7]);
+
 	//LineCube* shape;
 	void render(MatrixStack* MVstack, GLint locationMV);
+
+	
 
 	float pos[3];
 	float halfDim;

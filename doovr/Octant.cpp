@@ -142,6 +142,55 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 	child[0] = nullptr;
 }
 
+void Octant::findNeighbors(Octant* _oNeighbors[7]) {
+	float hDim = halfDim;
+	float fDim = hDim * 2;
+	float addDim = hDim - 0.001953125f;//minDim;
+	float cornerPos[3];
+	float nPos[7][3];
+	Octant* tmpOct;
+	cornerPos[0] = pos[0] + addDim;
+	cornerPos[1] = pos[1] + addDim;
+	cornerPos[2] = pos[2] + addDim;
+	//find neighbours -------------------------------------
+	//childOct->pos
+	nPos[0][0] = cornerPos[0] - fDim;	nPos[0][1] = cornerPos[1] - fDim;	nPos[0][2] = cornerPos[2] - fDim;
+	nPos[1][0] = cornerPos[0];			nPos[1][1] = cornerPos[1] - fDim;	nPos[1][2] = cornerPos[2] - fDim;
+	nPos[2][0] = cornerPos[0];			nPos[2][1] = cornerPos[1] - fDim;	nPos[2][2] = cornerPos[2];
+	nPos[3][0] = cornerPos[0] - fDim;	nPos[3][1] = cornerPos[1] - fDim;	nPos[3][2] = cornerPos[2];
+	nPos[4][0] = cornerPos[0] - fDim;	nPos[4][1] = cornerPos[1];			nPos[4][2] = cornerPos[2] - fDim;
+	nPos[5][0] = cornerPos[0];			nPos[5][1] = cornerPos[1];			nPos[5][2] = cornerPos[2] - fDim;
+	nPos[6][0] = cornerPos[0] - fDim;	nPos[6][1] = cornerPos[1];			nPos[6][2] = cornerPos[2];
+
+	for (int j = 0; j < 7; j++){
+		//TODO: replace temp values of thjs jf
+		if ((nPos[j][0] > 0.5f || nPos[j][0] < -0.5f ||
+			nPos[j][1] > 0.5f || nPos[j][1] < -0.5f ||
+			nPos[j][2] > 0.5f || nPos[j][2] < -0.5f)){
+			std::cout << "utanfor";
+		}
+
+		tmpOct = parent;
+		while (nPos[j][0] > tmpOct->pos[0] + tmpOct->halfDim || nPos[j][0] < tmpOct->pos[0] - tmpOct->halfDim ||
+			nPos[j][1] > tmpOct->pos[1] + tmpOct->halfDim || nPos[j][1] < tmpOct->pos[1] - tmpOct->halfDim ||
+			nPos[j][2] > tmpOct->pos[2] + tmpOct->halfDim || nPos[j][2] < tmpOct->pos[2] - tmpOct->halfDim){
+
+			tmpOct = tmpOct->parent;
+		}
+		while (tmpOct->child[0] != nullptr){
+			for (int k = 0; k < 8; k++){
+				if (nPos[j][0] < tmpOct->child[k]->pos[0] + tmpOct->child[k]->halfDim && nPos[j][0] > tmpOct->child[k]->pos[0] - tmpOct->child[k]->halfDim &&
+					nPos[j][1] < tmpOct->child[k]->pos[1] + tmpOct->child[k]->halfDim && nPos[j][1] > tmpOct->child[k]->pos[1] - tmpOct->child[k]->halfDim &&
+					nPos[j][2] < tmpOct->child[k]->pos[2] + tmpOct->child[k]->halfDim && nPos[j][2] > tmpOct->child[k]->pos[2] - tmpOct->child[k]->halfDim){
+					tmpOct = tmpOct->child[k];
+					break;
+				}
+			}
+		}
+		_oNeighbors[j] = tmpOct;
+	}
+}
+
 void Octant::render(MatrixStack* MVstack, GLint locationMV) {
 	
 	if (child[0] != nullptr){

@@ -12,5 +12,7 @@ public:
 	void setStrength(float str){ strength = str; };
 
 	void changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot );
+
+	std::vector<Octant*> octList;
 };
 
