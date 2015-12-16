@@ -13,9 +13,9 @@ public:
 	Octant(int _depth, Octant* _parent, float x, float y, float z, float _hafDim);
 	~Octant();
 
-	const int MAX_DEPTH = 9;
-
 	void deAllocate(DynamicMesh* _mesh);
+
+	static const int MAX_DEPTH = 9;
 
 	void allocateData();
 	void deAllocateData();

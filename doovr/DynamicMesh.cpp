@@ -544,7 +544,8 @@ void DynamicMesh::updateOGLData() {
 }
 
 void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
-	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
+	//TODO: det är inte säkert att accessa listan såhär. gör det säkert 
+	//int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	//TODO: FIXA
 	const int V_ROW_MAX = 3;
 	const int T_ROW_MAX = 5;
@@ -566,7 +567,9 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * triangleCap,
 						GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	for (int i = _olStart; i < (*_octList).size(); i++) {
+	//for (int i = _olStart; i < (*_octList).size(); i++) {
+	int i = 0;
+	while ((*_octList)[i] != nullptr) {
 		_octant = (*_octList)[i];
 		if (_octant->triangles == nullptr)
 			continue;
@@ -597,6 +600,7 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 			indexP[_octant->triangles[k]].index[1] = (*triangleArray[_octant->triangles[k]]).index[1];
 			indexP[_octant->triangles[k]].index[2] = (*triangleArray[_octant->triangles[k]]).index[2];
 		}
+		i++;
 	}
 
 	glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -641,12 +645,12 @@ void DynamicMesh::updateRemovedOGLData(int _vStart, int _tStart) {
 
 	for (int i = _vStart; i < emptyVStack.size(); i++) {
 
-		vertexP[emptyVStack[i]].x = 0.0f;
-		vertexP[emptyVStack[i]].y = 0.0f;
-		vertexP[emptyVStack[i]].z = 0.0f;
-		vertexP[emptyVStack[i]].nx = 0.0f;
-		vertexP[emptyVStack[i]].ny = 0.0f;
-		vertexP[emptyVStack[i]].nz = 0.0f;
+		vertexP[emptyVStack[i]].x = -100.0f;
+		vertexP[emptyVStack[i]].y = -100.0f;
+		vertexP[emptyVStack[i]].z = -100.0f;
+		vertexP[emptyVStack[i]].nx = -100.0f;
+		vertexP[emptyVStack[i]].ny = -100.0f;
+		vertexP[emptyVStack[i]].nz = -100.0f;
 	}
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
@@ -1018,6 +1022,11 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 	int tCounter;
 
+	//used to reenter octants in to octList when they contain vertices and triangles. If they were entirely
+	//inside the isoSurface they are not reentered. At the end of this function octList[listCounter] is set
+	//to nullptr
+	int listCounter = 0;
+
 	float dim = (*_octList)[_olStart]->halfDim; //TODO: kolla noggrant innan borttagande* 2.0f;
 	fDim = dim * 2;
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
@@ -1075,16 +1084,19 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			//delete old vertex data
 			if (_octant->vertices[0] != -1){
 				delete vertexArray[_octant->vertices[0]];
+				vertexArray[_octant->vertices[0]] = nullptr;
 				emptyVStack.push_back(_octant->vertices[0]);
 				_octant->vertices[0] = -1;
 			}
 			if (_octant->vertices[1] != -1){
 				delete vertexArray[_octant->vertices[1]];
+				vertexArray[_octant->vertices[1]] = nullptr;
 				emptyVStack.push_back(_octant->vertices[1]);
 				_octant->vertices[1] = -1;
 			}
 			if (_octant->vertices[2] != -1){
 				delete vertexArray[_octant->vertices[2]];
+				vertexArray[_octant->vertices[2]] = nullptr;
 				emptyVStack.push_back(_octant->vertices[2]);
 				_octant->vertices[2] = -1;
 			}
@@ -1093,6 +1105,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			//delete old triangle data 
 			for (int i = 0; i < _octant->tCount; i++){
 				delete triangleArray[_octant->triangles[i]];
+				triangleArray[_octant->triangles[i]] = nullptr;
 				emptyTStack.push_back(_octant->triangles[i]);
 			}
 			_octant->tCount = 0;
@@ -1191,7 +1204,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			if (edgeTable[cubeIndex] & 32) {
 				//assign new vertex index and allocate data
 				//TODO: remove this bugtest (true) {//
-				if (true) {// (emptyVStack.size() == 0) {
+				if (emptyVStack.size() == 0) {
 					_octant->vertices[0] = vertexCap;
 					vertexCap++;
 				}
@@ -1210,7 +1223,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			if (edgeTable[cubeIndex] & 64) {
 				//assign new vertex index and allocate data
 				//TODO: remove this bugtest
-				if (true) {//(emptyVStack.size() == 0) {
+				if (emptyVStack.size() == 0) {
 					_octant->vertices[1] = vertexCap;
 					vertexCap++;
 				}
@@ -1238,7 +1251,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			if (edgeTable[cubeIndex] & 1024) {
 				//assign new vertex index and allocate data
 				//TODO: remove this debugtest
-				if (true) {//(emptyVStack.size() == 0) {
+				if (emptyVStack.size() == 0) {
 					_octant->vertices[2] = vertexCap;
 					vertexCap++;
 				}
@@ -1263,7 +1276,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 				tmpTindex = i*0.34;
 
 				//TODO: remove this bugtest
-				if (true) {// (emptyTStack.size() == 0) {
+				if (emptyTStack.size() == 0) {
 					tmpArray[tmpTindex] = triangleCap;
 					triangleCap++;
 				}
@@ -1285,6 +1298,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			for (int i = 0; i < _octant->tCount; i++){
 				_octant->triangles[i] = tmpArray[i];
 			}
+
+			(*_octList)[listCounter] = _octant;
+			listCounter++;
 		}
 		else {//Was entirely inside or outside isoSurface, parent octant needs to be checked to see if it should be deAllocated
 			
@@ -1300,6 +1316,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 						tCounter += tmpOct->child[i]->tCount;
 					}
 					if (tCounter == 0){
+						//tmpOct->data = _octant->data;
 						tmpOct->deAllocate(this);
 						tmpOct->parent->checkHomogeneity();
 					}
@@ -1313,6 +1330,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 					tCounter += tmpOct->child[i]->tCount;
 				}
 				if (tCounter == 0){
+					//tmpOct->data = _octant->data;
 					tmpOct->deAllocate(this);
 					tmpOct->parent->checkHomogeneity();
 				}
@@ -1321,6 +1339,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		}
 		_olStart++;
 	}
+	(*_octList)[listCounter] = nullptr;
 }
 
 void DynamicMesh::load(std::string fileName) {
@@ -1624,6 +1643,18 @@ void DynamicMesh::exportToObj() {
 	//}
 }
 
+void DynamicMesh::debug() {
+	for (int i = 0; i < vertexCap; i++){
+		if (vertexArray[i] != nullptr);
+		{
+			if (abs(vertexArray[i]->xyz[0]) < EPSILON && abs(vertexArray[i]->xyz[1]) < EPSILON && abs(vertexArray[i]->xyz[2]) < EPSILON){
+				std::cout << "zero";
+			}
+		}
+		
+		
+	}
+}
 
 void DynamicMesh::updateArea(int* changeList, int listSize) {
 

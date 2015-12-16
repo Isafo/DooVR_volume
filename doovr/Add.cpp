@@ -71,6 +71,8 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	int tmpI;
 	int olStart;
 	int fillCheck;
+
+	octList.clear();
 	
 
 	for (int j = 0; j < 3; j++) {
@@ -87,11 +89,10 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		return;
 	}
 
-
 	int emptyVStackInitSize = _mesh->emptyVStack.size();
 	int emptyTStackInitSize = _mesh->emptyTStack.size();
 
-	while (currentOct->depth < _ot->root->MAX_DEPTH) {//<-- reaching depth 6 --
+	while (currentOct->depth < _ot->root->MAX_DEPTH) {//<-- reaching MAX_DEPTH --
 			
 		//check if children are allocated
 		if (currentOct->child[0] == nullptr) {
@@ -143,8 +144,13 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 					if (childOct->child[0] != nullptr) {
 						childOct->deAllocate(_mesh);
 						//TODO: something is done wrong with this check and things related to it.
-						//if ()
-						//childOct->parent->checkHomogeneity();
+						/*if (olCounter < octList.size()){
+							if (currentOct->parent != octList[olCounter]->parent)
+								currentOct->checkHomogeneity();
+						}
+						else{
+							currentOct->checkHomogeneity();
+						}*/
 					}
 						
 					childOct->data = 255;

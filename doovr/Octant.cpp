@@ -105,8 +105,9 @@ void Octant::partition() {
 
 //do NOT use on MAX_DEPTH octants
 void Octant::deAllocate(DynamicMesh* _mesh) {
+	data = child[0]->data;
+	isoBool = child[0]->isoBool;
 	for (int i = 0; i < 8; i++) {
-
 		// child has no children 
 		if (child[i]->child[0] == nullptr) {
 			// data is allocated
@@ -150,11 +151,12 @@ void Octant::checkHomogeneity() {
 		if (child[i]->child[0] != nullptr)
 			return;
 	}
+	data = child[0]->data;
 	for (int i = 0; i < 8; i++){
 		delete child[i];
 	}
 	child[0] = nullptr;
-
+	
 	if (parent != nullptr)
 		parent->checkHomogeneity();
 }
