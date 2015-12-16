@@ -525,7 +525,7 @@ int Oculus::runOvr() {
 	Texture savedFeedbackTex("../Assets/Textures/sparad4by1.dds");
 	Texture loadModeInfoTex("../Assets/Textures/loadMode2by1.dds");
 
-	float boardPos[3] = { 0.0f, -0.26f, 0.0f };
+	float boardPos[3] = { 0.0f, -0.06f, 0.0f };
 	//float boardPos[3] = { 0.0f, -0.22f, 0.0f };
 	Box board(boardPos[0], boardPos[1] - 1.08*0.5, boardPos[2] - 0.148, 1.4, 1.08, 0.70); TrackingRange trackingRange(boardPos[0], (boardPos[1] + (0.25f / 2.0f) - 0.002f), boardPos[2], 0.50, 0.25, 0.40);
 	MenuItem ground(boardPos[0], boardPos[1] - 1.08, boardPos[2], 50, 50);
@@ -742,8 +742,8 @@ int Oculus::runOvr() {
 	StaticMesh* loaderMesh;
 
 	Tool* currentTool;
-	currentTool = new Push(modellingMesh, wand);
-	//currentTool = new Drag(modellingMesh, wand);
+	//currentTool = new Push(modellingMesh, wand);
+	currentTool = new Drag(modellingMesh, wand);
 
 	//=======================================================================================================================================
 	//Render loop
