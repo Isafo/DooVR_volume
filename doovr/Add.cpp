@@ -73,7 +73,10 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	int fillCheck;
 
 	octList.clear();
-	
+	std::vector<std::pair<Octant*, unsigned char>> octantStack;
+
+	int emptyVStackInitSize = _mesh->emptyVStack.size();
+	int emptyTStackInitSize = _mesh->emptyTStack.size();
 
 	for (int j = 0; j < 3; j++) {
 		if (nwPos[j] <  -currentOct->halfDim) {
@@ -88,84 +91,17 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	if (d > radius*radius) {
 		return;
 	}
+	else{
+		octantStack.push_back(std::make_pair(currentOct, 0));
+	}
 
-	int emptyVStackInitSize = _mesh->emptyVStack.size();
-	int emptyTStackInitSize = _mesh->emptyTStack.size();
 
-	while (currentOct->depth < _ot->root->MAX_DEPTH) {//<-- reaching MAX_DEPTH --
-			
-		//check if children are allocated
-		if (currentOct->child[0] == nullptr) {
-			//check if data is already filled
-			//TODO: this incrementation of the list counter might be unsafe, check if it is
-			if (currentOct->isoBool == false){
-				currentOct->partition();
-			}
-			else {
-				if (olCounter < octList.size()){
-					currentOct = octList[olCounter];
-					olCounter++;
-					continue;
-				}
-				else{
-					return;
-				}
-			}
-		}
-		//<--- collision check cubechildren ---
-		childDim = currentOct->child[0]->halfDim;
-		for (int i = 0; i < 8; i++) {
-			childOct = currentOct->child[i];
-			tmpPos[0] = nwPos[0] - childOct->pos[0];
-			tmpPos[1] = nwPos[1] - childOct->pos[1];
-			tmpPos[2] = nwPos[2] - childOct->pos[2];
-			d = 0.0f;
+	while (true){
+		if (octantStack.back().first->child[0] != nullptr)
+		currentOct = octantStack.back().first->child[octantStack.back().second];
+	}
 
-			for (int j = 0; j < 3; j++) {
-				if (tmpPos[j] <  -childDim) {
-					s = tmpPos[j] + childDim;
-					d += s*s;
-				}
-				else if (tmpPos[j] > childDim) {
-					s = tmpPos[j] - childDim;
-					d += s*s;
-				}
-			}
-			if (d <= radius*radius) {
-				//find corner furthest away from sphere center
-				tmpVec[0] = (0.0f > tmpPos[0] ? childDim : -childDim);
-				tmpVec[1] = (0.0f > tmpPos[1] ? childDim : -childDim);
-				tmpVec[2] = (0.0f > tmpPos[2] ? childDim : -childDim);
-
-				//<--- check if cube is entirely inside sphere --	
-				linAlg::calculateVec(tmpVec, tmpPos, tmpVec);
-				if (linAlg::vecLength(tmpVec) <= radius) {
-						
-					if (childOct->child[0] != nullptr) {
-						childOct->deAllocate(_mesh);
-						//TODO: something is done wrong with this check and things related to it.
-						/*if (olCounter < octList.size()){
-							if (currentOct->parent != octList[olCounter]->parent)
-								currentOct->checkHomogeneity();
-						}
-						else{
-							currentOct->checkHomogeneity();
-						}*/
-					}
-						
-					childOct->data = 255;
-					childOct->isoBool = true;
-				}// --->
-				else {
-					octList.push_back(childOct);
-				}
-			}
-		}// --->
-		currentOct = octList[olCounter];
-		olCounter++;
-	}// -->
-
-	
+	// remake
 	//<-- change selected iso values --
 	olCounter--;
 	olStart = olCounter;

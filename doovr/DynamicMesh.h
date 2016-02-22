@@ -94,7 +94,7 @@ class DynamicMesh : public Mesh{
 
   private:
 
-	const int tmpMAX_DEPTH = 9;
+	const int tmpMAX_DEPTH = 5;
 	  //TODO: remove one zero
 	const int MAX_NR_OF_VERTICES = 10000000;
 	//! negative index of the latest removed vertex

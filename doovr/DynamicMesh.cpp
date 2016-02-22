@@ -1027,7 +1027,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	//to nullptr
 	int listCounter = 0;
 
-	float dim = (*_octList)[_olStart]->halfDim; //TODO: kolla noggrant innan borttagande* 2.0f;
+	float dim = (*_octList)[_olStart]->halfDim;
 	fDim = dim * 2;
 	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	const int V_ROW_MAX = 3;
@@ -1041,6 +1041,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		// fetch current octant
 		_octant = (*_octList)[_olStart];
 
+		// TODO: rewrite this traversal using locational codes
 		nPos[0][0] = _octant->pos[0] - fDim;	nPos[0][1] = _octant->pos[1] - fDim;	nPos[0][2] = _octant->pos[2] - fDim;
 		nPos[1][0] = _octant->pos[0];			nPos[1][1] = _octant->pos[1] - fDim;	nPos[1][2] = _octant->pos[2] - fDim;
 		nPos[2][0] = _octant->pos[0];			nPos[2][1] = _octant->pos[1] - fDim;	nPos[2][2] = _octant->pos[2];
@@ -1115,12 +1116,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		}
 
 		// MC algorithm \_____________________________________________________________________
-		// create the first voxel ============================================================
-
-		//inherit corner values from local variable
-
-		//inherit corner values from isoCache
-
+		
 		//calculate corner values that could not be inherited
 		xyz[0][0] = _octant->pos[0] - dim;
 		xyz[0][1] = _octant->pos[1] - dim;
@@ -1178,12 +1174,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		// check if cube is entirely in or out of the surface ----------------------------
 		if (edgeTable[cubeIndex] != 0) {
 			tCounter = 0;
-
-			// Find the vertices where the surface intersects the cube--------------------
-
-			//inherit vertex indices from local variable ---------------------------------
-
-			//inherit vertex indices from isoCache ---------------------------------------
 
 			//calculate indices that could not be inherited ------------------------------
 			if (edgeTable[cubeIndex] & 1) {

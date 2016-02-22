@@ -29,7 +29,7 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 					data[i][j][k] = 0;
 	}*/
 
-	//shape = new LineCube(0.0f, 0.0f, 0.0f, _halfDim * 2, _halfDim * 2, _halfDim * 2);
+	shape = new LineCube(0.0f, 0.0f, 0.0f, _halfDim * 2, _halfDim * 2, _halfDim * 2);
 
 	parent = _parent;
 	depth = _depth;
@@ -101,6 +101,11 @@ void Octant::partition() {
 	child[5] = new Octant(depth + 1, this, pos[0] + d, pos[1] - d, pos[2] + d, d);
 	child[6] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] - d, d);
 	child[7] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] + d, d);
+}
+
+void Octant::collisionCheck() {
+
+
 }
 
 //do NOT use on MAX_DEPTH octants
@@ -226,7 +231,7 @@ void Octant::render(MatrixStack* MVstack, GLint locationMV) {
 		MVstack->push();
 			MVstack->translate(pos);
 			glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack->getCurrentMatrix());
-			//shape->render();
+			shape->render();
 		MVstack->pop();
 	}
 }

@@ -1325,7 +1325,7 @@ int Oculus::runOvr() {
 					MVstack.multiply(modellingMesh->getOrientation());
 
 					//debug
-					//oTest->root->render(MVptr, locationMV);
+					oTest->root->render(MVptr, locationMV);
 
 					glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					glUniform4fv(locationFlatLP, 1, LP);

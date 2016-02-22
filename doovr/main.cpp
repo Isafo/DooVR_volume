@@ -43,8 +43,11 @@ redirects to two different namespaces depending on the choice.
 */
 int main() {
 
+	char test{ 0 };
+	int size = sizeof(test);
+
 	int runSuccess = 0;
-	
+
 	runSuccess = Oculus::runOvr();
 	
 	return runSuccess;
