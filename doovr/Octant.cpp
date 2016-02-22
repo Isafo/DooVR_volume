@@ -2,7 +2,19 @@
 #include <vector>
 #include "DynamicMesh.h"
 
-
+Octant::Octant() {
+	parent = nullptr;
+	depth = NULL;
+	//pos[0] = x; pos[1] = y; pos[2] = z;
+	//halfDim = _halfDim;
+	//TODO: maybe do manually
+	data = 0;
+	isoBool = false;
+	vertices[0] = -1;
+	vertices[1] = -1;
+	vertices[2] = -1;
+	triangles = nullptr;
+}
 
 Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim) {
 	/*if (_depth != MAX_DEPTH) {
@@ -92,6 +104,9 @@ Octant::~Octant() {
 
 //do NOT use on MAX_DEPTH octants
 void Octant::partition() {
+	data = 0;
+	isoBool = false;
+
 	float d = halfDim / 2.0f;
 	child[0] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] - d, d);
 	child[1] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] + d, d);
@@ -157,9 +172,11 @@ void Octant::checkHomogeneity() {
 			return;
 	}
 	data = child[0]->data;
+	isoBool = child[0]->isoBool;
 	for (int i = 0; i < 8; i++){
 		delete child[i];
 	}
+
 	child[0] = nullptr;
 	
 	if (parent != nullptr)

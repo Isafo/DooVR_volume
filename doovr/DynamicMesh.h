@@ -58,7 +58,9 @@ class DynamicMesh : public Mesh{
 	friend class Add;
 	friend class Octant;
 
+
   public:
+
 	DynamicMesh();
 	DynamicMesh(std::string fileName);
 	~DynamicMesh();
@@ -95,6 +97,8 @@ class DynamicMesh : public Mesh{
   private:
 
 	const int tmpMAX_DEPTH = 5;
+	//! placeholder used when empty and temporary octants are needed. Used along the physical edges of the octree
+	
 	  //TODO: remove one zero
 	const int MAX_NR_OF_VERTICES = 10000000;
 	//! negative index of the latest removed vertex

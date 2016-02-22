@@ -1022,6 +1022,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 
 	int tCounter;
 
+	static Octant octantPlaceHolder;
+
 	//used to reenter octants in to octList when they contain vertices and triangles. If they were entirely
 	//inside the isoSurface they are not reentered. At the end of this function octList[listCounter] is set
 	//to nullptr
@@ -1056,6 +1058,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 				nPos[i][1] > 0.5f || nPos[i][1] < -0.5f ||
 				nPos[i][2] > 0.5f || nPos[i][2] < -0.5f)){
 				std::cout << "utanfor";
+
+				oNeighbor[i] = &octantPlaceHolder;
+				continue;
 			}
 
 			tmpOct = _octant->parent;
@@ -1306,7 +1311,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 						tCounter += tmpOct->child[i]->tCount;
 					}
 					if (tCounter == 0){
-						//tmpOct->data = _octant->data;
+						tmpOct->data = _octant->data;
 						tmpOct->deAllocate(this);
 						tmpOct->parent->checkHomogeneity();
 					}
@@ -1320,7 +1325,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 					tCounter += tmpOct->child[i]->tCount;
 				}
 				if (tCounter == 0){
-					//tmpOct->data = _octant->data;
+					tmpOct->data = _octant->data;
 					tmpOct->deAllocate(this);
 					tmpOct->parent->checkHomogeneity();
 				}
@@ -1329,7 +1334,11 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 		}
 		_olStart++;
 	}
-	(*_octList)[listCounter] = nullptr;
+	if (listCounter == (*_octList).size())
+		(*_octList).push_back(nullptr);
+	else 
+		(*_octList)[listCounter] = nullptr;
+	
 }
 
 void DynamicMesh::load(std::string fileName) {

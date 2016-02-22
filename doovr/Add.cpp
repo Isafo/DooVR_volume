@@ -64,13 +64,6 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	float hDim;
 	float addDim;
 	float cornerPos[3];
-	//TODO: make this variable depend on MAX_DEPTH
-	const float minDim = 0.001953125f;
-
-	int olCounter = 0;
-	int tmpI;
-	int olStart;
-	int fillCheck;
 
 	octList.clear();
 	std::vector<std::pair<Octant*, unsigned char>> octantStack;
@@ -96,41 +89,99 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	}
 
 
-	while (true){
-		if (octantStack.back().first->child[0] != nullptr)
-		currentOct = octantStack.back().first->child[octantStack.back().second];
+	while (!octantStack.empty()){
+
+		if (octantStack.back().second >= 8){
+			octantStack.pop_back();
+			continue;
+		}
+
+		childOct = octantStack.back().first->child[octantStack.back().second];
+		++octantStack.back().second;
+		
+
+		tmpPos[0] = nwPos[0] - childOct->pos[0];
+		tmpPos[1] = nwPos[1] - childOct->pos[1];
+		tmpPos[2] = nwPos[2] - childOct->pos[2];
+		d = 0.0f;
+
+		childDim = childOct->halfDim;
+
+		for (int j = 0; j < 3; j++) {
+			if (tmpPos[j] <  -childDim) {
+				s = tmpPos[j] + childDim;
+				d += s*s;
+			}
+			else if (tmpPos[j] > childDim) {
+				s = tmpPos[j] - childDim;
+				d += s*s;
+			}
+		}
+		if (d <= radius*radius) {
+			//find corner furthest away from sphere center
+			tmpVec[0] = (0.0f > tmpPos[0] ? childDim : -childDim);
+			tmpVec[1] = (0.0f > tmpPos[1] ? childDim : -childDim);
+			tmpVec[2] = (0.0f > tmpPos[2] ? childDim : -childDim);
+
+			//<--- check if cube is entirely inside sphere --	
+			linAlg::calculateVec(tmpVec, tmpPos, tmpVec);
+			if (linAlg::vecLength(tmpVec) <= radius) {
+
+				if (childOct->child[0] != nullptr) {
+					childOct->deAllocate(_mesh);
+				}
+
+				childOct->data = 255;
+				childOct->isoBool = true;
+			}// --->
+			else {
+				if (childOct->depth == Octant::MAX_DEPTH) {
+					octList.push_back(childOct);
+				}
+				else {
+
+					if (childOct->child[0] == nullptr){
+						if (childOct->isoBool == false){
+							childOct->partition();
+							octantStack.push_back(std::make_pair(childOct, 0));
+						}
+							
+					}
+					else {
+						octantStack.push_back(std::make_pair(childOct, 0));
+					}
+					
+				}
+			}
+		} 
+
+		
 	}
+
+	if (octList.empty())
+		return;
 
 	// remake
 	//<-- change selected iso values --
-	olCounter--;
-	olStart = olCounter;
-	tmpI = octList.size();
 
-	int scalarNR = std::pow(2, 10 - _ot->root->MAX_DEPTH);
+	int scalarNR = std::pow(2, 10 - Octant::MAX_DEPTH);
 	int hRes = (scalarNR - 1) / 2;
-	float dim = octList[olStart]->halfDim;
+	float dim = octList[0]->halfDim;
 	
-
-	while (olCounter < tmpI) {
-		currentOct = octList[olCounter];
-
-		tmpPos[0] = currentOct->pos[0] + currentOct->halfDim;
-		tmpPos[1] = currentOct->pos[1] + currentOct->halfDim;
-		tmpPos[2] = currentOct->pos[2] + currentOct->halfDim;
+	for (auto& tempOct : octList) {
+		tmpPos[0] = tempOct->pos[0] + tempOct->halfDim;
+		tmpPos[1] = tempOct->pos[1] + tempOct->halfDim;
+		tmpPos[2] = tempOct->pos[2] + tempOct->halfDim;
 		linAlg::calculateVec(tmpPos, nwPos, tmpVec);
 
 		if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
-			currentOct->data = 255;
-			currentOct->isoBool = true;
+			tempOct->data = 255;
+			tempOct->isoBool = true;
 		}
-		olCounter++;
 	}// -->
 
-   	olCounter = olStart;
-
-	_mesh->generateMC(&octList, olStart);
-	_mesh->updateOGLData(&octList, olStart);
+	_mesh->generateMC(&octList, 0);
+	_mesh->updateOGLData(&octList, 0);
 	
 
 	// update removed vertexbuffer data that was not reused
