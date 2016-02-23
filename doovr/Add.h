@@ -1,5 +1,8 @@
 #pragma once
 #include "ScalarTool.h"
+
+
+
 class Add : public ScalarTool
 {
 public:
@@ -14,5 +17,13 @@ public:
 	void changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot );
 
 	std::vector<Octant*> octList;
+
+private:
+
+	struct octantStackElement {
+		Octant* octant;
+		int index{ 0 };
+		unsigned char deallocationBool{ 0 }; // 0 nothing has happened, 1 octant has children and no check will be done, 2 deallocation has been done no children exists
+	};
 };
 

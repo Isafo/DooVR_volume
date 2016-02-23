@@ -66,7 +66,8 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	float cornerPos[3];
 
 	octList.clear();
-	std::vector<std::pair<Octant*, unsigned char>> octantStack;
+	std::vector<octantStackElement> octantStack;
+	octantStackElement tempStackElm;
 
 	int emptyVStackInitSize = _mesh->emptyVStack.size();
 	int emptyTStackInitSize = _mesh->emptyTStack.size();
@@ -85,19 +86,23 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		return;
 	}
 	else{
-		octantStack.push_back(std::make_pair(currentOct, 0));
+		tempStackElm.octant = currentOct;
+		octantStack.push_back(tempStackElm);
 	}
 
 
 	while (!octantStack.empty()){
 
-		if (octantStack.back().second >= 8){
+		if (octantStack.back().index >= 8){
+			if (octantStack.back().deallocationBool == 2)
+				octantStack.back().octant->checkHomogeneity();
+
 			octantStack.pop_back();
 			continue;
 		}
 
-		childOct = octantStack.back().first->child[octantStack.back().second];
-		++octantStack.back().second;
+		childOct = octantStack.back().octant->child[octantStack.back().index];
+		++octantStack.back().index;
 		
 
 		tmpPos[0] = nwPos[0] - childOct->pos[0];
@@ -128,6 +133,9 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 			if (linAlg::vecLength(tmpVec) <= radius) {
 
 				if (childOct->child[0] != nullptr) {
+					if (octantStack.back().deallocationBool != 1)
+						octantStack.back().deallocationBool = 2;
+
 					childOct->deAllocate(_mesh);
 				}
 
@@ -143,19 +151,22 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 					if (childOct->child[0] == nullptr){
 						if (childOct->isoBool == false){
 							childOct->partition();
-							octantStack.push_back(std::make_pair(childOct, 0));
+
+							octantStack.back().deallocationBool = 1;
+
+							tempStackElm.octant = childOct;
+							octantStack.push_back(tempStackElm);
 						}
-							
 					}
 					else {
-						octantStack.push_back(std::make_pair(childOct, 0));
+						octantStack.back().deallocationBool = 1;
+
+						tempStackElm.octant = childOct;
+						octantStack.push_back(tempStackElm);
 					}
-					
 				}
 			}
 		} 
-
-		
 	}
 
 	if (octList.empty())

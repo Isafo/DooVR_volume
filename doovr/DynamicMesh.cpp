@@ -560,7 +560,7 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
 	// Activate the index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 
-	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData)*vertexCap,
+	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) * vertexCap,
 							GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	// Present our vertex <indices to OpenGL
@@ -1311,7 +1311,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 						tCounter += tmpOct->child[i]->tCount;
 					}
 					if (tCounter == 0){
-						tmpOct->data = _octant->data;
+						//tmpOct->data = _octant->data;
+						//tmpOct->isoBool = _octant->isoBool;
 						tmpOct->deAllocate(this);
 						tmpOct->parent->checkHomogeneity();
 					}
@@ -1325,7 +1326,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 					tCounter += tmpOct->child[i]->tCount;
 				}
 				if (tCounter == 0){
-					tmpOct->data = _octant->data;
+					//tmpOct->data = _octant->data;
+					//tmpOct->isoBool = _octant->isoBool;
 					tmpOct->deAllocate(this);
 					tmpOct->parent->checkHomogeneity();
 				}

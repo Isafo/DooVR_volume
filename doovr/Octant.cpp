@@ -41,7 +41,7 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 					data[i][j][k] = 0;
 	}*/
 
-	shape = new LineCube(0.0f, 0.0f, 0.0f, _halfDim * 2, _halfDim * 2, _halfDim * 2);
+	//shape = new LineCube(0.0f, 0.0f, 0.0f, _halfDim * 2, _halfDim * 2, _halfDim * 2);
 
 	parent = _parent;
 	depth = _depth;
@@ -248,7 +248,7 @@ void Octant::render(MatrixStack* MVstack, GLint locationMV) {
 		MVstack->push();
 			MVstack->translate(pos);
 			glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack->getCurrentMatrix());
-			shape->render();
+			//shape->render();
 		MVstack->pop();
 	}
 }

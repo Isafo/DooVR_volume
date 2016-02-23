@@ -16,7 +16,7 @@ public:
 
 	void deAllocate(DynamicMesh* _mesh);
 
-	static const int MAX_DEPTH = 5;
+	static const int MAX_DEPTH = 8;
 
 	void allocateData();
 	void deAllocateData();
@@ -29,7 +29,7 @@ public:
 
 	void findNeighbors(Octant* _oNeighbors[7]);
 
-	LineCube* shape;
+	//LineCube* shape;
 	void render(MatrixStack* MVstack, GLint locationMV);
 
 	float pos[3];

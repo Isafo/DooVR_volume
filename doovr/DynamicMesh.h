@@ -96,7 +96,7 @@ class DynamicMesh : public Mesh{
 
   private:
 
-	const int tmpMAX_DEPTH = 5;
+	const int tmpMAX_DEPTH = 8;
 	//! placeholder used when empty and temporary octants are needed. Used along the physical edges of the octree
 	
 	  //TODO: remove one zero

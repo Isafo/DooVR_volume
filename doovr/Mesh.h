@@ -17,7 +17,7 @@ class Mesh
 
 public:
 	Mesh();
-	~Mesh();
+	virtual ~Mesh();
 
 	float* getPosition(){ return position; };
 	float* getOrientation(){ return orientation; };
