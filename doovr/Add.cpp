@@ -191,8 +191,8 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		}
 	}// -->
 
-	_mesh->generateMC(&octList, 0);
-	_mesh->updateOGLData(&octList, 0);
+	_mesh->generateMC(&octList);
+	_mesh->updateOGLData(&octList);
 	
 
 	// update removed vertexbuffer data that was not reused

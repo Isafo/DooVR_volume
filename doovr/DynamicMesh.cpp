@@ -543,7 +543,7 @@ void DynamicMesh::updateOGLData() {
 	
 }
 
-void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList, int _olStart) {
+void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList) {
 	//TODO: det är inte säkert att accessa listan såhär. gör det säkert 
 	//int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
 	//TODO: FIXA
@@ -1002,7 +1002,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 }
 
 
-void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
+void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 
 	int cubeIndex;
 
@@ -1029,19 +1029,21 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 	//to nullptr
 	int listCounter = 0;
 
-	float dim = (*_octList)[_olStart]->halfDim;
+	float dim = (*_octList)[0]->halfDim;
 	fDim = dim * 2;
-	int res = std::pow(2, 10 - (*_octList)[_olStart]->MAX_DEPTH);
+	int res = std::pow(2, 10 - (*_octList)[0]->MAX_DEPTH);
 	const int V_ROW_MAX = 3;
 	const int T_ROW_MAX = 5;
 	res = res - 1;
 
 	int olEnd = (*_octList).size();
 
-	while (_olStart < olEnd) {
+	int currentVoxel{ 0 };
+
+	while (currentVoxel < olEnd) {
 
 		// fetch current octant
-		_octant = (*_octList)[_olStart];
+		_octant = (*_octList)[currentVoxel];
 
 		// TODO: rewrite this traversal using locational codes
 		nPos[0][0] = _octant->pos[0] - fDim;	nPos[0][1] = _octant->pos[1] - fDim;	nPos[0][2] = _octant->pos[2] - fDim;
@@ -1301,9 +1303,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			
 			//TODO: ta bort if satsen som kolla listans storlek och gå istället till näst sista platsen i listan för att därefter behandla sista platsen enskilt. eventuellt...
 			//TODO:använd något annat än tCounter
-			if (_olStart < (*_octList).size() - 1){
+			if (currentVoxel < (*_octList).size() - 1){
 				// check if next octant in octlist have the same parent
-				if (_octant->parent != (*_octList)[_olStart + 1]->parent) {
+				if (_octant->parent != (*_octList)[currentVoxel + 1]->parent) {
 
 					tmpOct = _octant->parent;
 					tCounter = tmpOct->child[0]->tCount;
@@ -1334,7 +1336,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int _olStart) {
 			}
 
 		}
-		_olStart++;
+		currentVoxel++;
 	}
 	if (listCounter == (*_octList).size())
 		(*_octList).push_back(nullptr);

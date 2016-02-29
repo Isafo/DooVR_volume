@@ -75,12 +75,12 @@ class DynamicMesh : public Mesh{
 
 	void createBuffers();
 	void updateOGLData();
-	void updateOGLData(std::vector<Octant*>* _octList, int _olStart);
+	void updateOGLData(std::vector<Octant*>* _octList);
 	void updateRemovedOGLData(int _vStart, int _tStart);
 
 	//! saves the mesh as a binary file with the current date and time as file name (yyyy-mm-dd_hh-mm-ss.bin)
 	void sphereSubdivide(float rad);
-	void generateMC(std::vector<Octant*>* _octList, int _olStart);
+	void generateMC(std::vector<Octant*>* _octList);
 
 	void save();
 	void load(std::string _fileName);
