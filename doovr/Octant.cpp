@@ -16,7 +16,7 @@ Octant::Octant() {
 	triangles = nullptr;
 }
 
-Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim) {
+Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim, bool _fill) {
 	/*if (_depth != MAX_DEPTH) {
 		data = new unsigned char**[1];
 		data[0] = new unsigned char*[1];
@@ -48,8 +48,9 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 	pos[0] = x; pos[1] = y; pos[2] = z;
 	halfDim = _halfDim;
 	//TODO: maybe do manually
-	data = 0;
-	isoBool = false;
+	isoBool = _fill;
+	(_fill) ? (data = 255) : (data = 0);
+	
 	vertices[0] = -1;
 	vertices[1] = -1;
 	vertices[2] = -1;
@@ -104,18 +105,20 @@ Octant::~Octant() {
 
 //do NOT use on MAX_DEPTH octants
 void Octant::partition() {
-	data = 0;
-	isoBool = false;
+	//data = 0;
+	//isoBool = false;
 
 	float d = halfDim / 2.0f;
-	child[0] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] - d, d);
-	child[1] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] + d, d);
-	child[2] = new Octant(depth + 1, this, pos[0] - d, pos[1] + d, pos[2] - d, d);
-	child[3] = new Octant(depth + 1, this, pos[0] - d, pos[1] + d, pos[2] + d, d);
-	child[4] = new Octant(depth + 1, this, pos[0] + d, pos[1] - d, pos[2] - d, d);
-	child[5] = new Octant(depth + 1, this, pos[0] + d, pos[1] - d, pos[2] + d, d);
-	child[6] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] - d, d);
-	child[7] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] + d, d);
+	child[0] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] - d, d, isoBool);
+	child[1] = new Octant(depth + 1, this, pos[0] - d, pos[1] - d, pos[2] + d, d, isoBool);
+	child[2] = new Octant(depth + 1, this, pos[0] - d, pos[1] + d, pos[2] - d, d, isoBool);
+	child[3] = new Octant(depth + 1, this, pos[0] - d, pos[1] + d, pos[2] + d, d, isoBool);
+	child[4] = new Octant(depth + 1, this, pos[0] + d, pos[1] - d, pos[2] - d, d, isoBool);
+	child[5] = new Octant(depth + 1, this, pos[0] + d, pos[1] - d, pos[2] + d, d, isoBool);
+	child[6] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] - d, d, isoBool);
+	child[7] = new Octant(depth + 1, this, pos[0] + d, pos[1] + d, pos[2] + d, d, isoBool);
+
+
 }
 
 void Octant::collisionCheck() {

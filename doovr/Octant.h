@@ -11,7 +11,7 @@ class Octant
 {
 public:
 	Octant();
-	Octant(int _depth, Octant* _parent, float x, float y, float z, float _hafDim);
+	Octant(int _depth, Octant* _parent, float x, float y, float z, float _hafDim, bool _fill);
 	~Octant();
 
 	void deAllocate(DynamicMesh* _mesh);

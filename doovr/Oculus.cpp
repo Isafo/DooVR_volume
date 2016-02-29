@@ -34,6 +34,7 @@
 #include "BuildUp.h"
 //
 #include "Add.h"
+#include "Remove.h"
 
 #include <thread>
 #include <mutex>
@@ -758,8 +759,11 @@ int Oculus::runOvr() {
 
 	VertexTool* currentTool;
 	//currentTool = new Push(modellingMesh, wand);
-	ScalarTool* currentSTool;
-	currentSTool = new Add;
+	//ScalarTool* currentSTool;
+
+	std::unique_ptr<ScalarTool> currentSTool;
+	currentSTool = std::make_unique<Add>();
+
 	//currentTool = new Drag(modellingMesh, wand);
 
 	//=======================================================================================================================================
@@ -876,7 +880,12 @@ int Oculus::runOvr() {
 			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
 				modellingMesh->debug();
 			}
-
+			if (glfwGetKey(l_Window, GLFW_KEY_LEFT)) {
+				currentSTool = std::make_unique<Remove>();
+			}
+			if (glfwGetKey(l_Window, GLFW_KEY_RIGHT)) {
+				currentSTool = std::make_unique<Add>();
+			}
 			// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
 			if (aModellingStateIsActive == 0) {
 				activeButton = handleMenu(wandPos, modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
@@ -1012,6 +1021,12 @@ int Oculus::runOvr() {
 							*/
 							//TODO: should be generally for both types of tools
 							//currentTool->setRadius(toolRad);
+
+							if (i == 0)
+								currentSTool = std::make_unique<Add>();
+							else
+								currentSTool = std::make_unique<Remove>();
+							
 							currentSTool->setRadius(toolRad);
 							//TODO: should be done when using halfedge structure
 							//currentTool->setStrength(toolStr);

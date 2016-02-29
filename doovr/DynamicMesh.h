@@ -55,7 +55,10 @@ class DynamicMesh : public Mesh{
 	friend class Draw;
 	friend class Drag;
 	friend class BuildUp;
+
 	friend class Add;
+	friend class Remove;
+
 	friend class Octant;
 
 
