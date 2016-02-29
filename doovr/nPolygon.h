@@ -8,8 +8,8 @@
 class nPolygon
 {
   public:
-	  nPolygon();
-	  ~nPolygon();
+	nPolygon();
+	virtual ~nPolygon();
 
 	float* getPosition(){ return position; }
 	void setPosition(float* p) { position[0] = p[0]; position[1] = p[1]; position[2] = p[2]; }
@@ -26,6 +26,8 @@ class nPolygon
   protected:
 	float position[3];
 	float orientation[16];
+
+	virtual void clean() = 0;
 
 	GLuint vao;				// Vertex array object, the main handle for geometry
 	int nverts;				// Number of vertices in the vertex array

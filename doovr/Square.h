@@ -8,7 +8,7 @@ public:
 	Square(float pX, float pY, float pZ, float dX, float dY);
 	~Square();
 
-	void render();
+	void render() override;
 
 private:
 	void clean();

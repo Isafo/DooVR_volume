@@ -70,10 +70,10 @@ class DynamicMesh : public Mesh{
 
 	//dilate/erode based modelling
 
-	void render();
+	void render() override;
 	void render(unsigned int PrimID);
 
-	void createBuffers();
+	void createBuffers() override;
 	void updateOGLData();
 	void updateOGLData(std::vector<Octant*>* _octList);
 	void updateRemovedOGLData(int _vStart, int _tStart);

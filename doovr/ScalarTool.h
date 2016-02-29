@@ -8,7 +8,7 @@ class ScalarTool :
 {
 public:
 	ScalarTool();
-	~ScalarTool();
+	virtual ~ScalarTool();
 
 	virtual void render(MatrixStack* MVstack, GLint locationMV) = 0;
 

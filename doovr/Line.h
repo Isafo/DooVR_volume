@@ -10,6 +10,6 @@ public:
 
 	void clean();
 
-	void render();
+	void render() override;
 };
 

@@ -18,8 +18,6 @@ public:
 	void setRadius(float rad) { radius = rad; };
 	void setStrength(float str){};
 
-	void getIntersection(float* intersectionP, float* intersectionN){};
-
 private:
 
 	vertex* mVertexArray;

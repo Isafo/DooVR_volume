@@ -19,7 +19,7 @@ class TrackingRange : public Entity {
 
 	void createBox(float xSize, float ySize, float zSize);
 
-	void render();
+	void render() override;
 
   private:
 	GLuint vao;          // Vertex array object, the main handle for geometry

@@ -12,20 +12,22 @@ public:
 	void render(MatrixStack* MVstack, GLint locationMV);
 	void renderIntersection(MatrixStack* MVstack, GLint locationMV);
 
-	void findIntersection(DynamicMesh* mesh, Wand* wand, int triIndex){};
-	void firstSelect(DynamicMesh* mesh, Wand* wand);
-	void moveVertices(DynamicMesh* mesh, Wand* wand, float dT);
-	void deSelect();
+	void findIntersection(DynamicMesh* mesh, Wand* wand, int triIndex) override {};
+	void firstSelect(DynamicMesh* mesh, Wand* wand) override;
+	void moveVertices(DynamicMesh* mesh, Wand* wand, float dT) override;
+	void deSelect() override;
 
-	void setRadius(float rad) { radius = rad; };
-	void setStrength(float str){ strength = abs(str)/0.075f; };
+	void setRadius(float rad) override { radius = rad; };
+	void setStrength(float str) override { strength = abs(str)/0.075f; };
 
-	void getIntersection(float* intersectionP, float* intersectionN){ intersectionP[0] = intersection.xyz[0]; 
-																	intersectionP[1] = intersection.xyz[1]; 
-																	intersectionP[2] = intersection.xyz[2];
-																	intersectionN[0] = intersection.nxyz[0];
-																	intersectionN[1] = intersection.nxyz[1];
-																	intersectionN[2] = intersection.nxyz[2]; };
+	void getIntersection(float* intersectionP, float* intersectionN) override {
+		intersectionP[0] = intersection.xyz[0];
+		intersectionP[1] = intersection.xyz[1];
+		intersectionP[2] = intersection.xyz[2];
+		intersectionN[0] = intersection.nxyz[0];
+		intersectionN[1] = intersection.nxyz[1];
+		intersectionN[2] = intersection.nxyz[2];
+	};
 
 private:
 
@@ -33,8 +35,6 @@ private:
 	float lineOffset[3];
 
 	Circle* iCircle;
-
-	vertex intersection;
 
 	int* previouslySelectedVertices;
 	int previouslySelectedSize;

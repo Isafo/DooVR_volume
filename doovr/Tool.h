@@ -16,7 +16,6 @@ public:
 	virtual void setStrength(float str) = 0;
 protected:
 
-	//Polygon* toolBrush;
 	nPolygon* toolBrush;
 
 	float radius;

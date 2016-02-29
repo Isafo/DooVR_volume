@@ -8,7 +8,7 @@ public:
 	Circle(float pX, float pY, float pZ, float r);
 	~Circle();
 
-	void render();
+	void render() override;
 
 private:
 	void clean();
