@@ -1090,11 +1090,12 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 		if (_octant->triangles != nullptr) {
 
 			//delete old vertex data
-			if (_octant->vertices[0] != -1){
-				delete vertexArray[_octant->vertices[0]];
-				vertexArray[_octant->vertices[0]] = nullptr;
-				emptyVStack.push_back(_octant->vertices[0]);
-				_octant->vertices[0] = -1;
+			//TODO: changed order of ifs, don't forget to change back and test this
+			if (_octant->vertices[2] != -1){
+				delete vertexArray[_octant->vertices[2]];
+				vertexArray[_octant->vertices[2]] = nullptr;
+				emptyVStack.push_back(_octant->vertices[2]);
+				_octant->vertices[2] = -1;
 			}
 			if (_octant->vertices[1] != -1){
 				delete vertexArray[_octant->vertices[1]];
@@ -1102,11 +1103,11 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				emptyVStack.push_back(_octant->vertices[1]);
 				_octant->vertices[1] = -1;
 			}
-			if (_octant->vertices[2] != -1){
-				delete vertexArray[_octant->vertices[2]];
-				vertexArray[_octant->vertices[2]] = nullptr;
-				emptyVStack.push_back(_octant->vertices[2]);
-				_octant->vertices[2] = -1;
+			if (_octant->vertices[0] != -1){
+				delete vertexArray[_octant->vertices[0]];
+				vertexArray[_octant->vertices[0]] = nullptr;
+				emptyVStack.push_back(_octant->vertices[0]);
+				_octant->vertices[0] = -1;
 			}
 			//vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
 
@@ -1200,7 +1201,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			}
 			if (edgeTable[cubeIndex] & 32) {
 				//assign new vertex index and allocate data
-				//TODO: remove this bugtest (true) {//
 				if (emptyVStack.size() == 0) {
 					_octant->vertices[0] = vertexCap;
 					vertexCap++;
@@ -1219,7 +1219,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			}
 			if (edgeTable[cubeIndex] & 64) {
 				//assign new vertex index and allocate data
-				//TODO: remove this bugtest
 				if (emptyVStack.size() == 0) {
 					_octant->vertices[1] = vertexCap;
 					vertexCap++;
@@ -1247,7 +1246,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			}
 			if (edgeTable[cubeIndex] & 1024) {
 				//assign new vertex index and allocate data
-				//TODO: remove this debugtest
 				if (emptyVStack.size() == 0) {
 					_octant->vertices[2] = vertexCap;
 					vertexCap++;
@@ -1272,7 +1270,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
 				tmpTindex = i*0.34;
 
-				//TODO: remove this bugtest
 				if (emptyTStack.size() == 0) {
 					tmpArray[tmpTindex] = triangleCap;
 					triangleCap++;

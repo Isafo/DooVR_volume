@@ -71,6 +71,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 
 	int emptyVStackInitSize = _mesh->emptyVStack.size();
 	int emptyTStackInitSize = _mesh->emptyTStack.size();
+	int tmpStackSize;
 
 	for (int j = 0; j < 3; j++) {
 		if (nwPos[j] <  -currentOct->halfDim) {
@@ -94,10 +95,17 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	while (!octantStack.empty()){
 
 		if (octantStack.back().index >= 8){
-			if (octantStack.back().deallocationBool == 2)
-				octantStack.back().octant->checkHomogeneity();
+			if (octantStack.back().deallocationBool == 2){
+				tmpStackSize = octantStack.size();
+				octantStack.back().octant->checkHomogeneity(octantStack);
 
-			octantStack.pop_back();
+				if (tmpStackSize == octantStack.size())
+					octantStack.pop_back();
+			}
+			else{
+				octantStack.pop_back();
+			}
+
 			continue;
 		}
 

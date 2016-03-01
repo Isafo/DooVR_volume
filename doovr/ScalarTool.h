@@ -3,9 +3,15 @@
 #include "Octree.h"
 #include "Octant.h"
 #include "DynamicMesh.h"
+
+
+
+
 class ScalarTool :
 	public Tool
 {
+	friend class Octant;
+
 public:
 	ScalarTool();
 	virtual ~ScalarTool();
@@ -18,5 +24,6 @@ public:
 	virtual void changeScalarData( DynamicMesh* _mesh, Wand* _wand, Octree* _ot) = 0;
 
 protected:
+
 };
 

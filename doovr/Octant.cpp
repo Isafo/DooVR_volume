@@ -186,6 +186,27 @@ void Octant::checkHomogeneity() {
 		parent->checkHomogeneity();
 }
 
+//do NOT use on MAX_DEPTH or (MAX_DEPTH - 1)  octants
+void Octant::checkHomogeneity(std::vector<octantStackElement>& octStack) {
+	//int count = 0;
+	for (int i = 0; i < 8; i++){
+		if (child[i]->child[0] != nullptr)
+			return;
+	}
+	data = child[0]->data;
+	isoBool = child[0]->isoBool;
+	for (int i = 0; i < 8; i++){
+		delete child[i];
+	}
+
+	octStack.pop_back();
+
+	child[0] = nullptr;
+
+	if (parent != nullptr)
+		parent->checkHomogeneity(octStack);
+}
+
 void Octant::findNeighbors(Octant* _oNeighbors[7]) {
 	float hDim = halfDim;
 	float fDim = hDim * 2;

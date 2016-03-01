@@ -7,6 +7,15 @@
 #include <vector>
 
 class DynamicMesh;
+
+class Octant;
+
+struct octantStackElement {
+	Octant* octant;
+	int index{ 0 };
+	unsigned char deallocationBool{ 0 }; // 0 nothing has happened, 1 octant has children and no check will be done, 2 deallocation has been done no children exists
+};
+
 class Octant
 {
 public:
@@ -26,6 +35,8 @@ public:
 	void collisionCheck();
 
 	void checkHomogeneity();
+	void checkHomogeneity(std::vector<octantStackElement>& octStack);
+
 
 	void findNeighbors(Octant* _oNeighbors[7]);
 
@@ -52,4 +63,6 @@ private:
 
 
 };
+
+
 
