@@ -209,7 +209,7 @@ void Remove::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot) {
 
 	// update removed vertexbuffer data that was not reused
 	if (_mesh->emptyVStack.size() > emptyVStackInitSize || _mesh->emptyTStack.size() > emptyTStackInitSize) {
-		//_mesh->updateRemovedOGLData(emptyVStackInitSize, emptyTStackInitSize);
+		_mesh->updateRemovedOGLData(emptyVStackInitSize, emptyTStackInitSize);
 	}
 }
 
