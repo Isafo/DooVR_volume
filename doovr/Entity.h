@@ -10,10 +10,9 @@
 
 #include "Utilities.h"
 
-class Entity
-{
+class Entity {
 	public:
-		//getters
+
 		char getOtype(){ return oType; }
 
 		float* getPosition(){ return position; }
@@ -31,4 +30,6 @@ class Entity
 		char oType; 
 		float position[3];	
 		float orientation[16];
+
+		virtual void clean() = 0;
 };

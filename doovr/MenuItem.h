@@ -21,7 +21,7 @@ class MenuItem : public Entity {
 
 	MenuItem(float x, float y, float z, float dX, float dZ, int tX, int tY, int tXLength, int tYLength);
 	MenuItem::MenuItem(float x, float y, float z, float dX, float dZ);
-	void render();
+	void render() override;
 
 	//! returns the width and depth of the menu item
 	float* getDim() { return dim; };
@@ -39,5 +39,7 @@ class MenuItem : public Entity {
 
 	float dim[2];
 	bool active = false;
+
+	void clean();
 };
 

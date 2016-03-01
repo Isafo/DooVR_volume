@@ -6,7 +6,7 @@ class Wand
 {
 public:
 	Wand();
-	~Wand();
+	virtual ~Wand();
 
 	void getPosition(float* vec) ;
 	void getVelocity(float* vec);

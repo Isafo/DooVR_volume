@@ -13,7 +13,6 @@ uniform sampler2D dTex;
 
 uniform float Radius;
 
-
 void main () {
 	vec3 LightIntensity;
 	//vec2 finaluv = vec2(((uv.x/0.02) + 1.0f)/2.0f, ((uv.y/0.02) + 1.0f)/2.0f);

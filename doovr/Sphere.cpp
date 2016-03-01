@@ -1,7 +1,6 @@
 #include "Sphere.h"
 
-Sphere::Sphere(float x, float y, float z, float _rad)
-{
+Sphere::Sphere(float x, float y, float z, float _rad) {
 	oType = 'S';
 	position[0] = x;
 	position[1] = y;
@@ -27,7 +26,6 @@ Sphere::Sphere(float x, float y, float z, float _rad)
 	orientation[14] = 0.0f;
 	orientation[15] = 1.0f;
 
-
 	radius = _rad;
 	createSphere(_rad, 32);
 }
@@ -51,17 +49,17 @@ void Sphere::clean() {
 }
 
 
-void Sphere::render()
-{
+void Sphere::render() {
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, 3 * ntris, GL_UNSIGNED_INT, (void*)0);
 	// (mode, vertex count, type, element array buffer offset)
 	glBindVertexArray(0);
 }
 
-Sphere::~Sphere(void)
-{
+Sphere::~Sphere(void) {
 	std::cout << "A sphere has died" << std::endl;
+	delete[] vertexarray;
+	delete[] indexarray;
 	clean();
 }
 

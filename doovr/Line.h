@@ -8,6 +8,8 @@ public:
 	Line(float pX, float pY, float pZ, float length);
 	~Line();
 
-	void render();
+	void clean();
+
+	void render() override;
 };
 

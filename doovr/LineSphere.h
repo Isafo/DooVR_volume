@@ -8,6 +8,10 @@ public:
 	LineSphere(float pX, float pY, float pZ, float r);
 	~LineSphere();
 
-	void render();
+	void render() override;
+
+private:
+	void clean();
+
 };
 

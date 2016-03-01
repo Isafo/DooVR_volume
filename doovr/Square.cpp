@@ -76,6 +76,25 @@ Square::Square(float pX, float pY, float pZ, float dX, float dY) {
 Square::~Square() {
 	delete[] vertexarray;
 	delete[] indexarray;
+	clean();
+}
+
+void Square::clean() {
+
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
+
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
 }
 
 void Square::render() {

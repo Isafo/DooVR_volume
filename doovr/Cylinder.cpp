@@ -45,6 +45,8 @@ void Cylinder::render()
 Cylinder::~Cylinder(void)
 {
 	std::cout << "A Cylinder has died" << std::endl;
+	delete[] vertexarray;
+	delete[] indexarray;
 }
 
 void Cylinder::createCylinder(float radius, int segments) {

@@ -19,6 +19,7 @@
 
 #include "DynamicMesh.h"
 #include "StaticMesh.h"
+#include "Octree.h"
 
 #include "Circle.h"
 #include "Square.h"
@@ -31,11 +32,15 @@
 #include "Draw.h"
 #include "Drag.h"
 #include "BuildUp.h"
+//
+#include "Add.h"
+#include "Remove.h"
 
 #include <thread>
 #include <mutex>
 #include <atomic>
 #include <math.h>
+#include <time.h>
 
 #include "glm\glm\glm.hpp"
 #include "glm\glm\gtc\matrix_transform.hpp"
@@ -45,6 +50,7 @@
 #include <OVR/OVR_CAPI_GL.h>
 //#include <OVR/Win32_GLAppUtil.h> //needed for OVR GL structs.
 
+//#include "vld\vld.h"
 
 struct DepthBuffer
 {
@@ -372,61 +378,61 @@ int Oculus::runOvr() {
 
 
 	//WandView \____________________________________________________________________________
+	//
+	//// create and set up the FBO
+	//GLuint wandViewFBO;
+	//glGenFramebuffers(1, &wandViewFBO);
+	//glBindFramebuffer(GL_FRAMEBUFFER, wandViewFBO);
 
-	// create and set up the FBO
-	GLuint wandViewFBO;
-	glGenFramebuffers(1, &wandViewFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, wandViewFBO);
+	//GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
 
-	GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+	//GLuint wandShadowMap;
+	//glGenTextures(1, &wandShadowMap);
+	//glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	////glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+	///*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	//glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+	//*/
+	////Assign the shadow map to texture channel 0 
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, wandShadowMap);
 
-	GLuint wandShadowMap;
-	glGenTextures(1, &wandShadowMap);
-	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//glDrawBuffer(GL_NONE); // No color buffer is drawn to.
-	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-	*/
-	//Assign the shadow map to texture channel 0 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+	//glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, wandShadowMap, 0);
 
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, wandShadowMap, 0);
+	//GLuint pickingTexture;
+	//glGenTextures(1, &pickingTexture);
+	//glBindTexture(GL_TEXTURE_2D, pickingTexture);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB_FLOAT32_ATI, 1024, 1024,
+	//	0, GL_RGB, GL_FLOAT, NULL);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+	//	pickingTexture, 0);
 
-	GLuint pickingTexture;
-	glGenTextures(1, &pickingTexture);
-	glBindTexture(GL_TEXTURE_2D, pickingTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB_FLOAT32_ATI, 1024, 1024,
-		0, GL_RGB, GL_FLOAT, NULL);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-		pickingTexture, 0);
+	////glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
+	////glDrawBuffer(GL_NONE);
+	////glReadBuffer(GL_NONE);
+	//glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, wandShadowMap, 0);
-	//glDrawBuffer(GL_NONE);
-	//glReadBuffer(GL_NONE);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	//GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
-	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-	if (Status != GL_FRAMEBUFFER_COMPLETE) {
-		printf("FB error, status: 0x%x\n", Status);
-		return false;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//if (Status != GL_FRAMEBUFFER_COMPLETE) {
+	//	printf("FB error, status: 0x%x\n", Status);
+	//	return false;
+	//}
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-	glfwSetWindowSizeCallback(l_Window, WindowSizeCallback);
-
+	//glfwSetWindowSizeCallback(l_Window, WindowSizeCallback);
+	//
 	//=====================================================================================================================================
 	// 2 - Variable Declarations
 	//=====================================================================================================================================
@@ -721,13 +727,23 @@ int Oculus::runOvr() {
 	float wandRadius = 0.01f;
 	float lastRadius;
 
+	
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
+	//ScalarField sTest(128, 128, 128, 0.1, 0.1, 0.1);
+	Octree* oTest = new Octree(1.0f);
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
 	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
 	modellingMesh->setPosition(tempVec);
 	//modellingMesh->load("2015-07-22_16-08-10.bin"); modellingMesh->createBuffers();
-	modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
+	//modellingMesh->sphereSubdivide(0.05f); modellingMesh->createBuffers();
+	
+	clock_t begin = clock(); //DEBUG TEST
+	//modellingMesh->generateMC(oTest->root);
+	clock_t end = clock(); //DEBUG TEST
+	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC; //DEBUG TEST
+	modellingMesh->createBuffers();
+	
 	std::string currentMesh = "../Assets/Models/resetMesh.bin";
 
 	// variables for browsing saved meshes
@@ -741,9 +757,14 @@ int Oculus::runOvr() {
 	StaticMesh* previewMesh;
 	StaticMesh* loaderMesh;
 
-	Tool* currentTool;
+	VertexTool* currentTool;
 	//currentTool = new Push(modellingMesh, wand);
-	currentTool = new Drag(modellingMesh, wand);
+	//ScalarTool* currentSTool;
+
+	std::unique_ptr<ScalarTool> currentSTool;
+	currentSTool = std::make_unique<Add>();
+
+	//currentTool = new Drag(modellingMesh, wand);
 
 	//=======================================================================================================================================
 	//Render loop
@@ -770,13 +791,13 @@ int Oculus::runOvr() {
 
 			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_UP)) {
 				if (modellingState[0] == 2) {
-					currentTool->moveVertices(modellingMesh, wand, deltaTime);
-
+					//currentTool->moveVertices(modellingMesh, wand, deltaTime);
+					currentSTool->changeScalarData(modellingMesh, wand, oTest);
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
-					currentTool->deSelect();
-					currentTool->firstSelect(modellingMesh, wand);
+					//currentTool->deSelect();
+					//currentTool->firstSelect(modellingMesh, wand);
 				}
 				else if (modellingState[0] == 0)
 				{
@@ -791,11 +812,11 @@ int Oculus::runOvr() {
 				}
 				else if (modellingState[0] != 0) {
 					modellingState[0] = 3;
-					currentTool->deSelect();
+					//currentTool->deSelect();
 					aModellingStateIsActive--;
 				}
-				currentTool->deSelect();
-				currentTool->firstSelect(modellingMesh, wand);
+				//currentTool->deSelect();
+				//currentTool->firstSelect(modellingMesh, wand);
 			}
 
 			//3.1.2 - move mesh >-----------------------------------------------------------------------------------------------------------
@@ -856,13 +877,15 @@ int Oculus::runOvr() {
 			if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 				glfwSetWindowShouldClose(l_Window, GL_TRUE);
 			}
+			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
+				modellingMesh->debug();
+			}
 			if (glfwGetKey(l_Window, GLFW_KEY_LEFT)) {
-				currentTool->setStrength(0.01f*deltaTime);
+				currentSTool = std::make_unique<Remove>();
 			}
 			if (glfwGetKey(l_Window, GLFW_KEY_RIGHT)) {
-				currentTool->setStrength(-0.01f*deltaTime);
+				currentSTool = std::make_unique<Add>();
 			}
-
 			// 3.2 - handelmenu and menuswitch \______________________________________________________________________________________________
 			if (aModellingStateIsActive == 0) {
 				activeButton = handleMenu(wandPos, modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
@@ -983,6 +1006,8 @@ int Oculus::runOvr() {
 						&& wandPos[2] > tool[i].getPosition()[2] - tool[i].getDim()[2] / 2.f
 						&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {
 						if (!tool[i].getState()) {
+							//TODO: should be done when using halfedge structure
+							/*
 							tool[activeTool].setState(false);
 							delete currentTool;
 							tool[i].setState(true);
@@ -993,9 +1018,18 @@ int Oculus::runOvr() {
 								currentTool = new Smooth(modellingMesh, wand);
 							else if (i == 2)
 								currentTool = new BuildUp(modellingMesh, wand);
+							*/
+							//TODO: should be generally for both types of tools
+							//currentTool->setRadius(toolRad);
 
-							currentTool->setRadius(toolRad);
-							currentTool->setStrength(toolStr);
+							if (i == 0)
+								currentSTool = std::make_unique<Add>();
+							else
+								currentSTool = std::make_unique<Remove>();
+							
+							currentSTool->setRadius(toolRad);
+							//TODO: should be done when using halfedge structure
+							//currentTool->setStrength(toolStr);
 						}
 						break;
 					}
@@ -1008,7 +1042,9 @@ int Oculus::runOvr() {
 					&& wandPos[2] < toolSize.getPosition()[2] + toolSize.getDim()[2] / 2.f) {
 					tempVecPtr = toolSizeFill.getPosition();
 					toolSizeFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
-					currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f;
+					//TODO: should be generally for both types of tools
+					//currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f; 
+					currentSTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f;
 				}
 				else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
 					&& wandPos[0] > toolStrength.getPosition()[0] - toolStrength.getDim()[0] / 2.f
@@ -1018,7 +1054,8 @@ int Oculus::runOvr() {
 					&& wandPos[2] < toolStrength.getPosition()[2] + toolStrength.getDim()[2] / 2.f) {
 					tempVecPtr = toolStrengthFill.getPosition();
 					toolStrengthFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
-					currentTool->setStrength((wandPos[1] - tempVecPtr[1])); toolStr = (wandPos[1] - tempVecPtr[1]);
+					//TODO: should be done when using halfedge structure
+					//currentTool->setStrength((wandPos[1] - tempVecPtr[1])); toolStr = (wandPos[1] - tempVecPtr[1]);
 				}
 			}
 
@@ -1035,80 +1072,81 @@ int Oculus::runOvr() {
 			}
 
 			//wandViewMAP -------------------------------------------
-			glViewport(0, 0, 1024, 1024);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wandViewFBO);
-			glClear(GL_DEPTH_BUFFER_BIT);
-			glUseProgram(projectionShader.programID);
+			//glViewport(0, 0, 1024, 1024);
+			//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wandViewFBO);
+			//glClear(GL_DEPTH_BUFFER_BIT);
+			//glUseProgram(projectionShader.programID);
 
-			//glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
-			glm::mat4 projP = glm::ortho(-0.1f, 0.1f, -0.1f, 0.1f, 0.0f, 1.0f);
-			glm::transpose(projP);
-			glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
-			//glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
-			MVstack.push();
+			////glm::mat4 projP = glm::perspective(30.0f, 1.0f, 0.01f, 10.0f);
+			//glm::mat4 projP = glm::ortho(-0.1f, 0.1f, -0.1f, 0.1f, 0.0f, 1.0f);
+			//glm::transpose(projP);
+			//glUniformMatrix4fv(locationProjP, 1, GL_FALSE, &projP[0][0]);
+			////glUniformMatrix4fv(locationP, 1, GL_FALSE, &(g_ProjectionMatrix[0].Transposed().M[0][0]));
+			//MVstack.push();
 
-			//pmat4 = wand->getOrientation();
-			//linAlg::invertMatrix(pmat4, unitMat);
-			//linAlg::transpose(unitMat);
-			//MVstack.multiply(pmat4);
+			////pmat4 = wand->getOrientation();
+			////linAlg::invertMatrix(pmat4, unitMat);
+			////linAlg::transpose(unitMat);
+			////MVstack.multiply(pmat4);
 
-			//wand->getPosition(wandPos);
-			glm::vec3 gWandPos = glm::vec3(wandPos[0], wandPos[1], wandPos[2]);
-			wand->getDirection(tempVec);
-			glm::vec3 gWandDirr = glm::vec3(tempVec[0], tempVec[1], tempVec[2]);
-			//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
-			//MVstack.translate(tempVec);
+			////wand->getPosition(wandPos);
+			//glm::vec3 gWandPos = glm::vec3(wandPos[0], wandPos[1], wandPos[2]);
+			//wand->getDirection(tempVec);
+			//glm::vec3 gWandDirr = glm::vec3(tempVec[0], tempVec[1], tempVec[2]);
+			////tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
+			////MVstack.translate(tempVec);
 
-			glm::normalize(gWandDirr);
+			//glm::normalize(gWandDirr);
 
-			glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
-			//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
-			MVstack.multiply(&camTrans[0][0]);
+			//glm::mat4 camTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
+			////glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
+			//MVstack.multiply(&camTrans[0][0]);
 
-			MVstack.push();
-			MVstack.translate(modellingMesh->getPosition());
-			MVstack.multiply(modellingMesh->getOrientation());
-			//MVstack.multiply(&projP[0][0]);
-			linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
-			glUniformMatrix4fv(locationProjMV, 1, GL_FALSE, LMVP);
-			linAlg::matrixMult(biasMatrix, LMVP, LMVP);
+			//MVstack.push();
+			//MVstack.translate(modellingMesh->getPosition());
+			//MVstack.multiply(modellingMesh->getOrientation());
+			////MVstack.multiply(&projP[0][0]);
+			//linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
+			//glUniformMatrix4fv(locationProjMV, 1, GL_FALSE, LMVP);
+			//linAlg::matrixMult(biasMatrix, LMVP, LMVP);
 
-			modellingMesh->render();
-			MVstack.pop();
-			MVstack.pop();
+			//modellingMesh->render();
+			//MVstack.pop();
+			//MVstack.pop();
 
-			//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			////glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-			//glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
-			//glReadBuffer(GL_COLOR_ATTACHMENT0);
+			////glBindFramebuffer(GL_READ_FRAMEBUFFER, wandViewFBO);
+			////glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-			//glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
+			////glReadPixels(512, 512, 1, 1, GL_RGB, GL_FLOAT, &pixel);
 
-			//std::cout << pixel << std::endl;
-			glReadBuffer(GL_NONE);
-			//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-			//currentTool->findIntersection(modellingMesh, wand, Pixel);
-			currentTool->getIntersection(intersectionP, intersectionN);
-			//linAlg::normVec(intersectionN);
+			////std::cout << pixel << std::endl;
+			//glReadBuffer(GL_NONE);
+			////glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+			////currentTool->findIntersection(modellingMesh, wand, Pixel);
+			////TODO: this should be done when using half edge structure
+			////currentTool->getIntersection(intersectionP, intersectionN);
+			////linAlg::normVec(intersectionN);
 
-			glm::vec3 interP = glm::vec3(intersectionP[0], intersectionP[1], intersectionP[2]);
-			wand->getDirection(tempVec);
-			glm::vec3 interN = glm::vec3(intersectionN[0], intersectionN[1], intersectionN[2]);
-			//tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
-			//MVstack.translate(tempVec);
+			//glm::vec3 interP = glm::vec3(intersectionP[0], intersectionP[1], intersectionP[2]);
+			//wand->getDirection(tempVec);
+			//glm::vec3 interN = glm::vec3(intersectionN[0], intersectionN[1], intersectionN[2]);
+			////tempVec[0] = -wandPos[0]; tempVec[1] = -wandPos[1]; tempVec[2] = -wandPos[2];
+			////MVstack.translate(tempVec);
 
 
-			glm::mat4 interTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
-			//glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
+			//glm::mat4 interTrans = glm::lookAt(gWandPos, gWandPos + gWandDirr, glm::vec3(0.0f, 0.0f, 1.0f));
+			////glm::mat4 camTrans = glm::lookAt(glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2] + 0.1), glm::vec3(modellingMesh->getPosition()[0], modellingMesh->getPosition()[1], modellingMesh->getPosition()[2]), glm::vec3(0.0f, 1.0f, 0.0f));
 
-			MVstack.push();
-			MVstack.multiply(&interTrans[0][0]);
-			MVstack.translate(modellingMesh->getPosition());
-			MVstack.multiply(modellingMesh->getOrientation());
-			//MVstack.multiply(&projP[0][0]);
-			linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
-			linAlg::matrixMult(biasMatrix, LMVP, LMVP);
-			MVstack.pop();
+			//MVstack.push();
+			//MVstack.multiply(&interTrans[0][0]);
+			//MVstack.translate(modellingMesh->getPosition());
+			//MVstack.multiply(modellingMesh->getOrientation());
+			////MVstack.multiply(&projP[0][0]);
+			//linAlg::matrixMult(&projP[0][0], MVstack.getCurrentMatrix(), LMVP);
+			//linAlg::matrixMult(biasMatrix, LMVP, LMVP);
+			//MVstack.pop();
 
 
 			// get hmd eye poses \__________________________________________________________________________________________________________________
@@ -1168,14 +1206,15 @@ int Oculus::runOvr() {
 
 				// 3.4 - Scene Matrix stack \__________________________________________________________________________________________________
 				MVstack.push();
-				// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
+				
 
+				// 3.4.1 RENDER BOARD >----------------------------------------------------------------------------------------------------
 				glUniform4fv(locationLP, 1, LP);
 				MVstack.push();
-				MVstack.translate(board.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				glBindTexture(GL_TEXTURE_2D, greyTex.getTextureID());
-				board.render();
+					MVstack.translate(board.getPosition());
+					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
+					glBindTexture(GL_TEXTURE_2D, greyTex.getTextureID());
+					board.render();
 				MVstack.pop();
 
 				// Render Ground >----------------------------------------------------------------------------------------------------------------
@@ -1299,6 +1338,10 @@ int Oculus::runOvr() {
 					MVstack.push();
 					MVstack.translate(modellingMesh->getPosition());
 					MVstack.multiply(modellingMesh->getOrientation());
+
+					//debug
+					//oTest->root->render(MVptr, locationMV);
+
 					glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					glUniform4fv(locationFlatLP, 1, LP);
 					glUniform4fv(locationFlatLP2, 1, lPosTemp);
@@ -1309,7 +1352,7 @@ int Oculus::runOvr() {
 				else {
 					glUseProgram(meshShader.programID);
 
-					glUniformMatrix4fv(locationMeshPP, 1, GL_FALSE, &projP[0][0]);
+					//glUniformMatrix4fv(locationMeshPP, 1, GL_FALSE, &projP[0][0]);
 					glUniformMatrix4fv(locationMeshLMVP, 1, GL_FALSE, LMVP);
 					glUniform3fv(locationMeshIntersectionP, 1, intersectionP);
 					glUniform3fv(locationMeshIntersectionN, 1, intersectionN);
@@ -1336,12 +1379,13 @@ int Oculus::runOvr() {
 
 					glUniformMatrix4fv(locationMeshP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
 
-					glBindTexture(GL_TEXTURE_2D, wandShadowMap);
-					glUniform1i(locationMeshDTex, 0);
+					//glBindTexture(GL_TEXTURE_2D, wandShadowMap);
+					//glUniform1i(locationMeshDTex, 0);
 
 					MVstack.push();
 					MVstack.translate(modellingMesh->getPosition());
 					MVstack.multiply(modellingMesh->getOrientation());
+
 					glUniformMatrix4fv(locationMeshMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					glUniform4fv(locationMeshLP, 1, LP);
 					glUniform4fv(locationMeshLP2, 1, lPosTemp);
@@ -1389,7 +1433,7 @@ int Oculus::runOvr() {
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 				brush.render();
 				MVstack.pop();*/
-				currentTool->render(MVptr, locationMV);
+				currentSTool->render(MVptr, locationMV);
 				MVstack.pop();
 
 				glUseProgram(bloomShader.programID);
@@ -2146,6 +2190,17 @@ int Oculus::runOvr() {
 	ovr_Destroy(HMD);
 	ovr_Shutdown();
 
+	//delete eyeRenderTexture[0]; delete eyeRenderTexture[1];
+	//delete eyeDepthBuffer[0]; delete eyeDepthBuffer[1];
+
+	/*for (int i = 0; i < NR_OF_MODELLING_BUTTONS; i++)
+		delete modellingButton[i];
+
+	delete modellingButtonFrame;
+
+	for (int i = 0; i < 3; i++)
+		delete modellingButtonString[i];*/
+	
 	return 1;
 }
 

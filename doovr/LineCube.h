@@ -7,6 +7,9 @@ public:
 	LineCube(float pX, float pY, float pZ, float dX, float dY, float dZ);
 	~LineCube();
 
-	void render();
+	void render() override;
+
+private:
+	void clean();
 };
 

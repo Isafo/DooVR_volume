@@ -3,8 +3,7 @@
 
 #define EPSILON 0.000001
 
-Smooth::Smooth(DynamicMesh* mesh, Wand* wand)
-{
+Smooth::Smooth(DynamicMesh* mesh, Wand* wand) {
 	selectedVertices = new int[MAX_SELECTED]; selectedSize = 0;
 	previouslySelectedVertices = new int[MAX_SELECTED]; previouslySelectedSize = 0;
 
@@ -17,8 +16,8 @@ Smooth::Smooth(DynamicMesh* mesh, Wand* wand)
 	lineOffset[1] = 0.0f;
 	lineOffset[2] = 0.1f;
 
-	mVertexArray = mesh->vertexArray;
-	mVInfoArray = mesh->vInfoArray;
+	mVertexArray = mesh->vertexArray[0];
+	mVInfoArray = mesh->vInfoArray[0];
 	mEdgeArray = mesh->e;
 	mPosition = mesh->position;
 	mOrientation = mesh->orientation;
@@ -28,18 +27,15 @@ Smooth::Smooth(DynamicMesh* mesh, Wand* wand)
 }
 
 
-Smooth::~Smooth()
-{
-	delete selectedVertices;
-	delete previouslySelectedVertices;
+Smooth::~Smooth() {
+	delete[] selectedVertices;
+	delete[] previouslySelectedVertices;
 	delete toolBrush;
 	delete pointer;
 	delete iCircle;
 }
 
-void Smooth::renderIntersection(MatrixStack* MVstack, GLint locationMV)
-{
-
+void Smooth::renderIntersection(MatrixStack* MVstack, GLint locationMV) {
 	linAlg::crossProd(tempVec, intersection.nxyz, zVec);
 	linAlg::normVec(tempVec);
 	linAlg::rotAxis(tempVec, acos(linAlg::dotProd(intersection.nxyz, zVec)), iTransform);
@@ -48,7 +44,6 @@ void Smooth::renderIntersection(MatrixStack* MVstack, GLint locationMV)
 	//iCircle->setPosition(intersection.xyz);
 
 	MVstack->push();
-		
 		MVstack->translate(intersection.xyz);
 		MVstack->multiply(iTransform);
 		MVstack->scale(radius);
@@ -57,9 +52,7 @@ void Smooth::renderIntersection(MatrixStack* MVstack, GLint locationMV)
 	MVstack->pop();
 }
 
-void Smooth::render(MatrixStack* MVstack, GLint locationMV)
-{
-
+void Smooth::render(MatrixStack* MVstack, GLint locationMV) {
 	MVstack->push();
 		MVstack->translate(lineOffset);
 		glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack->getCurrentMatrix());
@@ -75,8 +68,7 @@ void Smooth::render(MatrixStack* MVstack, GLint locationMV)
 }
 
 
-void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
-{
+void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand) {
 	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
 	float eVec1[3]; float eVec2[3];
 	float P[3]; float Q[3]; float T[3];
@@ -115,9 +107,7 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 
 	for (int i = 0; i <= mesh->vertexCap; i++) {
 		//--< 2.1 | calculate vector between vertexposition and wandposition
-
 		linAlg::calculateVec(mVertexArray[i].xyz, newWPoint, eVec1);
-
 		
 		pLength = linAlg::dotProd(newDirr, eVec1);;//                                                 
 		Dirr[0] = newDirr[0] * pLength;
@@ -127,16 +117,14 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 		linAlg::calculateVec(eVec1, Dirr, eVec2);
 		oLength = linAlg::vecLength(eVec2);
 		// 2.2 >----------------------
-		if (pLength > 0.0f && oLength < mMAX_LENGTH)
-		{
+		if (pLength > 0.0f && oLength < mMAX_LENGTH) {
 			selectedVertices[selectedSize] = i; selectedSize++;
 			success = true;
 		}
 	}
 	// 2.0 >----------------------
 
-	if (!success) 
-	{
+	if (!success) {
 		deSelect();
 		mesh->updateOGLData();
 		return;
@@ -152,37 +140,32 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 		do {
 			tempE = mEdgeArray[mEdgeArray[tempEdge].nextEdge].sibling;
 
-			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected != 1.0f)
-			{
+			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected != 1.0f) {
 				linAlg::calculateVec(mVertexArray[mEdgeArray[tempEdge].vertex].xyz, mVertexArray[index2].xyz, eVec1);
 				linAlg::calculateVec(mVertexArray[mEdgeArray[tempE].vertex].xyz, mVertexArray[index2].xyz, eVec2);
 				linAlg::crossProd(P, newDirr, eVec2);
 
 				pLength = linAlg::dotProd(eVec1, P);
-				if (pLength < -EPSILON || pLength > EPSILON)
-				{
+				if (pLength < -EPSILON || pLength > EPSILON) {
 					invP = 1.f / pLength;
 					linAlg::calculateVec(newWPoint, mVertexArray[index2].xyz, T);
 
 					u = linAlg::dotProd(T, P) * invP;
-					if (u > 0.0f && u < 1.0f)
-					{
+					if (u > 0.0f && u < 1.0f) {
 						linAlg::crossProd(Q, T, eVec1);
 
 						v = linAlg::dotProd(newDirr, Q)*invP;
 
-						if (v > 0.0f && u + v < 1.0f)
-						{
+						if (v > 0.0f && u + v < 1.0f) {
 							t = linAlg::dotProd(eVec2, Q)*invP;
-							if (t > EPSILON && t < 0.1f)
-							{
+							if (t > EPSILON && t < 0.1f) {
 								//sIt->next->index = e[tempEdge].triangle;
 								tempVec[0] = newDirr[0] * t;
 								tempVec[1] = newDirr[1] * t;
 								tempVec[2] = newDirr[2] * t;
 								tempE = mVInfoArray[index2].edgePtr;
 								success = true;
-								if (linAlg::vecLength(tempVec) < linAlg::vecLength(intersection.nxyz)){
+								if (linAlg::vecLength(tempVec) < linAlg::vecLength(intersection.nxyz)) {
 									mIndex = index2;
 									intersection.xyz[0] = newWPoint[0] + tempVec[0];
 									intersection.xyz[1] = newWPoint[1] + tempVec[1];
@@ -205,16 +188,14 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 		mVInfoArray[index2].selected = 1.0f;
 	}
 
-	if (!success)
-	{
+	if (!success) {
 		deSelect();
 		mesh->updateOGLData();
 		return;
 	}
 	success = false;
 	//==============================================================
-	for (int i = 0; i < selectedSize; i++)
-	{
+	for (int i = 0; i < selectedSize; i++) {
 		mVInfoArray[selectedVertices[i]].selected = 0.0f;
 	}
 
@@ -234,7 +215,7 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 		tempEdge = mVInfoArray[index2].edgePtr;
 
 		do {
-			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected < 4.0f){
+			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected < 4.0f) {
 				index = mEdgeArray[tempEdge].vertex;
 
 				linAlg::calculateVec(mVertexArray[index].xyz, vPoint, eVec1);
@@ -262,8 +243,7 @@ void Smooth::firstSelect(DynamicMesh* mesh, Wand* wand)
 	mesh->updateOGLData();
 
 }
-void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
-{
+void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT) {
 	float wPoint[4]; float newWPoint[4]; float Dirr[4]; float newDirr[4];
 	float eVec1[3]; float eVec2[3];
 	float P[3]; float Q[3]; float T[3]; float lengthVec[3];
@@ -318,37 +298,32 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 
 		do {
 			tempE = mEdgeArray[mEdgeArray[tempEdge].nextEdge].sibling;
-			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected != 1.0f)
-			{
+			if (mVInfoArray[mEdgeArray[tempEdge].vertex].selected != 1.0f) {
 				linAlg::calculateVec(mVertexArray[mEdgeArray[tempEdge].vertex].xyz, mVertexArray[index2].xyz, eVec1);
 				linAlg::calculateVec(mVertexArray[mEdgeArray[tempE].vertex].xyz, mVertexArray[index2].xyz, eVec2);
 				linAlg::crossProd(P, newDirr, eVec2);
 
 				pLength = linAlg::dotProd(eVec1, P);
-				if (pLength < -EPSILON || pLength > EPSILON)
-				{
+				if (pLength < -EPSILON || pLength > EPSILON) {
 					invP = 1.f / pLength;
 					linAlg::calculateVec(newWPoint, mVertexArray[index2].xyz, T);
 
 					u = linAlg::dotProd(T, P) * invP;
-					if (u > 0.0f && u < 1.0f)
-					{
+					if (u > 0.0f && u < 1.0f) {
 						linAlg::crossProd(Q, T, eVec1);
 
 						v = linAlg::dotProd(newDirr, Q)*invP;
 
-						if (v > 0.0f && u + v < 1.0f)
-						{
+						if (v > 0.0f && u + v < 1.0f) {
 							t = linAlg::dotProd(eVec2, Q)*invP;
-							if (t > EPSILON && t < 0.1f)
-							{
+							if (t > EPSILON && t < 0.1f) {
 								//sIt->next->index = e[tempEdge].triangle;
 								lengthVec[0] = newDirr[0] * t;
 								lengthVec[1] = newDirr[1] * t;
 								lengthVec[2] = newDirr[2] * t;
 								tempE = mVInfoArray[index2].edgePtr;
 								success = true;
-								if (linAlg::vecLength(lengthVec) < linAlg::vecLength(intersection.nxyz)){
+								if (linAlg::vecLength(lengthVec) < linAlg::vecLength(intersection.nxyz)) {
 									mIndex = index2;
 									intersection.xyz[0] = newWPoint[0] + lengthVec[0];
 									intersection.xyz[1] = newWPoint[1] + lengthVec[1];
@@ -372,7 +347,7 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 
 
 	//CNR = 0;
-	if (!success){
+	if (!success) {
 		deSelect();
 		firstSelect(mesh, wand);
 		return;
@@ -406,7 +381,7 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 			selectedVertices[selectedSize] = index2; selectedSize++;
 			mVInfoArray[index2].selected = 3.0f;
 		}
-		else{
+		else {
 			mVInfoArray[index2].selected = 0.0f;
 		}
 
@@ -414,9 +389,9 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 
 	counter += dT;
 	//if (counter < strength){
-	if (false){
-		for (int i = 0; i < selectedSize; i++)
-		{
+	// TODO: remove this if false!?
+	if (false) {
+		for (int i = 0; i < selectedSize; i++) {
 			index2 = selectedVertices[i];
 			//	vPoint2 = mVertexArray[index].xyz;
 
@@ -425,7 +400,7 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 				index = mEdgeArray[tempEdge].vertex;
 				vPoint2 = mVertexArray[index].xyz;
 
-				if (mVInfoArray[index].selected != 3.0f){
+				if (mVInfoArray[index].selected != 3.0f) {
 
 					linAlg::calculateVec(vPoint2, vPoint, eVec1);
 
@@ -445,15 +420,12 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 					}
 				}
 				tempEdge = mEdgeArray[mEdgeArray[tempEdge].nextEdge].sibling;
-
-
 			} while (tempEdge != mVInfoArray[index2].edgePtr);
 		}
 	}
-	else{
+	else {
 		counter = 0.0f;
-		for (int i = 0; i < selectedSize; i++)
-		{
+		for (int i = 0; i < selectedSize; i++) {
 			index2 = selectedVertices[i];
 			//	vPoint2 = mVertexArray[index].xyz;
 
@@ -465,8 +437,7 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 				vPoint2 = mVertexArray[index].xyz;
 				nNR++;
 				nPos[0] += vPoint2[0]; nPos[1] += vPoint2[1]; nPos[2] += vPoint2[2];
-				if (mVInfoArray[index].selected != 3.0f){
-
+				if (mVInfoArray[index].selected != 3.0f) {
 					linAlg::calculateVec(vPoint2, vPoint, eVec1);
 
 					pLength = linAlg::dotProd(vNorm, eVec1);// / linAlg::vecLength(newDirr);
@@ -497,16 +468,13 @@ void Smooth::moveVertices(DynamicMesh* mesh, Wand* wand, float dT)
 	mesh->updateArea(selectedVertices, selectedSize);
 	mesh->updateOGLData();
 }
-void Smooth::deSelect()
-{
-	for (int i = 0; i < previouslySelectedSize; i++)
-	{
+void Smooth::deSelect() {
+	for (int i = 0; i < previouslySelectedSize; i++) {
 		mVInfoArray[previouslySelectedVertices[i]].selected = 0.0f;
 	}
 	previouslySelectedSize = 0;
 
-	for (int i = 0; i < selectedSize; i++)
-	{
+	for (int i = 0; i < selectedSize; i++) {
 		mVInfoArray[selectedVertices[i]].selected = 0.0f;
 	}
 	selectedSize = 0;

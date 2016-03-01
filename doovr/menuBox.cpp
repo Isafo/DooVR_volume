@@ -113,8 +113,29 @@ menuBox::menuBox(float x, float y, float z, float dX, float dY, float dZ, int tX
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+// TODO: kolla varför den crachar när denna körs
 menuBox::~menuBox(void) {
 	std::cout << "A box has died." << std::endl;
+	//delete[] vertexarray;
+	//delete[] indexarray;
+	clean();
+}
+
+void menuBox::clean() {
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
+
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
 }
 
 void menuBox::setDim(float x, float y, float z) {

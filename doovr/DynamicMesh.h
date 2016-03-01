@@ -3,6 +3,8 @@
 #include "linAlg.h"
 #include "Mesh.h"
 #include "Wand.h"
+#include "Octant.h"
+
 #include <vector>
 
 #ifndef DYNAMICMESH_H
@@ -15,7 +17,6 @@ struct dBufferData {
 	GLfloat nx;
 	GLfloat ny;
 	GLfloat nz;
-	GLfloat selected;
 };
 
 //! HalfEdge data structure. HalfEdge points to the next edge in the triangle counter clockwise.
@@ -39,6 +40,12 @@ struct vInfo {
 	GLfloat selected = 0;
 };
 
+struct cacheCell {
+	bool isoBool;
+	float cornerPoint[3];
+	int vertexIndex[3];
+};
+
 #endif
 
 //! A class representing a modifiable 3D mesh 
@@ -49,7 +56,14 @@ class DynamicMesh : public Mesh{
 	friend class Drag;
 	friend class BuildUp;
 
+	friend class Add;
+	friend class Remove;
+
+	friend class Octant;
+
+
   public:
+
 	DynamicMesh();
 	DynamicMesh(std::string fileName);
 	~DynamicMesh();
@@ -58,21 +72,18 @@ class DynamicMesh : public Mesh{
 	void deSelect();
 
 	//dilate/erode based modelling
-	void pull(Wand* wand, float rad);
-	void push(Wand* wand, float rad);
-	void drag(Wand* wand, float rad);
-	void draw(Wand* wand, float rad);
-	void smooth(Wand* wand, float rad);
-	void markUp(Wand* wand, float rad);
 
-	void render();
+	void render() override;
 	void render(unsigned int PrimID);
 
-	void createBuffers();
+	void createBuffers() override;
 	void updateOGLData();
+	void updateOGLData(std::vector<Octant*>* _octList);
+	void updateRemovedOGLData(int _vStart, int _tStart);
 
 	//! saves the mesh as a binary file with the current date and time as file name (yyyy-mm-dd_hh-mm-ss.bin)
 	void sphereSubdivide(float rad);
+	void generateMC(std::vector<Octant*>* _octList);
 
 	void save();
 	void load(std::string _fileName);
@@ -84,17 +95,25 @@ class DynamicMesh : public Mesh{
 
 	void cleanBuffer();
 
+	void debug();
+
   private:
 
-	const int MAX_NR_OF_VERTICES = 1000000;
+	const int tmpMAX_DEPTH = 8;
+	//! placeholder used when empty and temporary octants are needed. Used along the physical edges of the octree
+	
+	  //TODO: remove one zero
+	const int MAX_NR_OF_VERTICES = 10000000;
 	//! negative index of the latest removed vertex
 	/*! vInfoArray's edgepointer contains the negative index of an empty slot in the vertexArray*/
 	int emptyV;
+	std::vector<int> emptyVStack;
 
 	const int MAX_NR_OF_TRIANGLES = 2 * MAX_NR_OF_VERTICES;
 	//! negative index of the latest removed triangle
 	/*! triEPtr contains the negative index of an empty slot in the triangleArray*/
 	int emptyT;
+	std::vector<int> emptyTStack;
 
 	const int MAX_NR_OF_EDGES = 3 * MAX_NR_OF_VERTICES;
 	//! negative index of the latest removed edge
@@ -113,10 +132,10 @@ class DynamicMesh : public Mesh{
 
 	//! Array that exists parallell to the vertexArray and contains indices to an edge that is connected to the corresponding triangle
 	/*! An empty slot in vInfoArray and vertexArray saves the negative index of the next empty slot in the array in the edgePtr variable.*/
-	vInfo* vInfoArray;
+	vInfo** vInfoArray;
 	//! Array that exists parallell to the indexArray and contains indices to an edge that is part of the corresponding triangle
 	/*! An empty slot in triEPtr and triangleArray saves the negative index of the next empty slot in the array in triEPtr*/
-	int* triEPtr;
+	int** triEPtr;
 
 	//! Array that stores all halfEdges of the mesh
 	/*! An empty slot in the array saves the negative index of the next empty slot in the array in the nextEdge variable*/
@@ -125,14 +144,12 @@ class DynamicMesh : public Mesh{
 	//! largest index in the edgeArray where values exist 
 	int edgeCap;
 	
-	sVert HVerts[1000000];
-	int HNR = 0;
-	//sVert* sHead; sVert* sTail;
-	//sVert* sIt = nullptr;
-	//sVert* tempSVert = nullptr;
-	sVert sMid;
-	sVert CVerts[1000000];
-	int CNR = 0;
+	//TEMPORARY ARRAY FOR CACHING THE ISO VALUE
+	cacheCell*** isoCache;
+	int z0Cache;
+	int* y0Cache;
+
+	unsigned char isoValue = 128;
 	
 	//float midPoint[3];
 
@@ -157,4 +174,8 @@ class DynamicMesh : public Mesh{
 
 	//! updates the changed vertecies normal 
 	void updateNormals(int* changeList, int listSize);
+	
+	int edgeTable[256];
+	int triTable[256][16];
+
 };

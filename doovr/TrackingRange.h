@@ -19,7 +19,7 @@ class TrackingRange : public Entity {
 
 	void createBox(float xSize, float ySize, float zSize);
 
-	void render();
+	void render() override;
 
   private:
 	GLuint vao;          // Vertex array object, the main handle for geometry
@@ -29,4 +29,6 @@ class TrackingRange : public Entity {
 	GLuint indexbuffer;  // Buffer ID to bind to GL_ELEMENT_ARRAY_BUFFER
 	GLfloat *vertexarray; // Vertex array on interleaved format: x y z nx ny nz s t
 	GLuint *indexarray;   // Element index array
+
+	void clean();
 };

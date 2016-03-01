@@ -20,7 +20,7 @@ public:
 	};
 
 	void createCylinder(float radius, int segments);
-	void render();
+	void render() override;
 
 	float getRadius(){ return radius; }
 

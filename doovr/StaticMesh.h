@@ -24,12 +24,13 @@ public:
 	StaticMesh();
 	~StaticMesh();
 
-	void render();
-	void createBuffers();
+	void render() override;
+	void createBuffers() override;
 
 	void load(std::string fileName);
 
 private:
 	texCoords* texArray;
+	void clean();
 };
 

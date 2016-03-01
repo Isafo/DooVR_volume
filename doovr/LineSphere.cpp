@@ -149,6 +149,24 @@ LineSphere::LineSphere(float pX, float pY, float pZ, float r) {
 LineSphere::~LineSphere() {
 	delete[] vertexarray;
 	delete[] indexarray;
+	void clean();
+}
+
+void LineSphere::clean() {
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
+
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
 }
 
 void LineSphere::render() {

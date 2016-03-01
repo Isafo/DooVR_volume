@@ -11,6 +11,26 @@ Box::Box(float x, float y, float z, float dX, float dY, float dZ) {
 
 Box::~Box(void) {
 	std::cout << "A box has died." << std::endl;
+	delete[] vertexarray;
+	delete[] indexarray;
+	clean();
+}
+
+void Box::clean() {
+	if (glIsVertexArray(vao)) {
+		glDeleteVertexArrays(1, &vao);
+	}
+	vao = 0;
+
+	if (glIsBuffer(vertexbuffer)) {
+		glDeleteBuffers(1, &vertexbuffer);
+	}
+	vertexbuffer = 0;
+
+	if (glIsBuffer(indexbuffer)) {
+		glDeleteBuffers(1, &indexbuffer);
+	}
+	indexbuffer = 0;
 }
 
 void Box::createBox(float dX, float dY, float dZ) {
