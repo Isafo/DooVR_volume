@@ -7,10 +7,9 @@
 
 
 
-class ScalarTool :
-	public Tool
+class ScalarTool : public Tool
 {
-	friend class Octant;
+	//friend class Octant;
 
 public:
 	ScalarTool();
@@ -24,6 +23,9 @@ public:
 	virtual void changeScalarData( DynamicMesh* _mesh, Wand* _wand, Octree* _ot) = 0;
 
 protected:
+
+	std::vector<octantStackElement> octantStack;
+	std::vector<Octant*> octList;
 
 };
 

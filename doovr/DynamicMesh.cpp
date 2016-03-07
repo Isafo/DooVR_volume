@@ -571,9 +571,7 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList) {
 	int i = 0;
 	while ((*_octList)[i] != nullptr) {
 		_octant = (*_octList)[i];
-		if (_octant->triangles == nullptr)
-			continue;
-
+		
 		if (_octant->vertices[0] != -1){
 			vertexP[_octant->vertices[0]].x = (*vertexArray[_octant->vertices[0]]).xyz[0];
 			vertexP[_octant->vertices[0]].y = (*vertexArray[_octant->vertices[0]]).xyz[1];
@@ -594,6 +592,9 @@ void DynamicMesh::updateOGLData(std::vector<Octant*>* _octList) {
 		//vertexP[k].nx = vertexArray[_octant->vertices][k].nxyz[0];
 		//vertexP[k].ny = vertexArray[_octant->vertices][k].nxyz[1];
 		//vertexP[k].nz = vertexArray[_octant->vertices][k].nxyz[2];
+
+		if (_octant->tCount == 0)
+			continue;
 
 		for (int k = 0; k < _octant->tCount; k++) {
 			indexP[_octant->triangles[k]].index[0] = (*triangleArray[_octant->triangles[k]]).index[0];
@@ -1018,7 +1019,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 	Octant* oNeighbor[7];
 	int tmpVindex;
 	int tmpTindex;
-	int tmpArray[5];
+	int tmpTriArray[5];
 
 	int tCounter;
 
@@ -1038,12 +1039,12 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 
 	int olEnd = (*_octList).size();
 
-	int currentVoxel{ 0 };
+	int octantIndex{ 0 };
 
-	while (currentVoxel < olEnd) {
+	while (octantIndex < olEnd) {
 
 		// fetch current octant
-		_octant = (*_octList)[currentVoxel];
+		_octant = (*_octList)[octantIndex];
 
 		// TODO: rewrite this traversal using locational codes
 		nPos[0][0] = _octant->pos[0] - fDim;	nPos[0][1] = _octant->pos[1] - fDim;	nPos[0][2] = _octant->pos[2] - fDim;
@@ -1091,7 +1092,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 
 			//delete old vertex data
 			//TODO: changed order of ifs, don't forget to change back and test this
-			if (_octant->vertices[2] != -1){
+			/*if (_octant->vertices[2] != -1){
 				delete vertexArray[_octant->vertices[2]];
 				vertexArray[_octant->vertices[2]] = nullptr;
 				emptyVStack.push_back(_octant->vertices[2]);
@@ -1108,11 +1109,11 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				vertexArray[_octant->vertices[0]] = nullptr;
 				emptyVStack.push_back(_octant->vertices[0]);
 				_octant->vertices[0] = -1;
-			}
+			}*/
 			//vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
 
 			//delete old triangle data 
-			for (int i = 0; i < _octant->tCount; i++){
+			for (int i = 0; i < _octant->tCount; ++i){
 				delete triangleArray[_octant->triangles[i]];
 				triangleArray[_octant->triangles[i]] = nullptr;
 				emptyTStack.push_back(_octant->triangles[i]);
@@ -1201,15 +1202,18 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			}
 			if (edgeTable[cubeIndex] & 32) {
 				//assign new vertex index and allocate data
-				if (emptyVStack.size() == 0) {
-					_octant->vertices[0] = vertexCap;
-					vertexCap++;
-				}
-				else {
-					_octant->vertices[0] = emptyVStack.back();
-					emptyVStack.pop_back();
-				}
-				vertexArray[_octant->vertices[0]] = new vertex;
+				
+				if (_octant->vertices[0] == -1){
+					if (emptyVStack.size() == 0) {
+						_octant->vertices[0] = vertexCap;
+						vertexCap++;
+					}
+					else {
+						_octant->vertices[0] = emptyVStack.back();
+						emptyVStack.pop_back();
+					}
+					vertexArray[_octant->vertices[0]] = new vertex;
+				}				
 
 				dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
 				(*vertexArray[_octant->vertices[0]]).xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
@@ -1217,23 +1221,43 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				(*vertexArray[_octant->vertices[0]]).xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
 				vertList[5] = _octant->vertices[0];// *V_ROW_MAX;
 			}
+			else{ //Vertex no longer used, delete vertice information
+				if (_octant->vertices[0] != -1){
+					delete vertexArray[_octant->vertices[0]];
+					vertexArray[_octant->vertices[0]] = nullptr;
+					emptyVStack.push_back(_octant->vertices[0]);
+					_octant->vertices[0] = -1;
+				}
+			}
 			if (edgeTable[cubeIndex] & 64) {
 				//assign new vertex index and allocate data
-				if (emptyVStack.size() == 0) {
-					_octant->vertices[1] = vertexCap;
-					vertexCap++;
-				}
-				else {
-					_octant->vertices[1] = emptyVStack.back();
-					emptyVStack.pop_back();
-				}
-				vertexArray[_octant->vertices[1]] = new vertex;
 				
+				if (_octant->vertices[1] == -1){
+					if (emptyVStack.size() == 0) {
+						_octant->vertices[1] = vertexCap;
+						vertexCap++;
+					}
+					else {
+						_octant->vertices[1] = emptyVStack.back();
+						emptyVStack.pop_back();
+					}
+					vertexArray[_octant->vertices[1]] = new vertex;
+				}
+
+
 				dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
 				(*vertexArray[_octant->vertices[1]]).xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
 				(*vertexArray[_octant->vertices[1]]).xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
 				(*vertexArray[_octant->vertices[1]]).xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
 				vertList[6] = _octant->vertices[1];// * V_ROW_MAX + 1;
+			}
+			else{//Vertex no longer used, delete vertice information
+				if (_octant->vertices[1] != -1){
+					delete vertexArray[_octant->vertices[1]];
+					vertexArray[_octant->vertices[1]] = nullptr;
+					emptyVStack.push_back(_octant->vertices[1]);
+					_octant->vertices[1] = -1;
+				}
 			}
 			if (edgeTable[cubeIndex] & 128) {
 				vertList[7] = oNeighbor[6]->vertices[0];// * V_ROW_MAX;
@@ -1246,21 +1270,30 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			}
 			if (edgeTable[cubeIndex] & 1024) {
 				//assign new vertex index and allocate data
-				if (emptyVStack.size() == 0) {
-					_octant->vertices[2] = vertexCap;
-					vertexCap++;
+				if (_octant->vertices[2] == -1){
+					if (emptyVStack.size() == 0) {
+						_octant->vertices[2] = vertexCap;
+						vertexCap++;
+					}
+					else {
+						_octant->vertices[2] = emptyVStack.back();
+						emptyVStack.pop_back();
+					}
+					vertexArray[_octant->vertices[2]] = new vertex;
 				}
-				else {
-					_octant->vertices[2] = emptyVStack.back();
-					emptyVStack.pop_back();
-				}
-				vertexArray[_octant->vertices[2]] = new vertex;
-				
 				dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
 				(*vertexArray[_octant->vertices[2]]).xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
 				(*vertexArray[_octant->vertices[2]]).xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
 				(*vertexArray[_octant->vertices[2]]).xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
 				vertList[10] = _octant->vertices[2];// * V_ROW_MAX + 2;
+			}
+			else{//Vertex no longer used, delete vertice information
+				if (_octant->vertices[2] != -1){
+					delete vertexArray[_octant->vertices[2]];
+					vertexArray[_octant->vertices[2]] = nullptr;
+					emptyVStack.push_back(_octant->vertices[2]);
+					_octant->vertices[2] = -1;
+				}
 			}
 			if (edgeTable[cubeIndex] & 2048) {
 				vertList[11] = oNeighbor[6]->vertices[2];// * V_ROW_MAX + 2;
@@ -1271,26 +1304,26 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				tmpTindex = i*0.34;
 
 				if (emptyTStack.size() == 0) {
-					tmpArray[tmpTindex] = triangleCap;
+					tmpTriArray[tmpTindex] = triangleCap;
 					triangleCap++;
 				}
 				else {
-					tmpArray[tmpTindex] = emptyTStack.back();
+					tmpTriArray[tmpTindex] = emptyTStack.back();
 					emptyTStack.pop_back();
 				}
-				triangleArray[tmpArray[tmpTindex]] = new triangle;
-				(*triangleArray[tmpArray[tmpTindex]]).index[0] = vertList[triTable[cubeIndex][i]];
-				(*triangleArray[tmpArray[tmpTindex]]).index[1] = vertList[triTable[cubeIndex][i + 1]];
-				(*triangleArray[tmpArray[tmpTindex]]).index[2] = vertList[triTable[cubeIndex][i + 2]];
+				triangleArray[tmpTriArray[tmpTindex]] = new triangle;
+				(*triangleArray[tmpTriArray[tmpTindex]]).index[0] = vertList[triTable[cubeIndex][i]];
+				(*triangleArray[tmpTriArray[tmpTindex]]).index[1] = vertList[triTable[cubeIndex][i + 1]];
+				(*triangleArray[tmpTriArray[tmpTindex]]).index[2] = vertList[triTable[cubeIndex][i + 2]];
 
 				_octant->tCount++;
 			}
-			
 
 			// allocate triangle data and copy from tmp
-			_octant->triangles = new int[_octant->tCount + 1];
+			//TODO: check if tcount +1 is needed
+			_octant->triangles = new int[_octant->tCount];
 			for (int i = 0; i < _octant->tCount; i++){
-				_octant->triangles[i] = tmpArray[i];
+				_octant->triangles[i] = tmpTriArray[i];
 			}
 
 			(*_octList)[listCounter] = _octant;
@@ -1300,13 +1333,35 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			
 			//TODO: ta bort if satsen som kolla listans storlek och gå istället till näst sista platsen i listan för att därefter behandla sista platsen enskilt. eventuellt...
 			//TODO:använd något annat än tCounter
-			if (currentVoxel < (*_octList).size() - 1){
+
+
+			// remove old vertex data
+			if (_octant->vertices[2] != -1){
+				delete vertexArray[_octant->vertices[2]];
+				vertexArray[_octant->vertices[2]] = nullptr;
+				emptyVStack.push_back(_octant->vertices[2]);
+				_octant->vertices[2] = -1;
+			}
+			if (_octant->vertices[1] != -1){
+				delete vertexArray[_octant->vertices[1]];
+				vertexArray[_octant->vertices[1]] = nullptr;
+				emptyVStack.push_back(_octant->vertices[1]);
+				_octant->vertices[1] = -1;
+			}
+			if (_octant->vertices[0] != -1){
+				delete vertexArray[_octant->vertices[0]];
+				vertexArray[_octant->vertices[0]] = nullptr;
+				emptyVStack.push_back(_octant->vertices[0]);
+				_octant->vertices[0] = -1;
+			}
+
+			if (octantIndex < (*_octList).size() - 1){
 				// check if next octant in octlist have the same parent
-				if (_octant->parent != (*_octList)[currentVoxel + 1]->parent) {
+				if (_octant->parent != (*_octList)[octantIndex + 1]->parent) {
 
 					tmpOct = _octant->parent;
 					tCounter = tmpOct->child[0]->tCount;
-					for (int i = 1; i < 8; i++){
+					for (int i = 1; i < 8; ++i){
 						tCounter += tmpOct->child[i]->tCount;
 					}
 					if (tCounter == 0){
@@ -1321,7 +1376,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				// check the last octant in octlist
 				tmpOct = _octant->parent;
 				tCounter = tmpOct->child[0]->tCount;
-				for (int i = 1; i < 8; i++){
+				for (int i = 1; i < 8; ++i){
 					tCounter += tmpOct->child[i]->tCount;
 				}
 				if (tCounter == 0){
@@ -1333,7 +1388,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			}
 
 		}
-		currentVoxel++;
+		++octantIndex;
+
 	}
 	if (listCounter == (*_octList).size())
 		(*_octList).push_back(nullptr);

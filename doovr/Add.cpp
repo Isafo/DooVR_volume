@@ -11,6 +11,7 @@ Add::Add()
 	radius = 0.01f;
 	toolBrush = new LineSphere(0.0f, 0.0f, 0.0f, 1.0f);
 	octList.reserve(5000);
+	octantStack.reserve(100);
 }
 
 
@@ -66,7 +67,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	float cornerPos[3];
 
 	octList.clear();
-	std::vector<octantStackElement> octantStack;
+	//octantStack.clear();
 	octantStackElement tempStackElm;
 
 	int emptyVStackInitSize = _mesh->emptyVStack.size();
@@ -149,6 +150,39 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 
 				childOct->data = 255;
 				childOct->isoBool = true;
+
+				// delete the old vertex data
+				if (childOct->vertices[2] != -1){
+					delete _mesh->vertexArray[childOct->vertices[2]];
+					_mesh->vertexArray[childOct->vertices[2]] = nullptr;
+					_mesh->emptyVStack.push_back(childOct->vertices[2]);
+					childOct->vertices[2] = -1;
+				}
+				if (childOct->vertices[1] != -1){
+					delete _mesh->vertexArray[childOct->vertices[1]];
+					_mesh->vertexArray[childOct->vertices[1]] = nullptr;
+					_mesh->emptyVStack.push_back(childOct->vertices[1]);
+					childOct->vertices[1] = -1;
+				}
+				if (childOct->vertices[0] != -1){
+					delete _mesh->vertexArray[childOct->vertices[0]];
+					_mesh->vertexArray[childOct->vertices[0]] = nullptr;
+					_mesh->emptyVStack.push_back(childOct->vertices[0]);
+					childOct->vertices[0] = -1;
+				}
+
+				// delete the old triangle data
+				if (childOct->tCount != 0){
+					for (int i = 0; i < childOct->tCount; ++i){
+						delete _mesh->triangleArray[childOct->triangles[i]];
+						_mesh->triangleArray[childOct->triangles[i]] = nullptr;
+						_mesh->emptyTStack.push_back(childOct->triangles[i]);
+					}
+					childOct->tCount = 0;
+					delete[] childOct->triangles;
+					childOct->triangles = nullptr;
+				}
+				
 			}// --->
 			else {
 				if (childOct->depth == Octant::MAX_DEPTH) {

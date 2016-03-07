@@ -16,7 +16,6 @@ public:
 
 	void changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot) override;
 
-	std::vector<Octant*> octList;
 
 };
 
