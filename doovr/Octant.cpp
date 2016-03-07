@@ -8,7 +8,7 @@ Octant::Octant() {
 	//pos[0] = x; pos[1] = y; pos[2] = z;
 	//halfDim = _halfDim;
 	//TODO: maybe do manually
-	data = 0;
+	scalarValue = 0;
 	isoBool = false;
 	vertices[0] = -1;
 	vertices[1] = -1;
@@ -18,27 +18,27 @@ Octant::Octant() {
 
 Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _halfDim, bool _fill) {
 	/*if (_depth != MAX_DEPTH) {
-		data = new unsigned char**[1];
-		data[0] = new unsigned char*[1];
-		data[0][0] = new unsigned char[1];
-		data[0][0][0] = 0;
+		scalarValue = new unsigned char**[1];
+		scalarValue[0] = new unsigned char*[1];
+		scalarValue[0][0] = new unsigned char[1];
+		scalarValue[0][0][0] = 0;
 	}
 	else {
 
 		int scalarNR = std::pow(2, 10 - _depth);
 
-		data = new unsigned char**[scalarNR];
+		scalarValue = new unsigned char**[scalarNR];
 		for (int i = 0; i < scalarNR; i++)
-			data[i] = new unsigned char*[scalarNR];
+			scalarValue[i] = new unsigned char*[scalarNR];
 
 		for (int i = 0; i < scalarNR; i++)
 			for (int j = 0; j < scalarNR; j++)
-				data[i][j] = new unsigned char[scalarNR];
+				scalarValue[i][j] = new unsigned char[scalarNR];
 
 		for (int i = 0; i < scalarNR; i++)
 			for (int j = 0; j < scalarNR; j++)
 				for (int k = 0; k < scalarNR; k++)
-					data[i][j][k] = 0;
+					scalarValue[i][j][k] = 0;
 	}*/
 
 	//shape = new LineCube(0.0f, 0.0f, 0.0f, _halfDim * 2, _halfDim * 2, _halfDim * 2);
@@ -49,7 +49,7 @@ Octant::Octant(int _depth, Octant* _parent, float x, float y, float z, float _ha
 	halfDim = _halfDim;
 	//TODO: maybe do manually
 	isoBool = _fill;
-	(_fill) ? (data = 255) : (data = 0);
+	(_fill) ? (scalarValue = 255) : (scalarValue = 0);
 	
 	vertices[0] = -1;
 	vertices[1] = -1;
@@ -66,12 +66,12 @@ Octant::~Octant() {
 
 		for (int i = 0; i < scalarNR; i++)
 			for (int j = 0; j < scalarNR; j++)
-				delete data[i][j];
+				delete scalarValue[i][j];
 
 		for (int i = 0; i < scalarNR; i++)
-			delete data[i];
+			delete scalarValue[i];
 
-		delete data;
+		delete scalarValue;
 	}
 	else {
 		if (child[0] != nullptr) {
@@ -85,9 +85,9 @@ Octant::~Octant() {
 			delete child[7];
 		}
 
-		delete data[0][0];
-		delete data[0];
-		delete data;
+		delete scalarValue[0][0];
+		delete scalarValue[0];
+		delete scalarValue;
 	}*/
 
 	if (child[0] != nullptr) {
@@ -105,7 +105,7 @@ Octant::~Octant() {
 
 //do NOT use on MAX_DEPTH octants
 void Octant::partition() {
-	//data = 0;
+	//scalarValue = 0;
 	//isoBool = false;
 
 	float d = halfDim / 2.0f;
@@ -128,14 +128,14 @@ void Octant::collisionCheck() {
 
 //do NOT use on MAX_DEPTH octants
 void Octant::deAllocate(DynamicMesh* _mesh) {
-	data = child[0]->data;
+	scalarValue = child[0]->scalarValue;
 	isoBool = child[0]->isoBool;
 	for (int i = 0; i < 8; i++) {
 		// child has no children 
 		if (child[i]->child[0] == nullptr) {
-			// data is allocated
+			// scalarValue is allocated
 			if (child[i]->triangles != nullptr) {
-				//delete triangle data
+				//delete triangle scalarValue
 				for (int j = 0; j < child[i]->tCount; j++){
 					_mesh->emptyTStack.push_back(child[i]->triangles[j]);
 					delete _mesh->triangleArray[child[i]->triangles[j]];
@@ -145,7 +145,7 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 				child[i]->tCount = 0;
 				child[i]->triangles = nullptr;
 				
-				//delete vertex data
+				//delete vertex scalarValue
 				if (child[i]->vertices[0] != -1){
 					_mesh->emptyVStack.push_back(child[i]->vertices[0]);
 					delete _mesh->vertexArray[child[i]->vertices[0]];
@@ -183,7 +183,7 @@ void Octant::checkHomogeneity() {
 		if (child[i]->child[0] != nullptr)
 			return;
 	}
-	data = child[0]->data;
+	scalarValue = child[0]->scalarValue;
 	isoBool = child[0]->isoBool;
 	for (int i = 0; i < 8; i++){
 		delete child[i];
@@ -202,7 +202,7 @@ void Octant::checkHomogeneity(std::vector<octantStackElement>& octStack) {
 		if (child[i]->child[0] != nullptr)
 			return;
 	}
-	data = child[0]->data;
+	scalarValue = child[0]->scalarValue;
 	isoBool = child[0]->isoBool;
 	for (int i = 0; i < 8; i++){
 		delete child[i];

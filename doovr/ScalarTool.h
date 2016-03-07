@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #pragma once
 #include "Tool.h"
 #include "Octree.h"

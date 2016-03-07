@@ -50,7 +50,7 @@ public:
 	Octant* parent;
 	int depth;
 
-	unsigned char data;
+	unsigned char scalarValue;
 	bool isoBool;
 
 	int vertices[3];

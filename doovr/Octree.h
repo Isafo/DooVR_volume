@@ -9,7 +9,10 @@ public:
 
 	Octant* root;
 
-	const int MAX_DEPTH = 1000;
+	//relates to MAX_DEPTH in class Octant. 
+	//Must always be equal to the vector length of the vector that spans the corners in a voxel
+	const double voxDiagonalLength = 0.006928203230;//0.00346410161514;
+	
 	float halfDim;
 	//int scalarRes[3];
 

@@ -3,6 +3,8 @@
 #include "linAlg.h"
 
 #include <vector>
+#include <algorithm>
+
 
 
 
@@ -56,6 +58,11 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	linAlg::vectorMatrixMult(_mesh->orientation, wDirr, nwDirr);
 	linAlg::transpose(_mesh->orientation);
 
+	double wMaxRadius = radius + _ot->voxDiagonalLength;
+	double wMinRadius = radius - _ot->voxDiagonalLength;
+	float tmpVecLength;
+
+
 	Octant* currentOct = _ot->root;
 	Octant* childOct;
 	Octant* tmpOct;
@@ -84,7 +91,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 			d += s*s;
 		}
 	}
-	if (d > radius*radius) {
+	if (d > wMaxRadius*wMaxRadius) {
 		return;
 	}
 	else{
@@ -131,7 +138,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 				d += s*s;
 			}
 		}
-		if (d <= radius*radius) {
+		if (d <= wMaxRadius*wMaxRadius) {
 			//find corner furthest away from sphere center
 			tmpVec[0] = (0.0f > tmpPos[0] ? childDim : -childDim);
 			tmpVec[1] = (0.0f > tmpPos[1] ? childDim : -childDim);
@@ -139,7 +146,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 
 			//<--- check if cube is entirely inside sphere --	
 			linAlg::calculateVec(tmpVec, tmpPos, tmpVec);
-			if (linAlg::vecLength(tmpVec) <= radius) {
+			if (linAlg::vecLength(tmpVec) <= wMinRadius) {
 
 				if (childOct->child[0] != nullptr) {
 					if (octantStack.back().deallocationBool != 1)
@@ -148,7 +155,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 					childOct->deAllocate(_mesh);
 				}
 
-				childOct->data = 255;
+				childOct->scalarValue = 255;
 				childOct->isoBool = true;
 
 				// delete the old vertex data
@@ -227,9 +234,12 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		tmpPos[2] = tempOct->pos[2] + tempOct->halfDim;
 		linAlg::calculateVec(tmpPos, nwPos, tmpVec);
 
-		if (linAlg::vecLength(tmpVec) <= radius) {//check if point is inside sphere
-			tempOct->data = 255;
-			tempOct->isoBool = true;
+		tmpVecLength = linAlg::vecLength(tmpVec);
+
+		if (tmpVecLength < wMaxRadius) {//check if point is inside sphere
+	
+			tempOct->scalarValue = std::max(static_cast<double>(tempOct->scalarValue), (255 * std::max(std::min(((radius - tmpVecLength) + _ot->voxDiagonalLength) / (2 * _ot->voxDiagonalLength), 1.0), 0.0)));
+			tempOct->isoBool = (tempOct->scalarValue > 128 ? true : false);
 		}
 	}// -->
 

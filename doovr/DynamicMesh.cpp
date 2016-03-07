@@ -1087,10 +1087,10 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 		}
 		
 		//TODO: remove and do this always. remember to set _octant->tCount = 0
-		//check if data is allocated or not and then start using allocated data
+		//check if scalarValue is allocated or not and then start using allocated scalarValue
 		if (_octant->triangles != nullptr) {
 
-			//delete old vertex data
+			//delete old vertex scalarValue
 			//TODO: changed order of ifs, don't forget to change back and test this
 			/*if (_octant->vertices[2] != -1){
 				delete vertexArray[_octant->vertices[2]];
@@ -1112,7 +1112,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			}*/
 			//vertexArray[_octant->vertices] = new vertex[V_ROW_MAX];
 
-			//delete old triangle data 
+			//delete old triangle scalarValue 
 			for (int i = 0; i < _octant->tCount; ++i){
 				delete triangleArray[_octant->triangles[i]];
 				triangleArray[_octant->triangles[i]] = nullptr;
@@ -1130,50 +1130,50 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 		xyz[0][0] = _octant->pos[0] - dim;
 		xyz[0][1] = _octant->pos[1] - dim;
 		xyz[0][2] = _octant->pos[2] - dim;
-		val[0] = oNeighbor[0]->data;
+		val[0] = oNeighbor[0]->scalarValue;
 		cellIsoBool[0] = oNeighbor[0]->isoBool;
 
 		xyz[1][0] = _octant->pos[0] + dim;
 		xyz[1][1] = _octant->pos[1] - dim;
 		xyz[1][2] = _octant->pos[2] - dim;
-		val[1] = oNeighbor[1]->data;
+		val[1] = oNeighbor[1]->scalarValue;
 		cellIsoBool[1] = oNeighbor[1]->isoBool;
 
 		xyz[2][0] = _octant->pos[0] + dim;
 		xyz[2][1] = _octant->pos[1] - dim;
 		xyz[2][2] = _octant->pos[2] + dim;
-		val[2] = oNeighbor[2]->data;
+		val[2] = oNeighbor[2]->scalarValue;
 		cellIsoBool[2] = oNeighbor[2]->isoBool;
 
 		xyz[3][0] = _octant->pos[0] - dim;
 		xyz[3][1] = _octant->pos[1] - dim;
 		xyz[3][2] = _octant->pos[2] + dim;
-		val[3] = oNeighbor[3]->data;
+		val[3] = oNeighbor[3]->scalarValue;
 		cellIsoBool[3] = oNeighbor[3]->isoBool;
 
 		xyz[4][0] = _octant->pos[0] - dim;
 		xyz[4][1] = _octant->pos[1] + dim;
 		xyz[4][2] = _octant->pos[2] - dim;
-		val[4] = oNeighbor[4]->data;
+		val[4] = oNeighbor[4]->scalarValue;
 		cellIsoBool[4] = oNeighbor[4]->isoBool;
 
 		xyz[5][0] = _octant->pos[0] + dim;
 		xyz[5][1] = _octant->pos[1] + dim;
 		xyz[5][2] = _octant->pos[2] - dim;
-		val[5] = oNeighbor[5]->data;
+		val[5] = oNeighbor[5]->scalarValue;
 		cellIsoBool[5] = oNeighbor[5]->isoBool;
 
 		//save the sixth corner values to isoCache
 		xyz[6][0] = _octant->pos[0] + dim;
 		xyz[6][1] = _octant->pos[1] + dim;
 		xyz[6][2] = _octant->pos[2] + dim;
-		val[6] = _octant->data;
+		val[6] = _octant->scalarValue;
 		cellIsoBool[6] = _octant->isoBool;
 
 		xyz[7][0] = _octant->pos[0] - dim;
 		xyz[7][1] = _octant->pos[1] + dim;
 		xyz[7][2] = _octant->pos[2] + dim;
-		val[7] = oNeighbor[6]->data;
+		val[7] = oNeighbor[6]->scalarValue;
 		cellIsoBool[7] = oNeighbor[6]->isoBool;
 
 		// get the case index
@@ -1201,7 +1201,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				vertList[4] = oNeighbor[5]->vertices[1];// * V_ROW_MAX + 1;
 			}
 			if (edgeTable[cubeIndex] & 32) {
-				//assign new vertex index and allocate data
+				//assign new vertex index and allocate scalarValue
 				
 				if (_octant->vertices[0] == -1){
 					if (emptyVStack.size() == 0) {
@@ -1230,7 +1230,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				}
 			}
 			if (edgeTable[cubeIndex] & 64) {
-				//assign new vertex index and allocate data
+				//assign new vertex index and allocate scalarValue
 				
 				if (_octant->vertices[1] == -1){
 					if (emptyVStack.size() == 0) {
@@ -1269,7 +1269,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				vertList[9] = oNeighbor[5]->vertices[2];// * V_ROW_MAX + 2;
 			}
 			if (edgeTable[cubeIndex] & 1024) {
-				//assign new vertex index and allocate data
+				//assign new vertex index and allocate scalarValue
 				if (_octant->vertices[2] == -1){
 					if (emptyVStack.size() == 0) {
 						_octant->vertices[2] = vertexCap;
@@ -1319,7 +1319,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				_octant->tCount++;
 			}
 
-			// allocate triangle data and copy from tmp
+			// allocate triangle scalarValue and copy from tmp
 			//TODO: check if tcount +1 is needed
 			_octant->triangles = new int[_octant->tCount];
 			for (int i = 0; i < _octant->tCount; i++){
@@ -1335,7 +1335,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			//TODO:använd något annat än tCounter
 
 
-			// remove old vertex data
+			// remove old vertex scalarValue
 			if (_octant->vertices[2] != -1){
 				delete vertexArray[_octant->vertices[2]];
 				vertexArray[_octant->vertices[2]] = nullptr;
@@ -1365,7 +1365,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 						tCounter += tmpOct->child[i]->tCount;
 					}
 					if (tCounter == 0){
-						//tmpOct->data = _octant->data;
+						//tmpOct->scalarValue = _octant->scalarValue;
 						//tmpOct->isoBool = _octant->isoBool;
 						tmpOct->deAllocate(this);
 						tmpOct->parent->checkHomogeneity();
@@ -1380,7 +1380,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 					tCounter += tmpOct->child[i]->tCount;
 				}
 				if (tCounter == 0){
-					//tmpOct->data = _octant->data;
+					//tmpOct->scalarValue = _octant->scalarValue;
 					//tmpOct->isoBool = _octant->isoBool;
 					tmpOct->deAllocate(this);
 					tmpOct->parent->checkHomogeneity();
