@@ -877,9 +877,6 @@ int Oculus::runOvr() {
 			if (glfwGetKey(l_Window, GLFW_KEY_ESCAPE)) {
 				glfwSetWindowShouldClose(l_Window, GL_TRUE);
 			}
-			if (glfwGetKey(l_Window, GLFW_KEY_SPACE)) {
-				modellingMesh->debug();
-			}
 			if (glfwGetKey(l_Window, GLFW_KEY_LEFT)) {
 				currentSTool = std::make_unique<Remove>();
 			}

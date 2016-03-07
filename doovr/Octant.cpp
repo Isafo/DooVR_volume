@@ -138,8 +138,6 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 				//delete triangle scalarValue
 				for (int j = 0; j < child[i]->tCount; j++){
 					_mesh->emptyTStack.push_back(child[i]->triangles[j]);
-					delete _mesh->triangleArray[child[i]->triangles[j]];
-					_mesh->triangleArray[child[i]->triangles[j]] = nullptr;
 				}
 				delete[] child[i]->triangles;
 				child[i]->tCount = 0;
@@ -148,20 +146,14 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 				//delete vertex scalarValue
 				if (child[i]->vertices[0] != -1){
 					_mesh->emptyVStack.push_back(child[i]->vertices[0]);
-					delete _mesh->vertexArray[child[i]->vertices[0]];
-					_mesh->vertexArray[child[i]->vertices[0]] = nullptr;
 					child[i]->vertices[0] = -1;
 				}
 				if (child[i]->vertices[1] != -1){
 					_mesh->emptyVStack.push_back(child[i]->vertices[1]);
-					delete _mesh->vertexArray[child[i]->vertices[1]];
-					_mesh->vertexArray[child[i]->vertices[1]] = nullptr;
 					child[i]->vertices[1] = -1;
 				}
 				if (child[i]->vertices[2] != -1){
 					_mesh->emptyVStack.push_back(child[i]->vertices[2]);
-					delete _mesh->vertexArray[child[i]->vertices[2]];
-					_mesh->vertexArray[child[i]->vertices[2]] = nullptr;
 					child[i]->vertices[2] = -1;
 				}
 			}

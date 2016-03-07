@@ -95,8 +95,6 @@ class DynamicMesh : public Mesh{
 
 	void cleanBuffer();
 
-	void debug();
-
   private:
 
 	const int tmpMAX_DEPTH = 8;

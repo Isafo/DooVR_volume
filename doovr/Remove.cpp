@@ -161,20 +161,14 @@ void Remove::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot) {
 
 				// delete the old vertex data
 				if (childOct->vertices[2] != -1){
-					delete _mesh->vertexArray[childOct->vertices[2]];
-					_mesh->vertexArray[childOct->vertices[2]] = nullptr;
 					_mesh->emptyVStack.push_back(childOct->vertices[2]);
 					childOct->vertices[2] = -1;
 				}
 				if (childOct->vertices[1] != -1){
-					delete _mesh->vertexArray[childOct->vertices[1]];
-					_mesh->vertexArray[childOct->vertices[1]] = nullptr;
 					_mesh->emptyVStack.push_back(childOct->vertices[1]);
 					childOct->vertices[1] = -1;
 				}
 				if (childOct->vertices[0] != -1){
-					delete _mesh->vertexArray[childOct->vertices[0]];
-					_mesh->vertexArray[childOct->vertices[0]] = nullptr;
 					_mesh->emptyVStack.push_back(childOct->vertices[0]);
 					childOct->vertices[0] = -1;
 				}
@@ -182,8 +176,6 @@ void Remove::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot) {
 				// delete the old triangle data
 				if (childOct->tCount != 0){
 					for (int i = 0; i < childOct->tCount; ++i){
-						delete _mesh->triangleArray[childOct->triangles[i]];
-						_mesh->triangleArray[childOct->triangles[i]] = nullptr;
 						_mesh->emptyTStack.push_back(childOct->triangles[i]);
 					}
 					childOct->tCount = 0;
@@ -245,12 +237,12 @@ void Remove::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot) {
 	}// -->
 
 	_mesh->generateMC(&octList);
-	_mesh->updateOGLData(&octList);
+	//_mesh->updateOGLData(&octList);
 
 
 	// update removed vertexbuffer data that was not reused
-	if (_mesh->emptyVStack.size() > emptyVStackInitSize || _mesh->emptyTStack.size() > emptyTStackInitSize) {
+	/*if (_mesh->emptyVStack.size() > emptyVStackInitSize || _mesh->emptyTStack.size() > emptyTStackInitSize) {
 		_mesh->updateRemovedOGLData(emptyVStackInitSize, emptyTStackInitSize);
-	}
+	}*/
 }
 

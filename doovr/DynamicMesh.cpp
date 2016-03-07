@@ -42,13 +42,13 @@ DynamicMesh::DynamicMesh() {
 
 	y0Cache = new int[scalarNR];
 */
-	vertexArray = new vertex*[MAX_NR_OF_VERTICES/3];
+	//vertexArray = new vertex*[MAX_NR_OF_VERTICES/3];
 	//vertexArray[0] = new vertex[MAX_NR_OF_VERTICES];
 	//vInfoArray = new vInfo*[1];
 	//vInfoArray[0] = new vInfo[MAX_NR_OF_VERTICES];
 
 
-	triangleArray = new triangle*[MAX_NR_OF_TRIANGLES/4];
+	//triangleArray = new triangle*[MAX_NR_OF_TRIANGLES/4];
 	//triangleArray[0] = new triangle[MAX_NR_OF_TRIANGLES];
 	//triEPtr = new int*[1];
 	//triEPtr[1] = new int[MAX_NR_OF_TRIANGLES];
@@ -1021,6 +1021,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 	int tmpTindex;
 	int tmpTriArray[5];
 
+	int vStart = emptyVStack.size();
+	int tStart = emptyTStack.size();
+
 	int tCounter;
 
 	static Octant octantPlaceHolder;
@@ -1040,6 +1043,23 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 	int olEnd = (*_octList).size();
 
 	int octantIndex{ 0 };
+
+	// Map the vertex and triangle buffers so that we can start writing directly to them --------------------
+	triangle* indexP;
+	dBufferData* vertexP;
+
+	// Activate the vertex buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+	// Activate the index buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+
+	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) * MAX_NR_OF_VERTICES,
+		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+	// Present our vertex <indices to OpenGL
+	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * MAX_NR_OF_TRIANGLES,
+		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	while (octantIndex < olEnd) {
 
@@ -1114,8 +1134,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 
 			//delete old triangle scalarValue 
 			for (int i = 0; i < _octant->tCount; ++i){
-				delete triangleArray[_octant->triangles[i]];
-				triangleArray[_octant->triangles[i]] = nullptr;
+				//delete triangleArray[_octant->triangles[i]];
+				//triangleArray[_octant->triangles[i]] = nullptr;
 				emptyTStack.push_back(_octant->triangles[i]);
 			}
 			_octant->tCount = 0;
@@ -1212,19 +1232,16 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 						_octant->vertices[0] = emptyVStack.back();
 						emptyVStack.pop_back();
 					}
-					vertexArray[_octant->vertices[0]] = new vertex;
 				}				
 
 				dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-				(*vertexArray[_octant->vertices[0]]).xyz[0] = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-				(*vertexArray[_octant->vertices[0]]).xyz[1] = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-				(*vertexArray[_octant->vertices[0]]).xyz[2] = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+				vertexP[_octant->vertices[0]].x = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+				vertexP[_octant->vertices[0]].y = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+				vertexP[_octant->vertices[0]].z = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
 				vertList[5] = _octant->vertices[0];// *V_ROW_MAX;
 			}
 			else{ //Vertex no longer used, delete vertice information
 				if (_octant->vertices[0] != -1){
-					delete vertexArray[_octant->vertices[0]];
-					vertexArray[_octant->vertices[0]] = nullptr;
 					emptyVStack.push_back(_octant->vertices[0]);
 					_octant->vertices[0] = -1;
 				}
@@ -1241,20 +1258,17 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 						_octant->vertices[1] = emptyVStack.back();
 						emptyVStack.pop_back();
 					}
-					vertexArray[_octant->vertices[1]] = new vertex;
 				}
 
 
 				dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-				(*vertexArray[_octant->vertices[1]]).xyz[0] = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-				(*vertexArray[_octant->vertices[1]]).xyz[1] = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-				(*vertexArray[_octant->vertices[1]]).xyz[2] = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+				vertexP[_octant->vertices[1]].x = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+				vertexP[_octant->vertices[1]].y = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+				vertexP[_octant->vertices[1]].z = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
 				vertList[6] = _octant->vertices[1];// * V_ROW_MAX + 1;
 			}
 			else{//Vertex no longer used, delete vertice information
 				if (_octant->vertices[1] != -1){
-					delete vertexArray[_octant->vertices[1]];
-					vertexArray[_octant->vertices[1]] = nullptr;
 					emptyVStack.push_back(_octant->vertices[1]);
 					_octant->vertices[1] = -1;
 				}
@@ -1279,18 +1293,15 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 						_octant->vertices[2] = emptyVStack.back();
 						emptyVStack.pop_back();
 					}
-					vertexArray[_octant->vertices[2]] = new vertex;
 				}
 				dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-				(*vertexArray[_octant->vertices[2]]).xyz[0] = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-				(*vertexArray[_octant->vertices[2]]).xyz[1] = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-				(*vertexArray[_octant->vertices[2]]).xyz[2] = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+				vertexP[_octant->vertices[2]].x = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+				vertexP[_octant->vertices[2]].y = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+				vertexP[_octant->vertices[2]].z = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
 				vertList[10] = _octant->vertices[2];// * V_ROW_MAX + 2;
 			}
 			else{//Vertex no longer used, delete vertice information
 				if (_octant->vertices[2] != -1){
-					delete vertexArray[_octant->vertices[2]];
-					vertexArray[_octant->vertices[2]] = nullptr;
 					emptyVStack.push_back(_octant->vertices[2]);
 					_octant->vertices[2] = -1;
 				}
@@ -1311,10 +1322,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 					tmpTriArray[tmpTindex] = emptyTStack.back();
 					emptyTStack.pop_back();
 				}
-				triangleArray[tmpTriArray[tmpTindex]] = new triangle;
-				(*triangleArray[tmpTriArray[tmpTindex]]).index[0] = vertList[triTable[cubeIndex][i]];
-				(*triangleArray[tmpTriArray[tmpTindex]]).index[1] = vertList[triTable[cubeIndex][i + 1]];
-				(*triangleArray[tmpTriArray[tmpTindex]]).index[2] = vertList[triTable[cubeIndex][i + 2]];
+				indexP[tmpTriArray[tmpTindex]].index[0] = vertList[triTable[cubeIndex][i]];
+				indexP[tmpTriArray[tmpTindex]].index[1] = vertList[triTable[cubeIndex][i + 1]];
+				indexP[tmpTriArray[tmpTindex]].index[2] = vertList[triTable[cubeIndex][i + 2]];
 
 				_octant->tCount++;
 			}
@@ -1337,20 +1347,14 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 
 			// remove old vertex scalarValue
 			if (_octant->vertices[2] != -1){
-				delete vertexArray[_octant->vertices[2]];
-				vertexArray[_octant->vertices[2]] = nullptr;
 				emptyVStack.push_back(_octant->vertices[2]);
 				_octant->vertices[2] = -1;
 			}
 			if (_octant->vertices[1] != -1){
-				delete vertexArray[_octant->vertices[1]];
-				vertexArray[_octant->vertices[1]] = nullptr;
 				emptyVStack.push_back(_octant->vertices[1]);
 				_octant->vertices[1] = -1;
 			}
 			if (_octant->vertices[0] != -1){
-				delete vertexArray[_octant->vertices[0]];
-				vertexArray[_octant->vertices[0]] = nullptr;
 				emptyVStack.push_back(_octant->vertices[0]);
 				_octant->vertices[0] = -1;
 			}
@@ -1395,6 +1399,54 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 		(*_octList).push_back(nullptr);
 	else 
 		(*_octList)[listCounter] = nullptr;
+
+
+	// reset unused data in the buffers
+	for (int i = vStart; i < emptyVStack.size(); i++) {
+
+		vertexP[emptyVStack[i]].x = -100.0f;
+		vertexP[emptyVStack[i]].y = -100.0f;
+		vertexP[emptyVStack[i]].z = -100.0f;
+		vertexP[emptyVStack[i]].nx = -100.0f;
+		vertexP[emptyVStack[i]].ny = -100.0f;
+		vertexP[emptyVStack[i]].nz = -100.0f;
+	}
+
+	for (int i = tStart; i < emptyTStack.size(); i++) {
+		indexP[emptyTStack[i]].index[0] = 0;
+		indexP[emptyTStack[i]].index[1] = 0;
+		indexP[emptyTStack[i]].index[2] = 0;
+	}
+
+
+	//unmap vertex and triangle buffers since we are done writing to them
+	
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+
+	// Specify how many attribute arrays we have in our VAO
+	glEnableVertexAttribArray(0); // Vertex coordinates
+	glEnableVertexAttribArray(1); // Normals
+
+	// Specify how OpenGL should interpret the vertex buffer data:
+	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+	// Type GL_FLOAT
+	// Not normalized (GL_FALSE)
+	// Stride 8 (interleaved array with 8 floats per vertex)
+	// Array buffer offset 0, 3, 6 (offset into first vertex)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)0); // xyz coordinates
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+
+	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+
+	// Deactivate (unbind) the VAO and the buffers again.
+	// Do NOT unbind the buffers while the VAO is still bound.
+	// The index buffer is an essential part of the VAO state.
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	
 }
 
@@ -1697,19 +1749,6 @@ void DynamicMesh::exportToObj() {
 	//else {
 	//	std::cout << "could not open file for export" << std::endl;
 	//}
-}
-
-void DynamicMesh::debug() {
-	for (int i = 0; i < vertexCap; i++){
-		if (vertexArray[i] != nullptr);
-		{
-			if (abs(vertexArray[i]->xyz[0]) < EPSILON && abs(vertexArray[i]->xyz[1]) < EPSILON && abs(vertexArray[i]->xyz[2]) < EPSILON){
-				std::cout << "zero";
-			}
-		}
-		
-		
-	}
 }
 
 void DynamicMesh::updateArea(int* changeList, int listSize) {
