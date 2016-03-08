@@ -1,3 +1,9 @@
+/* Copyright (C) DooVR - All Rights Reserved
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+* Written by Olle Grahn <ollgr444@student.liu.se> and Isabelle Forsman <isafo268@student.liu.se>, July 2015 - Mars 2016
+*/
+
 #include "DynamicMesh.h"
 #include "time.h"
 #include "math.h"
@@ -472,6 +478,101 @@ void DynamicMesh::createBuffers() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
+
+void DynamicMesh::createPersistantBuffers(){
+
+	triangle* indexP;
+	dBufferData * vertexP;
+
+	// Generate one vertex array object (VAO) and bind it
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	// Generate two buffer IDs
+	glGenBuffers(1, &vertexbuffer);
+	glGenBuffers(1, &indexbuffer);
+
+	// Activate the vertex buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	// Present our vertex coordinates to OpenGL
+	glBufferStorage(GL_ARRAY_BUFFER,
+		(MAX_NR_OF_VERTICES)* sizeof(dBufferData), NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT);
+
+	// Specify how many attribute arrays we have in our VAO
+	glEnableVertexAttribArray(0); // Vertex coordinates
+	glEnableVertexAttribArray(1); // Normals
+
+	// Specify how OpenGL should interpret the vertex buffer data:
+	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+	// Type GL_FLOAT
+	// Not normalized (GL_FALSE)
+	// Stride 8 (interleaved array with 8 floats per vertex)
+	// Array buffer offset 0, 3, 6 (offset into first vertex)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)0); // xyz coordinates
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+
+	// Activate the index buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+	// Present our vertex indices to OpenGL
+	glBufferStorage(GL_ELEMENT_ARRAY_BUFFER,
+		(MAX_NR_OF_TRIANGLES)* sizeof(triangle), NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT);
+
+	// Deactivate (unbind) the VAO and the buffers again.
+	// Do NOT unbind the buffers while the VAO is still bound.
+	// The index buffer is an essential part of the VAO state.
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void DynamicMesh::mapBuffers(){
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+	// Activate the index buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+
+	vertexBufferPointer = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) * MAX_NR_OF_VERTICES,
+		GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+	// Present our vertex <indices to OpenGL
+	indexBufferPointer = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * MAX_NR_OF_TRIANGLES,
+		GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+
+}
+
+void DynamicMesh::unmapBuffers(){
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+
+	// Specify how many attribute arrays we have in our VAO
+	glEnableVertexAttribArray(0); // Vertex coordinates
+	glEnableVertexAttribArray(1); // Normals
+
+	// Specify how OpenGL should interpret the vertex buffer data:
+	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+	// Type GL_FLOAT
+	// Not normalized (GL_FALSE)
+	// Stride 8 (interleaved array with 8 floats per vertex)
+	// Array buffer offset 0, 3, 6 (offset into first vertex)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)0); // xyz coordinates
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+
+	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+
+	// Deactivate (unbind) the VAO and the buffers again.
+	// Do NOT unbind the buffers while the VAO is still bound.
+	// The index buffer is an essential part of the VAO state.
+	//glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+}
+
 
 void DynamicMesh::updateOGLData() {
 	int res = std::pow(2, 10 - tmpMAX_DEPTH);
@@ -1045,21 +1146,21 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 	int octantIndex{ 0 };
 
 	// Map the vertex and triangle buffers so that we can start writing directly to them --------------------
-	triangle* indexP;
-	dBufferData* vertexP;
+	/*triangle* indexP;
+	dBufferData* vertexP;*/
 
 	// Activate the vertex buffer
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	//glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 
-	// Activate the index buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+	//// Activate the index buffer
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
 
-	vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) * MAX_NR_OF_VERTICES,
-		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	//vertexP = (dBufferData*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(dBufferData) * MAX_NR_OF_VERTICES,
+	//	GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
-	// Present our vertex <indices to OpenGL
-	indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * MAX_NR_OF_TRIANGLES,
-		GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	//// Present our vertex <indices to OpenGL
+	//indexP = (triangle*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(triangle) * MAX_NR_OF_TRIANGLES,
+	//	GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 
 	while (octantIndex < olEnd) {
 
@@ -1235,9 +1336,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 				}				
 
 				dVal = (double)(isoValue - val[5]) / (double)(val[6] - val[5]);
-				vertexP[_octant->vertices[0]].x = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
-				vertexP[_octant->vertices[0]].y = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
-				vertexP[_octant->vertices[0]].z = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
+				vertexBufferPointer[_octant->vertices[0]].x = xyz[5][0] + dVal*(xyz[6][0] - xyz[5][0]);
+				vertexBufferPointer[_octant->vertices[0]].y = xyz[5][1] + dVal*(xyz[6][1] - xyz[5][1]);
+				vertexBufferPointer[_octant->vertices[0]].z = xyz[5][2] + dVal*(xyz[6][2] - xyz[5][2]);
 				vertList[5] = _octant->vertices[0];// *V_ROW_MAX;
 			}
 			else{ //Vertex no longer used, delete vertice information
@@ -1262,9 +1363,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 
 
 				dVal = (double)(isoValue - val[6]) / (double)(val[7] - val[6]);
-				vertexP[_octant->vertices[1]].x = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
-				vertexP[_octant->vertices[1]].y = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
-				vertexP[_octant->vertices[1]].z = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
+				vertexBufferPointer[_octant->vertices[1]].x = xyz[6][0] + dVal*(xyz[7][0] - xyz[6][0]);
+				vertexBufferPointer[_octant->vertices[1]].y = xyz[6][1] + dVal*(xyz[7][1] - xyz[6][1]);
+				vertexBufferPointer[_octant->vertices[1]].z = xyz[6][2] + dVal*(xyz[7][2] - xyz[6][2]);
 				vertList[6] = _octant->vertices[1];// * V_ROW_MAX + 1;
 			}
 			else{//Vertex no longer used, delete vertice information
@@ -1295,9 +1396,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 					}
 				}
 				dVal = (double)(isoValue - val[2]) / (double)(val[6] - val[2]);
-				vertexP[_octant->vertices[2]].x = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
-				vertexP[_octant->vertices[2]].y = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
-				vertexP[_octant->vertices[2]].z = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
+				vertexBufferPointer[_octant->vertices[2]].x = xyz[2][0] + dVal*(xyz[6][0] - xyz[2][0]);
+				vertexBufferPointer[_octant->vertices[2]].y = xyz[2][1] + dVal*(xyz[6][1] - xyz[2][1]);
+				vertexBufferPointer[_octant->vertices[2]].z = xyz[2][2] + dVal*(xyz[6][2] - xyz[2][2]);
 				vertList[10] = _octant->vertices[2];// * V_ROW_MAX + 2;
 			}
 			else{//Vertex no longer used, delete vertice information
@@ -1322,9 +1423,9 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 					tmpTriArray[tmpTindex] = emptyTStack.back();
 					emptyTStack.pop_back();
 				}
-				indexP[tmpTriArray[tmpTindex]].index[0] = vertList[triTable[cubeIndex][i]];
-				indexP[tmpTriArray[tmpTindex]].index[1] = vertList[triTable[cubeIndex][i + 1]];
-				indexP[tmpTriArray[tmpTindex]].index[2] = vertList[triTable[cubeIndex][i + 2]];
+				indexBufferPointer[tmpTriArray[tmpTindex]].index[0] = vertList[triTable[cubeIndex][i]];
+				indexBufferPointer[tmpTriArray[tmpTindex]].index[1] = vertList[triTable[cubeIndex][i + 1]];
+				indexBufferPointer[tmpTriArray[tmpTindex]].index[2] = vertList[triTable[cubeIndex][i + 2]];
 
 				_octant->tCount++;
 			}
@@ -1404,49 +1505,48 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 	// reset unused data in the buffers
 	for (int i = vStart; i < emptyVStack.size(); i++) {
 
-		vertexP[emptyVStack[i]].x = -100.0f;
-		vertexP[emptyVStack[i]].y = -100.0f;
-		vertexP[emptyVStack[i]].z = -100.0f;
-		vertexP[emptyVStack[i]].nx = -100.0f;
-		vertexP[emptyVStack[i]].ny = -100.0f;
-		vertexP[emptyVStack[i]].nz = -100.0f;
+		vertexBufferPointer[emptyVStack[i]].x = -100.0f;
+		vertexBufferPointer[emptyVStack[i]].y = -100.0f;
+		vertexBufferPointer[emptyVStack[i]].z = -100.0f;
+		vertexBufferPointer[emptyVStack[i]].nx = -100.0f;
+		vertexBufferPointer[emptyVStack[i]].ny = -100.0f;
+		vertexBufferPointer[emptyVStack[i]].nz = -100.0f;
 	}
 
 	for (int i = tStart; i < emptyTStack.size(); i++) {
-		indexP[emptyTStack[i]].index[0] = 0;
-		indexP[emptyTStack[i]].index[1] = 0;
-		indexP[emptyTStack[i]].index[2] = 0;
+		indexBufferPointer[emptyTStack[i]].index[0] = 0;
+		indexBufferPointer[emptyTStack[i]].index[1] = 0;
+		indexBufferPointer[emptyTStack[i]].index[2] = 0;
 	}
-
 
 	//unmap vertex and triangle buffers since we are done writing to them
 	
-	glUnmapBuffer(GL_ARRAY_BUFFER);
+	//glUnmapBuffer(GL_ARRAY_BUFFER);
 
-	// Specify how many attribute arrays we have in our VAO
-	glEnableVertexAttribArray(0); // Vertex coordinates
-	glEnableVertexAttribArray(1); // Normals
+	//// Specify how many attribute arrays we have in our VAO
+	//glEnableVertexAttribArray(0); // Vertex coordinates
+	//glEnableVertexAttribArray(1); // Normals
 
-	// Specify how OpenGL should interpret the vertex buffer data:
-	// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
-	// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
-	// Type GL_FLOAT
-	// Not normalized (GL_FALSE)
-	// Stride 8 (interleaved array with 8 floats per vertex)
-	// Array buffer offset 0, 3, 6 (offset into first vertex)
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-		sizeof(dBufferData), (void*)0); // xyz coordinates
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-		sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
+	//// Specify how OpenGL should interpret the vertex buffer data:
+	//// Attributes 0, 1, 2 (must match the lines above and the layout in the shader)
+	//// Number of dimensions (3 means vec3 in the shader, 2 means vec2)
+	//// Type GL_FLOAT
+	//// Not normalized (GL_FALSE)
+	//// Stride 8 (interleaved array with 8 floats per vertex)
+	//// Array buffer offset 0, 3, 6 (offset into first vertex)
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+	//	sizeof(dBufferData), (void*)0); // xyz coordinates
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+	//	sizeof(dBufferData), (void*)(3 * sizeof(GLfloat))); // normals
 
-	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	//glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
-	// Deactivate (unbind) the VAO and the buffers again.
-	// Do NOT unbind the buffers while the VAO is still bound.
-	// The index buffer is an essential part of the VAO state.
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	//// Deactivate (unbind) the VAO and the buffers again.
+	//// Do NOT unbind the buffers while the VAO is still bound.
+	//// The index buffer is an essential part of the VAO state.
+	//glBindVertexArray(0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	
 }
 

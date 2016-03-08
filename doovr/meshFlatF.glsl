@@ -2,14 +2,14 @@
 layout( location = 0 ) out vec4 FragColor;
 
 in vec3 Position;
-in vec3 LightIntensity;
-
 
 uniform vec4 lightPos;
 uniform vec4 lightPos2;
 
 void main () {
 	
+	vec3 LightIntensity = vec3(102.0f/255.0f, 24.0f/255.0f, 6.0f/255.0f);
+
 	vec3 X = dFdx(Position);
 	vec3 Y = dFdy(Position);
 	vec3 Normal = normalize(cross(X,Y));

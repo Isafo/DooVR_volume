@@ -8,7 +8,7 @@ class Tool
 {
 public:
 	Tool();
-	~Tool();
+	virtual ~Tool();
 
 	virtual void render(MatrixStack* MVstack, GLint locationMV) = 0;
 

@@ -1,3 +1,9 @@
+/* Copyright (C) DooVR - All Rights Reserved
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+* Written by Olle Grahn <ollgr444@student.liu.se> and Isabelle Forsman <isafo268@student.liu.se>, July 2015 - Mars 2016
+*/
+
 #pragma once
 #include "Utilities.h"
 #include "linAlg.h"
@@ -77,6 +83,9 @@ class DynamicMesh : public Mesh{
 	void render(unsigned int PrimID);
 
 	void createBuffers() override;
+	void createPersistantBuffers();
+	void mapBuffers();
+	void unmapBuffers();
 	void updateOGLData();
 	void updateOGLData(std::vector<Octant*>* _octList);
 	void updateRemovedOGLData(int _vStart, int _tStart);
@@ -100,6 +109,10 @@ class DynamicMesh : public Mesh{
 	const int tmpMAX_DEPTH = 8;
 	//! placeholder used when empty and temporary octants are needed. Used along the physical edges of the octree
 	
+	//buffer handles
+	triangle* indexBufferPointer;
+	dBufferData * vertexBufferPointer;
+
 	  //TODO: remove one zero
 	const int MAX_NR_OF_VERTICES = 10000000;
 	//! negative index of the latest removed vertex

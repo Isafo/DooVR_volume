@@ -16,8 +16,11 @@ public:
 	float halfDim;
 	//int scalarRes[3];
 
+	void render(MatrixStack* MVstack, GLint locationMV);
+
 private:
 
-
+	LineCube* shape;
+	
 };
 

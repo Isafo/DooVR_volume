@@ -742,7 +742,8 @@ int Oculus::runOvr() {
 	//modellingMesh->generateMC(oTest->root);
 	clock_t end = clock(); //DEBUG TEST
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC; //DEBUG TEST
-	modellingMesh->createBuffers();
+	modellingMesh->createPersistantBuffers();
+	modellingMesh->mapBuffers();
 	
 	std::string currentMesh = "../Assets/Models/resetMesh.bin";
 
@@ -1337,7 +1338,7 @@ int Oculus::runOvr() {
 					MVstack.multiply(modellingMesh->getOrientation());
 
 					//debug
-					//oTest->root->render(MVptr, locationMV);
+					oTest->render(MVptr, locationMV);
 
 					glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					glUniform4fv(locationFlatLP, 1, LP);
@@ -2178,6 +2179,9 @@ int Oculus::runOvr() {
 	//glDeleteRenderbuffers(1, &l_DepthBufferId);
 	//glDeleteTextures(1, &l_TextureId);
 	//glDeleteFramebuffers(1, &l_FBOId);
+
+	modellingMesh->unmapBuffers();
+	//delete modellingMesh;
 
 	// Clean up window...
 	glfwDestroyWindow(l_Window);
