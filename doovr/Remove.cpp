@@ -245,6 +245,22 @@ void Remove::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot) {
 	_mesh->generateMC(&octList);
 	//_mesh->updateOGLData(&octList);
 
+	// reset unused data in the buffers
+	for (int i = emptyVStackInitSize; i < _mesh->emptyVStack.size(); i++) {
+
+		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].x = -100.0f;
+		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].y = -100.0f;
+		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].z = -100.0f;
+		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].nx = -100.0f;
+		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].ny = -100.0f;
+		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].nz = -100.0f;
+	}
+
+	for (int i = emptyTStackInitSize; i < _mesh->emptyTStack.size(); i++) {
+		_mesh->indexBufferPointer[_mesh->emptyTStack[i]].index[0] = 0;
+		_mesh->indexBufferPointer[_mesh->emptyTStack[i]].index[1] = 0;
+		_mesh->indexBufferPointer[_mesh->emptyTStack[i]].index[2] = 0;
+	}
 
 	// update removed vertexbuffer data that was not reused
 	/*if (_mesh->emptyVStack.size() > emptyVStackInitSize || _mesh->emptyTStack.size() > emptyTStackInitSize) {

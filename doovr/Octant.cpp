@@ -138,6 +138,10 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 				//delete triangle scalarValue
 				for (int j = 0; j < child[i]->tCount; j++){
 					_mesh->emptyTStack.push_back(child[i]->triangles[j]);
+
+					//_mesh->indexBufferPointer[child[i]->triangles[j]].index[0] = 0;
+					//_mesh->indexBufferPointer[child[i]->triangles[j]].index[1] = 0;
+					//_mesh->indexBufferPointer[child[i]->triangles[j]].index[2] = 0;
 				}
 				delete[] child[i]->triangles;
 				child[i]->tCount = 0;
@@ -146,14 +150,23 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 				//delete vertex scalarValue
 				if (child[i]->vertices[0] != -1){
 					_mesh->emptyVStack.push_back(child[i]->vertices[0]);
+					//_mesh->vertexBufferPointer[child[i]->vertices[0]].x = 0.0f;
+					//_mesh->vertexBufferPointer[child[i]->vertices[0]].y = 0.0f;
+					//_mesh->vertexBufferPointer[child[i]->vertices[0]].z = 0.0f;
 					child[i]->vertices[0] = -1;
 				}
 				if (child[i]->vertices[1] != -1){
 					_mesh->emptyVStack.push_back(child[i]->vertices[1]);
+					//_mesh->vertexBufferPointer[child[i]->vertices[1]].x = 0.0f;
+					//_mesh->vertexBufferPointer[child[i]->vertices[1]].y = 0.0f;
+					//_mesh->vertexBufferPointer[child[i]->vertices[1]].z = 0.0f;
 					child[i]->vertices[1] = -1;
 				}
 				if (child[i]->vertices[2] != -1){
 					_mesh->emptyVStack.push_back(child[i]->vertices[2]);
+					//_mesh->vertexBufferPointer[child[i]->vertices[2]].x = 0.0f;
+					//_mesh->vertexBufferPointer[child[i]->vertices[2]].y = 0.0f;
+					//_mesh->vertexBufferPointer[child[i]->vertices[2]].z = 0.0f;
 					child[i]->vertices[2] = -1;
 				}
 			}

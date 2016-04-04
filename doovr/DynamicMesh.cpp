@@ -1122,8 +1122,8 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 	int tmpTindex;
 	int tmpTriArray[5];
 
-	int vStart = emptyVStack.size();
-	int tStart = emptyTStack.size();
+	//int vStart = emptyVStack.size();
+	//int tStart = emptyTStack.size();
 
 	int tCounter;
 
@@ -1503,7 +1503,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 
 
 	// reset unused data in the buffers
-	for (int i = vStart; i < emptyVStack.size(); i++) {
+	/*for (int i = vStart; i < emptyVStack.size(); i++) {
 
 		vertexBufferPointer[emptyVStack[i]].x = -100.0f;
 		vertexBufferPointer[emptyVStack[i]].y = -100.0f;
@@ -1517,7 +1517,7 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 		indexBufferPointer[emptyTStack[i]].index[0] = 0;
 		indexBufferPointer[emptyTStack[i]].index[1] = 0;
 		indexBufferPointer[emptyTStack[i]].index[2] = 0;
-	}
+	}*/
 
 	//unmap vertex and triangle buffers since we are done writing to them
 	
