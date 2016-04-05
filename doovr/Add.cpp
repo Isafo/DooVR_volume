@@ -87,6 +87,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 	int emptyTStackInitSize = _mesh->emptyTStack.size();
 	int tmpStackSize;
 
+	//collision check if wand is inside root
 	for (int j = 0; j < 3; j++) {
 		if (nwPos[j] <  -currentOct->halfDim) {
 			s = nwPos[j] + currentOct->halfDim;
@@ -105,7 +106,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		octantStack.push_back(tempStackElm);
 	}
 
-
+	//start traversing the Octree
 	while (!octantStack.empty()){
 
 		if (octantStack.back().index >= 8){
@@ -241,11 +242,24 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		}
 	}// -->
 
-	_mesh->generateMC(&octList);
+	_mesh->generateMC(&octList, emptyTStackInitSize);
+
+	//GLfloat* feedback;
+	//feedback = new GLfloat[_mesh->triangleCap * 3];
+	//glGetNamedBufferSubData(_mesh->indexbuffer, 0, sizeof(feedback), feedback);
+	//for (int i = 0; i < _mesh->triangleCap * 3; i = i + 3) {
+	//	std::cout << feedback[i] << ", " <<
+	//		feedback[i + 1] << ", " <<
+	//		feedback[i + 2] << ", " << std::endl;
+	//	if (i % 9 == 0)
+	//		std::cout << "----------" << std::endl;
+
+	//}
+
 	//_mesh->updateOGLData(&octList);
 
 	// reset unused data in the buffers
-	for (int i = 0; i < _mesh->emptyVStack.size(); i++) {
+	/*for (int i = 0; i < _mesh->emptyVStack.size(); i++) {
 
 		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].x = -100.0f;
 		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].y = -100.0f;
@@ -253,7 +267,7 @@ void Add::changeScalarData(DynamicMesh* _mesh, Wand* _wand, Octree* _ot ) {
 		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].nx = -100.0f;
 		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].ny = -100.0f;
 		_mesh->vertexBufferPointer[_mesh->emptyVStack[i]].nz = -100.0f;
-	}
+	}*/
 
 	for (int i = 0; i < _mesh->emptyTStack.size(); i++) {
 		_mesh->indexBufferPointer[_mesh->emptyTStack[i]].index[0] = 0;

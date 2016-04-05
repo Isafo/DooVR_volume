@@ -15,6 +15,7 @@ public:
 	
 	float halfDim;
 	//int scalarRes[3];
+	void reset() { root->destroy(); root->partition(); };
 
 	void render(MatrixStack* MVstack, GLint locationMV);
 

@@ -24,6 +24,7 @@ public:
 	~Octant();
 
 	void deAllocate(DynamicMesh* _mesh);
+	void destroy();
 
 	static const int MAX_DEPTH = 8;
 

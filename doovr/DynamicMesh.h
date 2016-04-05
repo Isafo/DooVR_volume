@@ -90,9 +90,11 @@ class DynamicMesh : public Mesh{
 	void updateOGLData(std::vector<Octant*>* _octList);
 	void updateRemovedOGLData(int _vStart, int _tStart);
 
+	void reset(float x, float y, float z);
+
 	//! saves the mesh as a binary file with the current date and time as file name (yyyy-mm-dd_hh-mm-ss.bin)
 	void sphereSubdivide(float rad);
-	void generateMC(std::vector<Octant*>* _octList);
+	void generateMC(std::vector<Octant*>* _octList, int &_tStart);
 
 	void save();
 	void load(std::string _fileName);

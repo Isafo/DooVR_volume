@@ -864,11 +864,24 @@ void DynamicMesh::cleanBuffer() {
 	}
 }
 
+void DynamicMesh::reset(float x, float y, float z){
+	nrofTris = 0;
+	nrofVerts = 0;
+	triangleCap = 0;
+	vertexCap = 0;
+
+	emptyTStack.clear();
+	emptyVStack.clear();
+
+	position[0] = 0.0f; position[1] = -0.3f; position[2] = 0.0f;
+
+	orientation[0] = 1.0f; orientation[1] = 0.0f; orientation[2] = 0.0f; orientation[3] = 0.0f;
+	orientation[4] = 0.0f; orientation[5] = 1.0f; orientation[6] = 0.0f; orientation[7] = 0.0f;
+	orientation[8] = 0.0f; orientation[9] = 0.0f; orientation[10] = 1.0f; orientation[11] = 0.0f;
+	orientation[12] = 0.0f; orientation[13] = 0.0f; orientation[14] = 0.0f; orientation[15] = 1.0f;
+}
+
 void DynamicMesh::render() {
-	//TODO: fixa
-	int res = std::pow(2, 10 - tmpMAX_DEPTH);
-	const int V_ROW_MAX = 3;
-	const int T_ROW_MAX = 5;
 	glBindVertexArray(vao);
 
 	glDrawElements(GL_TRIANGLES, triangleCap * sizeof(triangle), GL_UNSIGNED_INT, (void*)0);
@@ -1104,7 +1117,7 @@ void DynamicMesh::sphereSubdivide(float rad) {
 }
 
 
-void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
+void DynamicMesh::generateMC(std::vector<Octant*>* _octList, int &_tStart) {
 
 	int cubeIndex;
 
@@ -1415,13 +1428,15 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 			for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
 				tmpTindex = i*0.34;
 
-				if (emptyTStack.size() == 0) {
+				if (emptyTStack.empty()) {
 					tmpTriArray[tmpTindex] = triangleCap;
-					triangleCap++;
+					triangleCap = triangleCap + 1;
 				}
 				else {
 					tmpTriArray[tmpTindex] = emptyTStack.back();
 					emptyTStack.pop_back();
+					if (emptyTStack.size() < _tStart)
+						_tStart = emptyTStack.size();
 				}
 				indexBufferPointer[tmpTriArray[tmpTindex]].index[0] = vertList[triTable[cubeIndex][i]];
 				indexBufferPointer[tmpTriArray[tmpTindex]].index[1] = vertList[triTable[cubeIndex][i + 1]];
@@ -1500,7 +1515,6 @@ void DynamicMesh::generateMC(std::vector<Octant*>* _octList) {
 		(*_octList).push_back(nullptr);
 	else 
 		(*_octList)[listCounter] = nullptr;
-
 
 	// reset unused data in the buffers
 	/*for (int i = vStart; i < emptyVStack.size(); i++) {

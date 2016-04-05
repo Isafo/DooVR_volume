@@ -559,7 +559,7 @@ int Oculus::runOvr() {
 	int modellingState[NR_OF_MODELLING_STATES] = { 0 };
 	int aModellingStateIsActive = 0;
 
-	const int NR_OF_MODELLING_BUTTONS = 5;
+	const int NR_OF_MODELLING_BUTTONS = 1;
 	/*!	[0] resetMesh
 
 		[1] save
@@ -568,7 +568,7 @@ int Oculus::runOvr() {
 		[4] export to obj*/
 
 	menuBox* modellingButton[NR_OF_MODELLING_BUTTONS];
-	MenuItem* modellingButtonString[NR_OF_MODELLING_BUTTONS - 2];
+	MenuItem* modellingButtonString[3];
 	MenuItem* modellingButtonFrame;
 
 	Texture* modellingButtonTex = &menuIcons;
@@ -588,10 +588,10 @@ int Oculus::runOvr() {
 	static int modellingButtonState[NR_OF_MODELLING_BUTTONS];
 
 	modellingButton[0] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + 0.06, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
-	modellingButton[1] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.04, 0.025f, 0.025f, 0.025f, 3, 0, 1, 1, 5, 5);
-	modellingButton[2] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.08, 0.025f, 0.025f, 0.025f, 4, 0, 1, 1, 5, 5);
-	modellingButton[4] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.12, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
-	modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.16, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1, 5, 5);
+	//modellingButton[1] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.04, 0.025f, 0.025f, 0.025f, 3, 0, 1, 1, 5, 5);
+	//modellingButton[2] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.08, 0.025f, 0.025f, 0.025f, 4, 0, 1, 1, 5, 5);
+	//modellingButton[4] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.12, 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
+	//modellingButton[3] = new menuBox(boardPos[0] - 0.2f, boardPos[1] + 0.001f + 0.0125f, boardPos[2] + -0.16, 0.025f, 0.025f, 0.025f, 5, 0, 1, 1, 5, 5);
 
 	// place modellingButton Frame
 	modellingButtonFrame = new MenuItem(0.0f, -0.01245f, 0.0f, 0.04f, 0.04f, 0, 3, 1, 1);
@@ -600,16 +600,18 @@ int Oculus::runOvr() {
 	modellingButtonString[1] = new MenuItem(-0.105f, -0.0125f, 0.0f, 0.24f, 0.04f, 0, 1, 7, 1);
 	modellingButtonString[2] = new MenuItem(-0.11f, -0.0125f, 0.0f, 0.24f, 0.04f, 0, 0, 8, 1);
 	//variable used with the button that switches wireframe, TODO: should be replaced by something
-	bool lines = false;
+	bool lines = true;
 
 	// MenuItems representing a tool
-	const int NR_OF_TOOLS = 3;
-	menuBox tool[NR_OF_TOOLS];
+	const int NR_OF_TOOLS = 2;
+	menuBox* tool[NR_OF_TOOLS];
 	MenuItem toolFrame(boardPos[0] + 0.2, boardPos[1] + 0.001f, boardPos[2] - 0.04, 0.04f, 0.12f, 0, 4, 1, 3);
 	MenuItem toolString(boardPos[0] + 0.2f + 0.08f, boardPos[1] + 0.001f, boardPos[2] - 0.04, 0.12f, 0.04f, 1, 4, 3, 1);
 
-	for (int i = 0; i < NR_OF_TOOLS; i++)
-		tool[i] = menuBox(boardPos[0] + 0.2, boardPos[1] + 0.001f + 0.0125f, boardPos[2] - 0.04*(i), 0.025f, 0.025f, 0.025f, i, 0, 1, 1, 5, 5);
+	//for (int i = 0; i < NR_OF_TOOLS; i++)
+	//	tool[i] = menuBox(boardPos[0] + 0.2, boardPos[1] + 0.001f + 0.0125f, boardPos[2] - 0.04*(i), 0.025f, 0.025f, 0.025f, i, 0, 1, 1, 5, 5);
+	tool[0] = new menuBox(boardPos[0] + 0.2, boardPos[1] + 0.001f + 0.0125f, boardPos[2] - 0.04*(0.0f), 0.025f, 0.025f, 0.025f, 0, 1, 1, 1, 5, 5);
+	tool[1] = new menuBox(boardPos[0] + 0.2, boardPos[1] + 0.001f + 0.0125f, boardPos[2] - 0.04*(1.0f), 0.025f, 0.025f, 0.025f, 1, 0, 1, 1, 5, 5);
 
 	menuBox toolSize(boardPos[0] + 0.2, boardPos[1] + 0.001f + 0.075f, boardPos[2] - 0.16, 0.02f, 0.15f, 0.02f, 3, 3, 1, 1, 5, 5);
 	menuBox toolSizeFill(boardPos[0] + 0.2, boardPos[1] + 0.09 - 0.075, boardPos[2] - 0.16, 0.015f, 0.0f, 0.015f, 5, 2, 1, 1, 5, 2); toolSizeFill.setDim(0.0f, toolRad * 3, 0.0f);
@@ -626,7 +628,7 @@ int Oculus::runOvr() {
 	1 =
 	*/
 	int activeTool = 0;
-	tool[activeTool].setState(true);
+	tool[activeTool]->setState(true);
 	// 2.5.2 - variables used in Load Mode >------------------------------------------------------------------------------------------------
 	const int NR_OF_LOAD_BUTTONS = 2;
 	/*! 0 = loadFile button
@@ -730,7 +732,7 @@ int Oculus::runOvr() {
 	
 	// 2.7.3 - Mesh variables >--------------------------------------------------------------------------------------------------------------
 	//ScalarField sTest(128, 128, 128, 0.1, 0.1, 0.1);
-	Octree* oTest = new Octree(1.0f);
+	Octree* ot = new Octree(1.0f);
 	//DynamicMesh* modellingMesh = new DynamicMesh("2015-07-22_16-08-10.bin");
 	DynamicMesh* modellingMesh = new DynamicMesh();
 	tempVec[0] = boardPos[0]; tempVec[1] = boardPos[1] + 0.07f; tempVec[2] = boardPos[2];
@@ -793,7 +795,7 @@ int Oculus::runOvr() {
 			if (glfwGetKey(l_Window, GLFW_KEY_PAGE_UP)) {
 				if (modellingState[0] == 2) {
 					//currentTool->moveVertices(modellingMesh, wand, deltaTime);
-					currentSTool->changeScalarData(modellingMesh, wand, oTest);
+					currentSTool->changeScalarData(modellingMesh, wand, ot);
 				}
 				else if (modellingState[0] == 1) {
 					modellingState[0] = 2;
@@ -888,18 +890,20 @@ int Oculus::runOvr() {
 			if (aModellingStateIsActive == 0) {
 				activeButton = handleMenu(wandPos, modellingButton, NR_OF_MODELLING_BUTTONS, modellingButtonState);
 				switch (activeButton) {
-					//3.2.1 - new mesh button>----------------------------------------------------------------------------------------------
+					//3.2.1 - reset mesh button>----------------------------------------------------------------------------------------------
 				case 0: {
 					if (modellingButtonState[activeButton] == 1) {
 						// reset mesh
-						if (th2Status == 0) {
+						/*if (th2Status == 0) {
 							th2Status = 1;
 							th2 = std::thread(loadMesh, modellingMesh, currentMesh);
-						}
+						}*/
 
 						modellingButton[activeButton]->setState(true);
+						ot->reset();
+						modellingMesh->reset(boardPos[0], boardPos[1] + 0.07f, boardPos[2]);
 
-						reset = true;
+						//reset = true;
 
 					}
 					else if (modellingButtonState[activeButton] == 3) {
@@ -997,13 +1001,13 @@ int Oculus::runOvr() {
 				}
 				}
 				for (int i = 0; i < NR_OF_TOOLS; i++) {
-					if (wandPos[0] < tool[i].getPosition()[0] + tool[i].getDim()[0] / 2.f
-						&& wandPos[0] > tool[i].getPosition()[0] - tool[i].getDim()[0] / 2.f
-						&& wandPos[1] > tool[i].getPosition()[1] - tool[i].getDim()[1] / 2.f
-						&& wandPos[1] < tool[i].getPosition()[1] + tool[i].getDim()[1] / 2.f
-						&& wandPos[2] > tool[i].getPosition()[2] - tool[i].getDim()[2] / 2.f
-						&& wandPos[2] < tool[i].getPosition()[2] + tool[i].getDim()[2] / 2.f) {
-						if (!tool[i].getState()) {
+					if (wandPos[0] < tool[i]->getPosition()[0] + tool[i]->getDim()[0] / 2.f
+						&& wandPos[0] > tool[i]->getPosition()[0] - tool[i]->getDim()[0] / 2.f
+						&& wandPos[1] > tool[i]->getPosition()[1] - tool[i]->getDim()[1] / 2.f
+						&& wandPos[1] < tool[i]->getPosition()[1] + tool[i]->getDim()[1] / 2.f
+						&& wandPos[2] > tool[i]->getPosition()[2] - tool[i]->getDim()[2] / 2.f
+						&& wandPos[2] < tool[i]->getPosition()[2] + tool[i]->getDim()[2] / 2.f) {
+						if (!tool[i]->getState()) {
 							//TODO: should be done when using halfedge structure
 							/*
 							tool[activeTool].setState(false);
@@ -1019,6 +1023,10 @@ int Oculus::runOvr() {
 							*/
 							//TODO: should be generally for both types of tools
 							//currentTool->setRadius(toolRad);
+
+							tool[activeTool]->setState(false);
+							tool[i]->setState(true);
+							activeTool = i;
 
 							if (i == 0)
 								currentSTool = std::make_unique<Add>();
@@ -1042,7 +1050,7 @@ int Oculus::runOvr() {
 					toolSizeFill.setDim(0.0f, (wandPos[1] - tempVecPtr[1]), 0.0f);
 					//TODO: should be generally for both types of tools
 					//currentTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f; 
-					currentSTool->setRadius((wandPos[1] - tempVecPtr[1]) / 3.0f); toolRad = (wandPos[1] - tempVecPtr[1]) / 3.0f;
+					currentSTool->setRadius((wandPos[1] - tempVecPtr[1]) * 0.2f); toolRad = (wandPos[1] - tempVecPtr[1]) * 0.2f;
 				}
 				else if (wandPos[0] < toolStrength.getPosition()[0] + toolStrength.getDim()[0] / 2.f
 					&& wandPos[0] > toolStrength.getPosition()[0] - toolStrength.getDim()[0] / 2.f
@@ -1057,6 +1065,7 @@ int Oculus::runOvr() {
 				}
 			}
 
+			//join new mesh thread
 			if (reset) {
 				if (th2.joinable()) {
 					th2.join();
@@ -1299,7 +1308,7 @@ int Oculus::runOvr() {
 				}
 
 				//TODO fix the -2 the last buttons (flatshading) and export dont have strings
-				for (int i = 0; i < NR_OF_MODELLING_BUTTONS - 2; i++) {
+				for (int i = 0; i < 1; i++) {
 					MVstack.push();
 					MVstack.translate(modellingButton[i]->getPosition());
 					MVstack.translate(modellingButtonString[i]->getPosition());
@@ -1338,7 +1347,7 @@ int Oculus::runOvr() {
 					MVstack.multiply(modellingMesh->getOrientation());
 
 					//debug
-					oTest->render(MVptr, locationMV);
+					ot->render(MVptr, locationMV);
 
 					glUniformMatrix4fv(locationFlatMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 					glUniform4fv(locationFlatLP, 1, LP);
@@ -1441,7 +1450,7 @@ int Oculus::runOvr() {
 				// render tool select GUI
 				for (int i = 0; i < NR_OF_TOOLS; i++) {
 
-					if (tool[i].getState()) {
+					if (tool[i]->getState()) {
 						glUseProgram(bloomShader.programID);
 
 						glUniformMatrix4fv(locationP, 1, GL_FALSE, &(oProjectionMatrix[l_EyeIndex].Transposed().M[0][0]));
@@ -1453,9 +1462,10 @@ int Oculus::runOvr() {
 
 					glBindTexture(GL_TEXTURE_2D, menuIcons.getTextureID());
 					MVstack.push();
-					MVstack.translate(tool[i].getPosition());
+					MVstack.translate(tool[i]->getPosition());
 					glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-					tool[i].render();
+					tool[i]->render();
+					//modellingButton[0]->render();
 					MVstack.pop();
 				}
 				glBindTexture(GL_TEXTURE_2D, menuStrings.getTextureID());
@@ -1466,12 +1476,6 @@ int Oculus::runOvr() {
 				toolSizeFill.render();
 				MVstack.pop();
 
-				MVstack.push();
-				MVstack.translate(toolStrengthFill.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				toolStrengthFill.render();
-				MVstack.pop();
-
 				glBindTexture(GL_TEXTURE_2D, menuStringsSwe.getTextureID());
 				MVstack.push();
 				MVstack.translate(toolSize.getPosition());
@@ -1479,12 +1483,6 @@ int Oculus::runOvr() {
 				MVstack.translate(sizeString.getPosition());
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 				sizeString.render();
-				MVstack.pop();
-
-				MVstack.push();
-				MVstack.translate(strengthString.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				strengthString.render();
 				MVstack.pop();
 
 				MVstack.pop();
@@ -1498,12 +1496,6 @@ int Oculus::runOvr() {
 				MVstack.translate(toolSize.getPosition());
 				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
 				toolSize.render();
-				MVstack.pop();
-
-				MVstack.push();
-				MVstack.translate(toolStrength.getPosition());
-				glUniformMatrix4fv(locationMV, 1, GL_FALSE, MVstack.getCurrentMatrix());
-				toolStrength.render();
 				MVstack.pop();
 
 				//	}

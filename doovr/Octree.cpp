@@ -15,7 +15,10 @@ Octree::Octree(float _dim)
 
 Octree::~Octree()
 {
+	root->destroy();
+	delete root;
 
+	delete shape;
 }
 
 void Octree::render(MatrixStack* MVstack, GLint locationMV) {

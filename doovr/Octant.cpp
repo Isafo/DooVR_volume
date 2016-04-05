@@ -90,7 +90,7 @@ Octant::~Octant() {
 		delete scalarValue;
 	}*/
 
-	if (child[0] != nullptr) {
+	/*if (child[0] != nullptr) {
 		delete child[0];
 		child[0] = nullptr;
 		delete child[1];
@@ -100,7 +100,7 @@ Octant::~Octant() {
 		delete child[5];
 		delete child[6];
 		delete child[7];
-	}
+	}*/
 }
 
 //do NOT use on MAX_DEPTH octants
@@ -181,7 +181,30 @@ void Octant::deAllocate(DynamicMesh* _mesh) {
 	child[0] = nullptr;
 }
 
-//do NOT use on MAX_DEPTH or (MAX_DEPTH - 1)  octants
+void Octant::destroy() {
+
+	for (int i = 0; i < 8; i++) {
+		// child has no children 
+		if (child[i]->child[0] == nullptr) {
+			// scalarValue is allocated
+			if (child[i]->triangles != nullptr) {
+
+				//delete triangle scalarValue
+				delete[] child[i]->triangles;
+				child[i]->tCount = 0;
+				child[i]->triangles = nullptr;
+			}
+		}
+		// child has children
+		else {
+			child[i]->destroy();
+		}
+		// clean up
+		delete child[i];
+	}
+}
+
+//do NOT use on MAX_DEPTH or (MAX_DEPTH - 1)  octants OR Octree root
 void Octant::checkHomogeneity() {
 	//int count = 0;
 	for (int i = 0; i < 8; i++){
@@ -196,7 +219,7 @@ void Octant::checkHomogeneity() {
 
 	child[0] = nullptr;
 	
-	if (parent != nullptr)
+	if (parent->parent != nullptr)
 		parent->checkHomogeneity();
 }
 
